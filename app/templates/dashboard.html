@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-en="Dashboard" data-sk="Dashboard">Dashboard</title>
+    <style>
+        :root {
+            --primary-green: #4CAF50;
+            --light-green: #E8F5E9;
+            --dark-green: #2E7D32;
+            --white: #FFFFFF;
+            --light-gray: #F5F5F5;
+            --gray: #9E9E9E;
+        }
+
+        .flash-messages {
+            max-width: 900px;
+            margin: 1rem auto;
+            padding: 0 1rem;
+        }
+
+        .flash-message {
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .flash-message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .flash-message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--light-gray);
+            color: #333;
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: var(--primary-green);
+            color: var(--white);
+            padding: 2rem 1rem;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.4rem;
+        }
+
+        .header-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .logout-btn, .profile-btn {
+            padding: 10px 20px;
+            background-color: var(--white);
+            color: var(--primary-green);
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 500;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .logout-btn:hover, .profile-btn:hover {
+            background-color: var(--dark-green);
+            color: var(--white);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .language-switcher {
+            display: flex;
+            gap: 5px;
+        }
+
+        .lang-btn {
+            padding: 8px 12px;
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.8rem;
+        }
+
+        .lang-btn:hover {
+            background-color: #e0e0e0;
+        }
+
+        .lang-btn.active {
+            background-color: var(--primary-green);
+            color: white;
+        }
+
+        .user-info {
+            text-align: center;
+            padding: 15px;
+            background-color: var(--white);
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            color: var(--dark-green);
+            font-size: 1.1em;
+        }
+
+        main {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: var(--white);
+            border-radius: 8px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+        }
+
+        h2, h3 {
+            color: var(--dark-green);
+            border-bottom: 2px solid var(--primary-green);
+            padding-bottom: 0.3rem;
+            margin-top: 2rem;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 1rem;
+            background: var(--light-green);
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        input, select, button {
+            padding: 0.8rem;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        button {
+            background-color: var(--primary-green);
+            color: var(--white);
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background-color: var(--dark-green);
+        }
+
+        .welcome-box {
+            background-color: var(--light-green);
+            border-left: 5px solid var(--primary-green);
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-radius: 0 8px 8px 0;
+            transition: opacity 0.5s ease;
+        }
+
+        footer {
+            text-align: center;
+            padding: 1.5rem;
+            background-color: var(--primary-green);
+            color: var(--white);
+            font-size: 0.9rem;
+            margin-top: 3rem;
+        }
+
+        /* Štýly pre zoznam kategórií */
+        .category-list {
+            list-style: none;
+            padding: 0;
+            margin: 1rem 0;
+        }
+
+        .category-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--light-gray);
+            background: var(--white);
+            margin-bottom: 0.5rem;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .category-item:last-child {
+            border-bottom: none;
+        }
+
+        .category-item a {
+            text-decoration: none;
+            color: var(--dark-green);
+            font-weight: 500;
+        }
+
+        .category-item a:hover {
+            text-decoration: underline;
+        }
+
+        .test-levels {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .test-link {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 15px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .level-1 { background-color: #ffcdd2; color: #c62828; }
+        .level-2 { background-color: #fff59d; color: #f9a825; }
+        .level-3 { background-color: #c8e6c9; color: #2e7d32; }
+
+        .delete-btn {
+            padding: 5px 10px;
+            background: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .delete-btn:hover {
+            background: #cc0000;
+        }
+
+        #message {
+            display: none;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        #message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        #message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        /* Statistics section styles */
+        .stats-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: var(--light-green);
+            border-radius: 8px;
+            border: 1px solid var(--primary-green);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--white);
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border: 1px solid #e0e0e0;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary-green);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--dark-green);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .level-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .level-card {
+            background: var(--white);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border: 1px solid #e0e0e0;
+            transition: transform 0.2s ease;
+        }
+
+        .level-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .level-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .level-count {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--primary-green);
+            margin-bottom: 0.5rem;
+        }
+
+        .level-label {
+            color: var(--dark-green);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .level-dont-know {
+            border-left: 4px solid #ff6b6b;
+        }
+
+        .level-learning {
+            border-left: 4px solid #ffd93d;
+        }
+
+        .level-know {
+            border-left: 4px solid #6bcf7f;
+        }
+
+        @media (max-width: 768px) {
+            main {
+                margin: 0 1rem;
+                padding: 1.5rem;
+            }
+
+            header h1 {
+                font-size: 1.8rem;
+            }
+
+            form {
+                gap: 0.8rem;
+            }
+
+            .header-controls {
+                position: static;
+                justify-content: center;
+                margin-top: 1rem;
+            }
+
+            .test-levels {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .level-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .stat-number {
+                font-size: 2rem;
+            }
+
+            .level-count {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header-controls">
+        <div class="language-switcher">
+            <button class="lang-btn active" data-lang="en">EN</button>
+            <button class="lang-btn" data-lang="sk">SK</button>
+        </div>
+        <a href="/profile" class="profile-btn" data-en="Edit Profile" data-sk="Upraviť profil">Edit Profile</a>
+        <button class="logout-btn" onclick="logout()" data-en="Logout" data-sk="Odhlásiť sa">Logout</button>
+    </div>
+
+    <div class="user-info">
+        <span data-en="Logged in as:" data-sk="Prihlásený ako:">Logged in as:</span> <strong id="userEmail">{{ email }}</strong>
+    </div>
+
+    <header>
+        <h1 data-en="Welcome to Dashboard" data-sk="Vitajte v Dashboarde">Welcome to Dashboard</h1>
+    </header>
+
+    <main>
+        <div id="userStats" class="stats-section" style="display: none;">
+            <h2 data-en="Learning Statistics" data-sk="Štatistiky učenia">Learning Statistics</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalWords">0</div>
+                    <div class="stat-label" data-en="Total Words" data-sk="Celkom slovíčok">Total Words</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalCategories">0</div>
+                    <div class="stat-label" data-en="Categories" data-sk="Kategórií">Categories</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="testsTaken">0</div>
+                    <div class="stat-label" data-en="Tests Taken" data-sk="Opakovaní absolvovaných">Tests Taken</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="successRate">0%</div>
+                    <div class="stat-label" data-en="Success Rate" data-sk="Úspešnosť">Success Rate</div>
+                </div>
+            </div>
+
+            <h3 data-en="Words by Knowledge Level" data-sk="Slovíčka podľa úrovne znalostí">Words by Knowledge Level</h3>
+            <div class="level-stats">
+                <div class="level-card level-dont-know">
+                    <div class="level-icon">❓</div>
+                    <div class="level-count" id="dontKnowCount">0</div>
+                    <div class="level-label" data-en="Don't Know" data-sk="Neviem">Don't Know</div>
+                </div>
+                <div class="level-card level-learning">
+                    <div class="level-icon">📚</div>
+                    <div class="level-count" id="learningCount">0</div>
+                    <div class="level-label" data-en="Learning" data-sk="Učím sa">Learning</div>
+                </div>
+                <div class="level-card level-know">
+                    <div class="level-icon">✅</div>
+                    <div class="level-count" id="knowCount">0</div>
+                    <div class="level-label" data-en="Know" data-sk="Viem">Know</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="message"></div>
+
+        <h2 data-en="Your Categories" data-sk="Tvoje kategórie">Your Categories</h2>
+
+        <ul class="category-list" id="categoriesList">
+            <!-- Categories will be loaded dynamically -->
+            <li class="category-item" data-en="No categories yet." data-sk="Žiadne kategórie zatiaľ neexistujú.">No categories yet.</li>
+        </ul>
+
+        <form id="createCategoryForm">
+            <input type="text" name="name" placeholder="Category name" data-en-placeholder="Category name" data-sk-placeholder="Názov kategórie" required>
+            <input type="text" name="description" placeholder="Description (optional)" data-en-placeholder="Description (optional)" data-sk-placeholder="Popis (voliteľné)">
+            <button type="submit" data-en="Create Category" data-sk="Vytvoriť kategóriu">Create Category</button>
+        </form>
+
+        <h3 data-en="Add New Word" data-sk="Pridať slovíčko">Add New Word</h3>
+        <form id="addWordForm">
+            <input type="text" name="original_word" placeholder="English word" data-en-placeholder="English word" data-sk-placeholder="Anglické slovo" required>
+            <input type="text" name="translation" placeholder="Slovak translation" data-en-placeholder="Slovak translation" data-sk-placeholder="Slovenský preklad" required>
+            <select name="category_id" id="categorySelect" required>
+                <option value="" data-en="No categories available" data-sk="Žiadne kategórie">No categories available</option>
+            </select>
+            <button type="submit" data-en="Add Word" data-sk="Pridať slovíčko">Add Word</button>
+        </form>
+
+
+
+
+    </main>
+
+    <footer>
+        <p>&copy; 2024 WordKeeper. <span data-en="All rights reserved." data-sk="Všetky práva vyhradené.">All rights reserved.</span></p>
+    </footer>
+
+    <script>
+        // Language management
+        document.addEventListener('DOMContentLoaded', function() {
+            const langButtons = document.querySelectorAll('.lang-btn');
+            const currentLang = localStorage.getItem('preferredLang') || 'en';
+            
+            setActiveLanguage(currentLang);
+            
+            langButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const lang = this.getAttribute('data-lang');
+                    setActiveLanguage(lang);
+                    localStorage.setItem('preferredLang', lang);
+                });
+            });
+            
+            function setActiveLanguage(lang) {
+                langButtons.forEach(btn => {
+                    btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+                });
+                
+                document.querySelectorAll('[data-en], [data-sk]').forEach(element => {
+                    if (element.hasAttribute(`data-${lang}`)) {
+                        const text = element.getAttribute(`data-${lang}`);
+                        if (element.tagName === 'TITLE') {
+                            document.title = text;
+                        } else {
+                            element.textContent = text;
+                        }
+                    }
+                });
+
+                // Update placeholders
+                document.querySelectorAll('[data-en-placeholder], [data-sk-placeholder]').forEach(element => {
+                    if (element.hasAttribute(`data-${lang}-placeholder`)) {
+                        element.placeholder = element.getAttribute(`data-${lang}-placeholder`);
+                    }
+                });
+            }
+
+            // Load user data and categories
+            loadUserData();
+            loadCategories();
+            loadUserStats();
+            setupForms();
+        });
+
+        async function loadUserData() {
+            try {
+                const userEmail = localStorage.getItem('user_email');
+                const userName = localStorage.getItem('user_name');
+
+                if (!userEmail) {
+                    window.location.href = '/login';
+                    return;
+                }
+
+                // Zobrazenie emailu alebo mena používateľa
+                const displayName = userName || userEmail;
+                document.getElementById('userEmail').textContent = displayName;
+
+                // Load user data from API to get user_id
+                const response = await fetch('/api/user');
+                if (response.ok) {
+                    const userData = await response.json();
+                    window.currentUserId = userData.id;
+                } else {
+                    console.error('Failed to load user data');
+                    window.location.href = '/login';
+                }
+
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                showMessage(getTranslatedMessage('error_loading_data'), 'error');
+            }
+        }
+
+        async function loadCategories() {
+            try {
+                console.log('Loading categories...');
+                const response = await fetch('/api/v1/categories');
+
+                if (response.ok) {
+                    const categories = await response.json();
+                    console.log('Categories loaded:', categories);
+                    displayCategories(categories);
+                    populateCategorySelect(categories);
+                } else {
+                    console.error('Failed to load categories, status:', response.status);
+                    displayCategories([]);
+                }
+            } catch (error) {
+                console.error('Error loading categories:', error);
+                displayCategories([]);
+            }
+        }
+
+        async function loadUserStats() {
+            try {
+                console.log('Loading user statistics...');
+                const response = await fetch('/api/user/stats');
+
+                if (response.ok) {
+                    const stats = await response.json();
+                    console.log('Statistics loaded:', stats);
+                    displayUserStats(stats);
+                } else {
+                    console.error('Failed to load statistics, status:', response.status);
+                    // Hide stats section if loading fails
+                    document.getElementById('userStats').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+                // Hide stats section if loading fails
+                document.getElementById('userStats').style.display = 'none';
+            }
+        }
+
+        function displayUserStats(stats) {
+            // Show the stats section
+            document.getElementById('userStats').style.display = 'block';
+
+            // Update the statistics
+            document.getElementById('totalWords').textContent = stats.words_count || 0;
+            document.getElementById('totalCategories').textContent = stats.categories_count || 0;
+            document.getElementById('testsTaken').textContent = stats.tests_taken || 0;
+            document.getElementById('successRate').textContent = stats.success_rate ? `${Math.round(stats.success_rate)}%` : '0%';
+
+            // Update knowledge level counts
+            const levelCounts = stats.words_by_level || {};
+            document.getElementById('dontKnowCount').textContent = levelCounts.dont_know || 0;
+            document.getElementById('learningCount').textContent = levelCounts.learning || 0;
+            document.getElementById('knowCount').textContent = levelCounts.know || 0;
+        }
+
+        function displayCategories(categories) {
+            const categoriesList = document.getElementById('categoriesList');
+            
+            if (!categories || categories.length === 0) {
+                categoriesList.innerHTML = '<li class="category-item" data-en="No categories yet." data-sk="Žiadne kategórie zatiaľ neexistujú.">No categories yet.</li>';
+                return;
+            }
+
+            categoriesList.innerHTML = categories.map(category => `
+                <li class="category-item">
+                    <strong><a href="/category/${category.id}/words" style="color: var(--dark-green); text-decoration: none;">${category.name}</a></strong>
+                    ${category.description ? `<br><span style="color: #666; font-size: 0.9em;">${category.description}</span>` : ''}
+                    <div class="test-levels">
+                        <a href="/test?category=${category.id}&level=dont_know" class="test-link level-1"
+                        data-en="Repeat Don't Know" data-sk="Opakovanie Neviem">Don't Know</a>
+                        <a href="/test?category=${category.id}&level=learning" class="test-link level-2"
+                        data-en="Repeat Learning" data-sk="Opakovanie Učím sa">Learning</a>
+                        <a href="/test?category=${category.id}&level=know" class="test-link level-3"
+                        data-en="Repeat Know" data-sk="Opakovanie Viem">Know</a>
+                        <button class="delete-btn" onclick="deleteCategory(${category.id})"
+                        data-en="Delete" data-sk="Zmazať">Delete</button>
+                    </div>
+                </li>
+            `).join('');
+
+            // Update language for new elements
+            const currentLang = localStorage.getItem('preferredLang') || 'en';
+            document.querySelectorAll('[data-en], [data-sk]').forEach(element => {
+                if (element.hasAttribute(`data-${currentLang}`)) {
+                    element.textContent = element.getAttribute(`data-${currentLang}`);
+                }
+            });
+        }
+
+        function populateCategorySelect(categories) {
+            const categorySelect = document.getElementById('categorySelect');
+            
+            if (!categories || categories.length === 0) {
+                categorySelect.innerHTML = '<option value="" data-en="No categories available" data-sk="Žiadne kategórie">No categories available</option>';
+                return;
+            }
+
+            categorySelect.innerHTML = categories.map(category => `
+                <option value="${category.id}">${category.name}</option>
+            `).join('');
+        }
+
+        function setupForms() {
+            // Create Category Form
+            document.getElementById('createCategoryForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                if (!window.currentUserId) {
+                    showMessage(getTranslatedMessage('user_not_authenticated'), 'error');
+                    return;
+                }
+
+                const formData = new FormData(this);
+                const categoryData = {
+                    name: formData.get('name'),
+                    description: formData.get('description') || '',
+                    user_id: window.currentUserId
+                };
+
+                try {
+                    console.log('Creating category:', categoryData);
+                    const response = await fetch('/api/v1/categories', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(categoryData)
+                    });
+
+                    if (response.ok) {
+                        const newCategory = await response.json();
+                        console.log('Category created successfully:', newCategory);
+                        showMessage(getTranslatedMessage('category_created_successfully'), 'success');
+                        this.reset();
+                        
+                        // Reload categories
+                        await loadCategories();
+                    } else {
+                        const errorData = await response.json();
+                        console.error('Failed to create category:', errorData);
+                        showMessage(errorData.detail || getTranslatedMessage('failed_to_create_category'), 'error');
+                    }
+                } catch (error) {
+                    console.error('Error creating category:', error);
+                    showMessage(getTranslatedMessage('error_creating_category'), 'error');
+                }
+            });
+
+            // Add Word Form
+            document.getElementById('addWordForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(this);
+                const wordData = {
+                    original_word: formData.get('original_word'),
+                    translation: formData.get('translation'),
+                    category_id: parseInt(formData.get('category_id'))
+                };
+
+                try {
+                    const response = await fetch('/api/v1/words', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(wordData)
+                    });
+
+                    if (response.ok) {
+                        const newWord = await response.json();
+                        showMessage(getTranslatedMessage('word_added_successfully'), 'success');
+                        this.reset();
+                    } else {
+                        const errorData = await response.json();
+                        showMessage(errorData.detail || getTranslatedMessage('failed_to_add_word'), 'error');
+                    }
+                } catch (error) {
+                    console.error('Error adding word:', error);
+                    showMessage(getTranslatedMessage('error_adding_word'), 'error');
+                }
+            });
+        }
+
+        async function deleteCategory(categoryId) {
+            if (!confirm('Are you sure you want to delete this category?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/v1/categories/${categoryId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showMessage(getTranslatedMessage('category_deleted_successfully'), 'success');
+                    await loadCategories();
+                } else {
+                    const errorData = await response.json();
+                    showMessage(errorData.detail || getTranslatedMessage('failed_to_delete_category'), 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting category:', error);
+                showMessage(getTranslatedMessage('error_deleting_category'), 'error');
+            }
+        }
+
+        async function logout() {
+            try {
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('user_email');
+                localStorage.removeItem('user_name');
+                localStorage.removeItem('user_id');
+                localStorage.removeItem('preferredLang');
+                window.location.href = '/';
+            } catch (error) {
+                console.error('Logout failed:', error);
+                window.location.href = '/';
+            }
+        }
+
+        function getTranslatedMessage(messageKey) {
+            const currentLang = localStorage.getItem('preferredLang') || 'en';
+            const messages = {
+                'error_loading_data': {
+                    en: 'Error loading data',
+                    sk: 'Chyba pri načítaní dát'
+                },
+                'user_not_authenticated': {
+                    en: 'User not authenticated',
+                    sk: 'Používateľ nie je overený'
+                },
+                'category_created_successfully': {
+                    en: 'Category created successfully!',
+                    sk: 'Kategória bola úspešne vytvorená!'
+                },
+                'failed_to_create_category': {
+                    en: 'Failed to create category',
+                    sk: 'Nepodarilo sa vytvoriť kategóriu'
+                },
+                'error_creating_category': {
+                    en: 'Error creating category',
+                    sk: 'Chyba pri vytváraní kategórie'
+                },
+                'word_added_successfully': {
+                    en: 'Word added successfully!',
+                    sk: 'Slovíčko bolo úspešne pridané!'
+                },
+                'failed_to_add_word': {
+                    en: 'Failed to add word',
+                    sk: 'Nepodarilo sa pridať slovíčko'
+                },
+                'error_adding_word': {
+                    en: 'Error adding word',
+                    sk: 'Chyba pri pridávaní slovíčka'
+                },
+                'category_deleted_successfully': {
+                    en: 'Category deleted successfully!',
+                    sk: 'Kategória bola úspešne zmazaná!'
+                },
+                'failed_to_delete_category': {
+                    en: 'Failed to delete category',
+                    sk: 'Nepodarilo sa zmazať kategóriu'
+                },
+                'error_deleting_category': {
+                    en: 'Error deleting category',
+                    sk: 'Chyba pri mazaní kategórie'
+                }
+            };
+
+            return messages[messageKey] ? messages[messageKey][currentLang] : messageKey;
+        }
+
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = message;
+            messageDiv.className = type;
+            messageDiv.style.display = 'block';
+
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

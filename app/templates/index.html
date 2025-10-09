@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-en="Welcome" data-sk="Vitajte">Welcome</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+        }
+        .container {
+            background: white;
+            padding: 3rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 90%;
+            position: relative;
+        }
+        h1 {
+            color: #2E7D32;
+            margin-bottom: 2rem;
+        }
+        .auth-links {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+        .auth-link {
+            padding: 0.75rem 1.5rem;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+        .auth-link:hover {
+            background-color: #3e8e41;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .language-switcher {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+        }
+        .lang-btn {
+            padding: 0.5rem 1rem;
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .lang-btn:hover {
+            background-color: #e0e0e0;
+        }
+        .lang-btn.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .logo {
+            max-width: 150px;
+            margin-bottom: 1.5rem;
+        }
+        @media (max-width: 480px) {
+            .container {
+                padding: 2rem 1rem;
+            }
+            .auth-links {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .auth-link {
+                width: 100%;
+            }
+            .language-switcher {
+                position: static;
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Prepínač jazykov -->
+        <div class="language-switcher">
+            <button class="lang-btn active" data-lang="en">EN</button>
+            <button class="lang-btn" data-lang="sk">SK</button>
+        </div>
+        
+        <!-- Add your logo here if you have one -->
+        <!-- <img src="/static/logo.png" alt="Logo" class="logo"> -->
+        
+        <h1 data-en="Welcome to Our System" data-sk="Vitajte v našom systéme">Welcome to Our System</h1>
+        
+        <div class="auth-links">
+            <a href="/login" class="auth-link" data-en="Login" data-sk="Prihlásiť sa">Login</a>
+            <a href="/register" class="auth-link" data-en="Register" data-sk="Registrovať sa">Register</a>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const langButtons = document.querySelectorAll('.lang-btn');
+            const currentLang = localStorage.getItem('preferredLang') || 'en';
+            
+            // Nastavíme aktívny jazyk
+            setActiveLanguage(currentLang);
+            
+            // Prepínač jazykov
+            langButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const lang = this.getAttribute('data-lang');
+                    setActiveLanguage(lang);
+                    localStorage.setItem('preferredLang', lang);
+                });
+            });
+            
+            function setActiveLanguage(lang) {
+                // Aktualizácia prepínača
+                langButtons.forEach(btn => {
+                    btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+                });
+                
+                // Aktualizácia textov
+                document.querySelectorAll('[data-sk], [data-en]').forEach(element => {
+                    if (element.hasAttribute(`data-${lang}`)) {
+                        const text = element.getAttribute(`data-${lang}`);
+                        if (element.tagName === 'TITLE') {
+                            document.title = text;
+                        } else {
+                            element.textContent = text;
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+from pydantic import BaseModel, EmailStr
+from datetime import datetime
+from typing import Optional
+
+class UserBase(BaseModel):
+    email: EmailStr
+
+class UserCreate(UserBase):
+    password: str
+
+class UserLogin(UserBase):
+    password: str
+
+class UserResponse(UserBase):
+    id: int
+    is_plus: bool  # Pridané späť
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class UserUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    is_plus: Optional[bool] = None
+
+class PlusStatusUpdate(BaseModel):
+    is_plus: bool

@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-en="Flashcard Test" data-sk="Test kartičiek">Flashcard Test</title>
+    <style>
+        :root {
+            --primary-green: #4CAF50;
+            --light-green: #E8F5E9;
+            --dark-green: #2E7D32;
+            --white: #FFFFFF;
+            --light-gray: #F5F5F5;
+            --gray: #9E9E9E;
+            --red: #f44336;
+            --orange: #ff9800;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--light-gray);
+            color: #333;
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: var(--primary-green);
+            color: var(--white);
+            padding: 2rem 1rem;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.4rem;
+        }
+
+        .header-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .back-btn, .logout-btn, .profile-btn {
+            padding: 10px 20px;
+            background-color: var(--white);
+            color: var(--primary-green);
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 500;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .back-btn:hover, .logout-btn:hover, .profile-btn:hover {
+            background-color: var(--dark-green);
+            color: var(--white);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .language-switcher {
+            display: flex;
+            gap: 5px;
+        }
+
+        .lang-btn {
+            padding: 8px 12px;
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.8rem;
+        }
+
+        .lang-btn:hover {
+            background-color: #e0e0e0;
+        }
+
+        .lang-btn.active {
+            background-color: var(--primary-green);
+            color: white;
+        }
+
+        .user-info {
+            text-align: center;
+            padding: 15px;
+            background-color: var(--white);
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            color: var(--dark-green);
+            font-size: 1.1em;
+        }
+
+        main {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: var(--white);
+            border-radius: 8px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+        }
+
+        .test-info {
+            background-color: var(--light-green);
+            border-left: 5px solid var(--primary-green);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .test-info h2 {
+            margin: 0 0 0.5rem 0;
+            color: var(--dark-green);
+        }
+
+        .test-info p {
+            margin: 0;
+            color: #666;
+        }
+
+        .flashcard {
+            background: var(--white);
+            border: 2px solid var(--light-gray);
+            border-radius: 15px;
+            padding: 3rem;
+            margin: 2rem 0;
+            text-align: center;
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .flashcard:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .flashcard.flipped {
+            background: var(--light-green);
+            border-color: var(--primary-green);
+        }
+
+        .word-text {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--dark-green);
+            margin-bottom: 1rem;
+        }
+
+        .translation-text {
+            font-size: 1.8rem;
+            color: #666;
+            margin-top: 1rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .flashcard.flipped .translation-text {
+            opacity: 1;
+        }
+
+        .click-hint {
+            color: #999;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+
+        .test-controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+
+        .btn-change-level {
+            background-color: #2196F3;
+            color: white;
+        }
+
+        .btn-change-level:hover {
+            background-color: #1976D2;
+            transform: translateY(-2px);
+        }
+
+        .btn-next {
+            background-color: var(--primary-green);
+            color: white;
+        }
+
+        .btn-next:hover {
+            background-color: var(--dark-green);
+            transform: translateY(-2px);
+        }
+
+        .btn-end-test {
+            background-color: var(--red);
+            color: white;
+        }
+
+        .btn-end-test:hover {
+            background-color: #d32f2f;
+            transform: translateY(-2px);
+        }
+
+        .level-selector {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .level-selector.show {
+            display: flex;
+        }
+
+        .level-selector-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .level-selector h3 {
+            margin-top: 0;
+            color: var(--dark-green);
+        }
+
+        .level-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .level-option {
+            padding: 1rem;
+            border: 2px solid var(--light-gray);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .level-option:hover {
+            border-color: var(--primary-green);
+            background: var(--light-green);
+        }
+
+        .level-dont_know { border-color: #ffcdd2; background: #ffebee; }
+        .level-learning { border-color: #fff59d; background: #fffde7; }
+        .level-know { border-color: #c8e6c9; background: #f1f8e9; }
+
+
+        .progress-info {
+            text-align: center;
+            margin: 1rem 0;
+            color: #666;
+        }
+
+        .no-words {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+            font-style: italic;
+        }
+
+        .no-words a {
+            color: var(--primary-green);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .no-words a:hover {
+            text-decoration: underline;
+        }
+
+        footer {
+            text-align: center;
+            padding: 1.5rem;
+            background-color: var(--primary-green);
+            color: var(--white);
+            font-size: 0.9rem;
+            margin-top: 3rem;
+        }
+
+        #message {
+            display: none;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        #message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        #message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            main {
+                margin: 0 1rem;
+                padding: 1.5rem;
+            }
+
+            header h1 {
+                font-size: 1.8rem;
+            }
+
+            .flashcard {
+                padding: 2rem;
+                min-height: 250px;
+            }
+
+            .word-text {
+                font-size: 2rem;
+            }
+
+            .translation-text {
+                font-size: 1.5rem;
+            }
+
+            .test-controls {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .control-btn {
+                width: 100%;
+                max-width: 200px;
+            }
+
+            .level-options {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header-controls">
+        <div class="language-switcher">
+            <button class="lang-btn active" data-lang="en">EN</button>
+            <button class="lang-btn" data-lang="sk">SK</button>
+        </div>
+        <a href="/dashboard" class="back-btn" data-en="Back to Dashboard" data-sk="Späť na Dashboard">Back to Dashboard</a>
+        <a href="/profile" class="profile-btn" data-en="Edit Profile" data-sk="Upraviť profil">Edit Profile</a>
+        <button class="logout-btn" onclick="logout()" data-en="Logout" data-sk="Odhlásiť sa">Logout</button>
+    </div>
+
+    <div class="user-info">
+        <span data-en="Logged in as:" data-sk="Prihlásený ako:">Logged in as:</span> <strong id="userEmail">{{ email }}</strong>
+    </div>
+
+    <header>
+        <h1 data-en="Flashcard Test" data-sk="Test kartičiek">Flashcard Test</h1>
+    </header>
+
+    <main>
+        <div id="message"></div>
+
+        <div class="test-info">
+            <h2 id="testTitle">
+                {% if category %}
+                    {{ category.name }} - {{ level|title }} Level
+                {% else %}
+                    All Categories - {{ level|title }} Level
+                {% endif %}
+            </h2>
+            <p id="testDescription" data-en="Click on the word to reveal its translation, then choose your action." data-sk="Kliknite na slovíčko pre zobrazenie prekladu, potom vyberte svoju akciu.">Click on the word to reveal its translation, then choose your action.</p>
+        </div>
+
+        <div id="testContent">
+            <!-- Test content will be loaded dynamically -->
+        </div>
+    </main>
+
+    <!-- Level Selector Modal -->
+    <div class="level-selector" id="levelSelector">
+        <div class="level-selector-content">
+            <h3 data-en="Change Word Level" data-sk="Zmeniť úroveň slovíčka">Change Word Level</h3>
+            <div class="level-options">
+                <div class="level-option level-dont_know" onclick="changeWordLevel('dont_know')" data-en="Don't Know" data-sk="Neviem">Don't Know</div>
+                <div class="level-option level-learning" onclick="changeWordLevel('learning')" data-en="Learning" data-sk="Učím sa">Learning</div>
+                <div class="level-option level-know" onclick="changeWordLevel('know')" data-en="Know" data-sk="Viem">Know</div>
+            </div>
+            <button class="control-btn btn-end-test" onclick="closeLevelSelector()" data-en="Cancel" data-sk="Zrušiť">Cancel</button>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 WordKeeper. <span data-en="All rights reserved." data-sk="Všetky práva vyhradené.">All rights reserved.</span></p>
+    </footer>
+
+    <script>
+        let currentWords = [];
+        let currentWordIndex = 0;
+        let currentCategoryId = {{ category.id if category else 'null' }};
+        let currentLevel = "{{ level }}";
+
+        // Language management
+        document.addEventListener('DOMContentLoaded', function() {
+            const langButtons = document.querySelectorAll('.lang-btn');
+            const currentLang = localStorage.getItem('preferredLang') || 'en';
+
+            setActiveLanguage(currentLang);
+
+            langButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const lang = this.getAttribute('data-lang');
+                    setActiveLanguage(lang);
+                    localStorage.setItem('preferredLang', lang);
+                });
+            });
+
+            function setActiveLanguage(lang) {
+                langButtons.forEach(btn => {
+                    btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+                });
+
+                document.querySelectorAll('[data-en], [data-sk]').forEach(element => {
+                    if (element.hasAttribute(`data-${lang}`)) {
+                        const text = element.getAttribute(`data-${lang}`);
+                        if (element.tagName === 'TITLE') {
+                            document.title = text;
+                        } else {
+                            element.textContent = text;
+                        }
+                    }
+                });
+
+                // Update level selector options
+                updateLevelSelectorLanguage(lang);
+            }
+
+            function updateLevelSelectorLanguage(lang) {
+                const levelOptions = document.querySelectorAll('.level-option');
+                levelOptions.forEach(option => {
+                    if (option.hasAttribute(`data-${lang}`)) {
+                        option.textContent = option.getAttribute(`data-${lang}`);
+                    }
+                });
+            }
+
+            // Load user data and start test
+            loadUserData();
+            startTest();
+        });
+
+        async function loadUserData() {
+            try {
+                const userEmail = localStorage.getItem('user_email');
+                const userName = localStorage.getItem('user_name');
+
+                if (!userEmail) {
+                    window.location.href = '/login';
+                    return;
+                }
+
+                // Display user email/name
+                const displayName = userName || userEmail;
+                document.getElementById('userEmail').textContent = displayName;
+
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                showMessage('Error loading data', 'error');
+            }
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        async function startTest() {
+            try {
+                console.log('Starting test for category:', currentCategoryId, 'level:', currentLevel);
+
+                // Build query parameters
+                let url = `/api/v1/words?knowledge_level=${currentLevel}`;
+                if (currentCategoryId) {
+                    url += `&category_id=${currentCategoryId}`;
+                }
+
+                const response = await fetch(url);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Words loaded for test:', data);
+
+                    if (data.words && data.words.length > 0) {
+                        currentWords = shuffleArray(data.words);
+                        currentWordIndex = 0;
+                        displayCurrentWord();
+                    } else {
+                        showNoWordsMessage();
+                    }
+                } else {
+                    console.error('Failed to load words, status:', response.status);
+                    showNoWordsMessage();
+                }
+            } catch (error) {
+                console.error('Error starting test:', error);
+                showNoWordsMessage();
+            }
+        }
+
+        function displayCurrentWord() {
+            if (currentWordIndex >= currentWords.length) {
+                showTestComplete();
+                return;
+            }
+
+            const word = currentWords[currentWordIndex];
+
+            const testContent = document.getElementById('testContent');
+            testContent.innerHTML = `
+                <div class="progress-info">
+                    <span data-en="Word" data-sk="Slovíčko">Word</span> ${currentWordIndex + 1} / ${currentWords.length}
+                </div>
+                <div class="flashcard" onclick="flipCard()">
+                    <div class="word-text">${word.original_word}</div>
+                    <div class="translation-text">${word.translation}</div>
+                    <div class="click-hint" data-en="Click to reveal translation" data-sk="Kliknite pre zobrazenie prekladu">Click to reveal translation</div>
+                </div>
+                <div class="test-controls">
+                    <button class="control-btn btn-change-level" onclick="showLevelSelector()" data-en="Change Level" data-sk="Zmeniť úroveň">Change Level</button>
+                    <button class="control-btn btn-next" onclick="nextWord()" data-en="Next Word" data-sk="Ďalšie slovíčko">Next Word</button>
+                    <button class="control-btn btn-end-test" onclick="endTest()" data-en="End Test" data-sk="Ukončiť test">End Test</button>
+                </div>
+            `;
+
+            // Update language for new elements
+            const currentLang = localStorage.getItem('preferredLang') || 'en';
+            document.querySelectorAll('[data-en], [data-sk]').forEach(element => {
+                if (element.hasAttribute(`data-${currentLang}`)) {
+                    element.textContent = element.getAttribute(`data-${currentLang}`);
+                }
+            });
+        }
+
+        function flipCard() {
+            const flashcard = document.querySelector('.flashcard');
+            const hint = document.querySelector('.click-hint');
+
+            flashcard.classList.toggle('flipped');
+            hint.style.display = flashcard.classList.contains('flipped') ? 'none' : 'block';
+        }
+
+        function showLevelSelector() {
+            document.getElementById('levelSelector').classList.add('show');
+        }
+
+        function closeLevelSelector() {
+            document.getElementById('levelSelector').classList.remove('show');
+        }
+
+        async function changeWordLevel(newLevel) {
+            const word = currentWords[currentWordIndex];
+
+            try {
+                const response = await fetch(`/api/v1/words/${word.id}/knowledge-level`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        knowledge_level: newLevel
+                    })
+                });
+
+                if (response.ok) {
+                    showMessage('Word level updated successfully!', 'success');
+                    closeLevelSelector();
+                    nextWord();
+                } else {
+                    const errorData = await response.json();
+                    showMessage(errorData.detail || 'Failed to update word level', 'error');
+                }
+            } catch (error) {
+                console.error('Error updating word level:', error);
+                showMessage('Error updating word level', 'error');
+            }
+        }
+
+        function nextWord() {
+            currentWordIndex++;
+            displayCurrentWord();
+        }
+
+        function endTest() {
+            if (confirm('Are you sure you want to end the test?')) {
+                window.location.href = '/dashboard';
+            }
+        }
+
+        function showNoWordsMessage() {
+            const testContent = document.getElementById('testContent');
+            testContent.innerHTML = `
+                <div class="no-words">
+                    <h3 data-en="No words found for this test" data-sk="Pre tento test sa nenašli žiadne slovíčka">No words found for this test</h3>
+                    <p data-en="Try adding some words to this category or selecting a different level." data-sk="Skúste pridať slovíčka do tejto kategórie alebo vybrať inú úroveň.">
+                        Try adding some words to this category or selecting a different level.
+                    </p>
+                    <a href="/dashboard" data-en="Back to Dashboard" data-sk="Späť na Dashboard">Back to Dashboard</a>
+                </div>
+            `;
+
+            // Update language
+            const currentLang = localStorage.getItem('preferredLang') || 'en';
+            document.querySelectorAll('[data-en], [data-sk]').forEach(element => {
+                if (element.hasAttribute(`data-${currentLang}`)) {
+                    element.textContent = element.getAttribute(`data-${currentLang}`);
+                }
+            });
+        }
+
+        function showTestComplete() {
+            const testContent = document.getElementById('testContent');
+            testContent.innerHTML = `
+                <div class="no-words">
+                    <h3 data-en="Test Complete!" data-sk="Test dokončený!">Test Complete!</h3>
+                    <p data-en="You have reviewed all words in this test." data-sk="Prešli ste všetky slovíčka v tomto teste.">
+                        You have reviewed all words in this test.
+                    </p>
+                    <a href="/dashboard" data-en="Back to Dashboard" data-sk="Späť na Dashboard">Back to Dashboard</a>
+                </div>
+            `;
+
+            // Update language
+            const currentLang = localStorage.getItem('preferredLang') || 'en';
+            document.querySelectorAll('[data-en], [data-sk]').forEach(element => {
+                if (element.hasAttribute(`data-${currentLang}`)) {
+                    element.textContent = element.getAttribute(`data-${currentLang}`);
+                }
+            });
+        }
+
+        async function logout() {
+            try {
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('user_email');
+                localStorage.removeItem('user_name');
+                localStorage.removeItem('user_id');
+                localStorage.removeItem('preferredLang');
+                window.location.href = '/';
+            } catch (error) {
+                console.error('Logout failed:', error);
+                window.location.href = '/';
+            }
+        }
+
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = message;
+            messageDiv.className = type;
+            messageDiv.style.display = 'block';
+
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

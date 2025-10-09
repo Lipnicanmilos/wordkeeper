@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication Callback</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .container {
+            text-align: center;
+            background: white;
+            padding: 3rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .success { color: #4CAF50; }
+        .error { color: #F44336; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="spinner"></div>
+        <div id="message">Processing authentication...</div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            const error = urlParams.get('error');
+            const success = urlParams.get('success');
+
+            if (token) {
+                localStorage.setItem('token', token);
+            }
+
+            if (error) {
+                document.getElementById('message').innerHTML = 
+                    `<p class="error">Authentication failed: ${error}</p>`;
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 3000);
+            } else if (success) {
+                document.getElementById('message').innerHTML = 
+                    '<p class="success">Authentication successful! Redirecting...</p>';
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 2000);
+            } else {
+                // Check if we have user data in URL
+                const email = urlParams.get('email');
+                if (email) {
+                    document.getElementById('message').innerHTML = 
+                        `<p class="success">Welcome ${email}! Redirecting...</p>`;
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 2000);
+                } else {
+                    // No parameters, redirect to login
+                    window.location.href = '/login';
+                }
+            }
+        });
+    </script>
+</body>
+</html>

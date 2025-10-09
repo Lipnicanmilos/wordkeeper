@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-en="Register" data-sk="Registrácia">Register</title>
+    <style>
+        :root {
+            --primary-green: #4CAF50;
+            --dark-green: #2E7D32;
+            --white: #FFFFFF;
+            --light-gray: #F5F5F5;
+            --error-red: #F44336;
+            --error-bg: #FFEBEE;
+            --success-green: #4CAF50;
+            --success-bg: #E8F5E9;
+            --google-blue: #4285F4;
+            --google-dark-blue: #357AE8;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-gray);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .register-container {
+            background-color: var(--white);
+            padding: 2.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 450px;
+            margin: 1rem;
+            position: relative;
+        }
+        
+        .language-switcher {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+        }
+        
+        .lang-btn {
+            padding: 0.5rem 1rem;
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+        
+        .lang-btn:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .lang-btn.active {
+            background-color: var(--primary-green);
+            color: white;
+        }
+        
+        h1 {
+            color: var(--dark-green);
+            text-align: center;
+            margin-bottom: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
+        
+        input[type="email"]:focus,
+        input[type="password"]:focus {
+            border-color: var(--primary-green);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+        }
+        
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--primary-green);
+            color: var(--white);
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            background-color: var(--dark-green);
+            transform: translateY(-2px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        #message {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .success {
+            color: var(--success-green);
+            background-color: var(--success-bg);
+            border: 1px solid var(--success-green);
+        }
+        
+        .error {
+            color: var(--error-red);
+            background-color: var(--error-bg);
+            border: 1px solid var(--error-red);
+        }
+        
+        .login-link {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: #666;
+        }
+        
+        .login-link a {
+            color: var(--primary-green);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+
+        .home-button {
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+        
+        .home-button a {
+            padding: 0.75rem 1.5rem;
+            background-color: var(--primary-green);
+            color: var(--white);
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 500;
+            display: inline-block;
+        }
+        
+        .home-button a:hover {
+            background-color: var(--dark-green);
+        }
+
+        /* Google Register Styles */
+        .social-register {
+            margin: 2rem 0;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 1.5rem 0;
+            position: relative;
+            color: #666;
+        }
+
+        .divider:before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #ddd;
+            z-index: 1;
+        }
+
+        .divider span {
+            background: white;
+            padding: 0 1rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .google-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            padding: 0.75rem;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            color: #444;
+        }
+        
+        .google-btn:hover {
+            background: #f8f9fa;
+            border-color: #ccc;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .google-btn img {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* Password requirements */
+        .password-requirements {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 0.5rem;
+        }
+
+        .requirement {
+            margin: 0.2rem 0;
+            transition: color 0.3s;
+        }
+
+        .requirement.met {
+            color: var(--success-green);
+        }
+
+        .requirement.unmet {
+            color: var(--error-red);
+        }
+        
+        @media (max-width: 480px) {
+            .register-container {
+                padding: 1.5rem;
+            }
+            .language-switcher {
+                position: static;
+                text-align: center;
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <!-- Prepínač jazykov -->
+        <div class="language-switcher">
+            <button class="lang-btn active" data-lang="en">EN</button>
+            <button class="lang-btn" data-lang="sk">SK</button>
+        </div>
+        
+        <h1 data-en="Register" data-sk="Zaregistrovať sa">Register</h1>
+        
+        <!-- Google Register Button -->
+        <div class="social-register">
+            <button class="google-btn" onclick="handleGoogleRegister()">
+                <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google">
+                <span data-en="Sign up with Google" data-sk="Registrovať sa s Google">Sign up with Google</span>
+            </button>
+        </div>
+
+        <div class="divider">
+            <span data-en="Or register with email" data-sk="Alebo sa zaregistrujte emailom">Or register with email</span>
+        </div>
+        
+        <!-- Email Register Form -->
+        <form id="registerForm">
+            <div class="form-group">
+                <label for="email" data-en="Email:" data-sk="Email:">Email:</label>
+                <input type="email" id="email" name="email" required 
+                       data-en-placeholder="Enter your email" 
+                       data-sk-placeholder="Zadajte váš email">
+            </div>
+            <div class="form-group">
+                <label for="password" data-en="Password:" data-sk="Heslo:">Password:</label>
+                <input type="password" id="password" name="password" required 
+                       data-en-placeholder="Create a password" 
+                       data-sk-placeholder="Vytvorte heslo">
+                <div class="password-requirements" id="passwordRequirements">
+                    <div class="requirement unmet" id="reqLength" data-en="At least 8 characters" data-sk="Aspoň 8 znakov">At least 8 characters</div>
+                    <div class="requirement unmet" id="reqUpper" data-en="One uppercase letter" data-sk="Jedno veľké písmeno">One uppercase letter</div>
+                    <div class="requirement unmet" id="reqLower" data-en="One lowercase letter" data-sk="Jedno malé písmeno">One lowercase letter</div>
+                    <div class="requirement unmet" id="reqNumber" data-en="One number" data-sk="Jedno číslo">One number</div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="confirmPassword" data-en="Confirm Password:" data-sk="Potvrdiť heslo:">Confirm Password:</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" required 
+                       data-en-placeholder="Confirm your password" 
+                       data-sk-placeholder="Potvrdte vaše heslo">
+            </div>
+            <button type="submit" data-en="Create Account" data-sk="Vytvoriť účet">Create Account</button>
+        </form>
+
+        <div id="message"></div>
+        
+        <div class="login-link">
+            <span data-en="Already have an account?" data-sk="Už máte účet?">Already have an account?</span> 
+            <a href="/login" data-en="Login" data-sk="Prihlásiť sa">Login</a>
+        </div>
+        
+        <div class="home-button">
+            <a href="/" data-en="Back to Homepage" data-sk="Späť na domovskú stránku">Back to Homepage</a>
+        </div>
+    </div>
+
+    <script>
+        // Správa jazykov
+        document.addEventListener('DOMContentLoaded', function() {
+            const langButtons = document.querySelectorAll('.lang-btn');
+            const currentLang = localStorage.getItem('preferredLang') || 'en';
+            
+            // Nastavíme aktívny jazyk
+            setActiveLanguage(currentLang);
+            
+            // Prepínač jazykov
+            langButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const lang = this.getAttribute('data-lang');
+                    setActiveLanguage(lang);
+                    localStorage.setItem('preferredLang', lang);
+                });
+            });
+            
+            function setActiveLanguage(lang) {
+                // Aktualizácia prepínača
+                langButtons.forEach(btn => {
+                    btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+                });
+                
+                // Aktualizácia textov
+                document.querySelectorAll('[data-en], [data-sk]').forEach(element => {
+                    if (element.hasAttribute(`data-${lang}`)) {
+                        const text = element.getAttribute(`data-${lang}`);
+                        if (element.tagName === 'TITLE') {
+                            document.title = text;
+                        } else {
+                            element.textContent = text;
+                        }
+                    }
+                });
+
+                // Aktualizácia placeholderov
+                document.querySelectorAll('[data-en-placeholder], [data-sk-placeholder]').forEach(element => {
+                    if (element.hasAttribute(`data-${lang}-placeholder`)) {
+                        element.placeholder = element.getAttribute(`data-${lang}-placeholder`);
+                    }
+                });
+            }
+
+            // Password validation
+            setupPasswordValidation();
+
+            // Registračný formulár
+            const form = document.getElementById('registerForm');
+            const messageDiv = document.getElementById('message');
+
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+
+                const email = form.email.value;
+                const password = form.password.value;
+                const confirmPassword = form.confirmPassword.value;
+                const currentLang = localStorage.getItem('preferredLang') || 'en';
+
+                // Validácia emailu
+                const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailPattern.test(email)) {
+                    const errorMsg = currentLang === 'sk' 
+                        ? 'Prosím zadajte platný e-mail.' 
+                        : 'Please enter a valid email address.';
+                    showMessage(errorMsg, 'error');
+                    return;
+                }
+
+                // Validácia hesla
+                if (!validatePassword(password)) {
+                    const errorMsg = currentLang === 'sk' 
+                        ? 'Heslo nespĺňa požiadavky.' 
+                        : 'Password does not meet requirements.';
+                    showMessage(errorMsg, 'error');
+                    return;
+                }
+
+                // Kontrola zhody hesiel
+                if (password !== confirmPassword) {
+                    const errorMsg = currentLang === 'sk' 
+                        ? 'Heslá sa nezhodujú.' 
+                        : 'Passwords do not match.';
+                    showMessage(errorMsg, 'error');
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/api/v1/register?lang=${currentLang}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ email, password })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        const successMsg = currentLang === 'sk' 
+                            ? 'Registrácia bola úspešná! Teraz sa môžete prihlásiť.' 
+                            : 'Registration successful! You can now log in.';
+                        showMessage(successMsg, 'success');
+                        form.reset();
+                        
+                        // Presmerovanie na login po 3 sekundách
+                        setTimeout(() => {
+                            window.location.href = '/login';
+                        }, 3000);
+                        
+                    } else {
+                        showMessage(data.detail || 'Registration failed', 'error');
+                    }
+                } catch (error) {
+                    const errorMsg = currentLang === 'sk' 
+                        ? 'Nastala chyba. Skúste to prosím znova.' 
+                        : 'An error occurred. Please try again.';
+                    showMessage(errorMsg, 'error');
+                }
+            });
+        });
+
+        // Password validation functions
+        function setupPasswordValidation() {
+            const passwordInput = document.getElementById('password');
+            const confirmInput = document.getElementById('confirmPassword');
+
+            passwordInput.addEventListener('input', function() {
+                validatePassword(this.value);
+                validatePasswordConfirmation();
+            });
+
+            confirmInput.addEventListener('input', function() {
+                validatePasswordConfirmation();
+            });
+        }
+
+        function validatePassword(password) {
+            const requirements = {
+                length: password.length >= 8,
+                upper: /[A-Z]/.test(password),
+                lower: /[a-z]/.test(password),
+                number: /[0-9]/.test(password)
+            };
+
+            document.getElementById('reqLength').className = requirements.length ? 'requirement met' : 'requirement unmet';
+            document.getElementById('reqUpper').className = requirements.upper ? 'requirement met' : 'requirement unmet';
+            document.getElementById('reqLower').className = requirements.lower ? 'requirement met' : 'requirement unmet';
+            document.getElementById('reqNumber').className = requirements.number ? 'requirement met' : 'requirement unmet';
+
+            return Object.values(requirements).every(req => req);
+        }
+
+        function validatePasswordConfirmation() {
+            const password = document.getElementById('password').value;
+            const confirm = document.getElementById('confirmPassword').value;
+            const confirmInput = document.getElementById('confirmPassword');
+            
+            if (confirm.length > 0) {
+                if (password === confirm) {
+                    confirmInput.style.borderColor = 'var(--success-green)';
+                } else {
+                    confirmInput.style.borderColor = 'var(--error-red)';
+                }
+            } else {
+                confirmInput.style.borderColor = '#ddd';
+            }
+            
+            return password === confirm && password.length > 0;
+        }
+
+        // Google Register Function
+        function handleGoogleRegister() {
+            // Presmerujeme na backend Google OAuth endpoint
+            // Ten istý endpoint ako pre login - backend rozlíši či ide o nového používateľa
+            window.location.href = '/auth/google';
+        }
+
+        // Check if we're returning from Google OAuth with token
+        function checkOAuthCallback() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            const error = urlParams.get('error');
+            const newUser = urlParams.get('new_user');
+            const currentLang = localStorage.getItem('preferredLang') || 'en';
+
+            if (error) {
+                showMessage(
+                    currentLang === 'sk' 
+                        ? 'Chyba pri registrácii cez Google: ' + error 
+                        : 'Google registration error: ' + error, 
+                    'error'
+                );
+                return;
+            }
+
+            if (token) {
+                // Uložíme token
+                localStorage.setItem('access_token', token);
+                
+                if (newUser === '1') {
+                    // Nový používateľ - úspešná registrácia
+                    showMessage(
+                        currentLang === 'sk' 
+                            ? 'Úspešne zaregistrované cez Google!' 
+                            : 'Successfully registered with Google!', 
+                        'success'
+                    );
+                    
+                    // Uložíme flag pre welcome message
+                    localStorage.setItem('show_welcome', 'true');
+                }
+                
+                // Načítame user data a presmerujeme
+                loadUserDataAndRedirect();
+            }
+        }
+
+        async function loadUserDataAndRedirect() {
+            try {
+                const token = localStorage.getItem('access_token');
+                const response = await fetch('/api/v1/users/me', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const userData = await response.json();
+                    localStorage.setItem('user_email', userData.email);
+                    localStorage.setItem('user_name', userData.name || '');
+                    
+                    // Presmerujeme na dashboard
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 2000);
+                } else {
+                    throw new Error('Failed to load user data');
+                }
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                const currentLang = localStorage.getItem('preferredLang') || 'en';
+                showMessage(
+                    currentLang === 'sk' 
+                        ? 'Chyba pri načítaní používateľských dát' 
+                        : 'Error loading user data', 
+                    'error'
+                );
+            }
+        }
+
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = message;
+            messageDiv.className = type;
+            messageDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        // Skontrolujeme OAuth callback pri načítaní stránky
+        checkOAuthCallback();
+    </script>
+</body>
+</html>

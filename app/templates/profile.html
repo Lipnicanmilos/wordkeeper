@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-en="Edit Profile" data-sk="Upraviť profil">Edit Profile</title>
+    <style>
+        :root {
+            --primary-green: #4CAF50;
+            --light-green: #E8F5E9;
+            --dark-green: #2E7D32;
+            --white: #FFFFFF;
+            --light-gray: #F5F5F5;
+            --gray: #9E9E9E;
+            --error-red: #F44336;
+            --error-bg: #FFEBEE;
+            --success-green: #4CAF50;
+            --success-bg: #E8F5E9;
+            --plus-gold: #FFD700;
+            --plus-dark: #FFA000;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--light-gray);
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .header-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .back-btn, .logout-btn {
+            padding: 10px 20px;
+            background-color: var(--primary-green);
+            color: var(--white);
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 500;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .back-btn:hover, .logout-btn:hover {
+            background-color: var(--dark-green);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .language-switcher {
+            display: flex;
+            gap: 5px;
+        }
+
+        .lang-btn {
+            padding: 8px 12px;
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.8rem;
+        }
+
+        .lang-btn:hover {
+            background-color: #e0e0e0;
+        }
+
+        .lang-btn.active {
+            background-color: var(--primary-green);
+            color: white;
+        }
+
+        .profile-container {
+            max-width: 600px;
+            margin: 80px auto 2rem;
+            padding: 2rem;
+            background: var(--white);
+            border-radius: 8px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+        }
+
+        h1 {
+            color: var(--dark-green);
+            text-align: center;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--primary-green);
+            padding-bottom: 0.5rem;
+        }
+
+        .user-info-card {
+            background: var(--light-green);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            border-left: 5px solid var(--primary-green);
+        }
+
+        .user-info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .user-info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: var(--dark-green);
+        }
+
+        .info-value {
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-section {
+            margin-bottom: 2rem;
+        }
+
+        .form-section h2 {
+            color: var(--dark-green);
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 500;
+        }
+
+        input[type="email"],
+        input[type="password"],
+        input[type="text"] {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
+
+        input[type="email"]:focus,
+        input[type="password"]:focus,
+        input[type="text"]:focus {
+            border-color: var(--primary-green);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+        }
+
+        button {
+            padding: 0.8rem 1.5rem;
+            background-color: var(--primary-green);
+            color: var(--white);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        button:hover {
+            background-color: var(--dark-green);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .btn-full {
+            width: 100%;
+        }
+
+        #message {
+            margin: 1rem 0;
+            padding: 1rem;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .success {
+            color: var(--success-green);
+            background-color: var(--success-bg);
+            border: 1px solid var(--success-green);
+        }
+
+        .error {
+            color: var(--error-red);
+            background-color: var(--error-bg);
+            border: 1px solid var(--error-red);
+        }
+
+        .password-requirements {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 0.5rem;
+        }
+
+        .requirement {
+            margin: 0.2rem 0;
+        }
+
+        .requirement.met {
+            color: var(--success-green);
+        }
+
+        .requirement.unmet {
+            color: var(--error-red);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .stat-card {
+            background: var(--light-green);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid var(--primary-green);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--dark-green);
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        /* Plus Account Styles */
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-active {
+            background-color: var(--plus-gold);
+            color: #000;
+            border: 2px solid var(--plus-dark);
+        }
+
+        .status-inactive {
+            background-color: var(--gray);
+            color: white;
+        }
+
+        .plus-toggle-btn {
+            padding: 6px 12px;
+            background-color: var(--plus-gold);
+            color: #000;
+            border: 2px solid var(--plus-dark);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .plus-toggle-btn:hover {
+            background-color: var(--plus-dark);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .plus-features {
+            background: linear-gradient(135deg, #fff9c4, #ffecb3);
+            border: 2px solid var(--plus-gold);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+
+        .plus-features h3 {
+            color: #000;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .plus-features ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .plus-features li {
+            padding: 0.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .plus-features li:before {
+            content: "✓";
+            color: var(--plus-dark);
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .profile-container {
+                margin: 100px 1rem 2rem;
+                padding: 1.5rem;
+            }
+
+            .header-controls {
+                position: static;
+                justify-content: center;
+                margin-bottom: 1rem;
+            }
+
+            .user-info-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+
+            .info-value {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header-controls">
+        <div class="language-switcher">
+            <button class="lang-btn active" data-lang="en">EN</button>
+            <button class="lang-btn" data-lang="sk">SK</button>
+        </div>
+        <a href="/dashboard" class="back-btn" data-en="Back to Dashboard" data-sk="Späť na Dashboard">Back to Dashboard</a>
+        <button class="logout-btn" onclick="logout()" data-en="Logout" data-sk="Odhlásiť sa">Logout</button>
+    </div>
+
+    <div class="profile-container">
+        <h1 data-en="Edit Profile" data-sk="Upraviť profil">Edit Profile</h1>
+
+        <div class="user-info-card">
+            <div class="user-info-item">
+                <span class="info-label" data-en="User ID:" data-sk="ID používateľa:">User ID:</span>
+                <span class="info-value" id="userId">-</span>
+            </div>
+            <div class="user-info-item">
+                <span class="info-label" data-en="Email:" data-sk="Email:">Email:</span>
+                <span class="info-value" id="userEmail">-</span>
+            </div>
+            <div class="user-info-item">
+                <span class="info-label" data-en="Member since:" data-sk="Členom od:">Member since:</span>
+                <span class="info-value" id="memberSince">-</span>
+            </div>
+            <div class="user-info-item">
+                <span class="info-label" data-en="Plus Account:" data-sk="Plus účet:">Plus Account:</span>
+                <span class="info-value">
+                    <span id="plusStatus" class="status-badge"></span>
+                    <button type="button" onclick="togglePlus()" id="plusToggleBtn" class="plus-toggle-btn">
+                        <span data-en="Toggle Plus" data-sk="Prepnúť Plus">Toggle Plus</span>
+                    </button>
+                </span>
+            </div>
+        </div>
+
+        <div id="message"></div>
+
+        <!-- Plus Features Section -->
+        <div class="plus-features" id="plusFeatures">
+            <h3>🌟 <span data-en="Plus Account Features" data-sk="Výhody Plus účtu">Plus Account Features</span></h3>
+            <ul>
+                <li data-en="Unlimited word categories" data-sk="Neobmedzené kategórie slovíčok">Unlimited word categories</li>
+                <li data-en="Advanced statistics and analytics" data-sk="Pokročilé štatistiky a analýzy">Advanced statistics and analytics</li>
+                <li data-en="Priority customer support" data-sk="Prioritná zákaznícka podpora">Priority customer support</li>
+                <li data-en="Export data in multiple formats" data-sk="Export dát vo viacerých formátoch">Export data in multiple formats</li>
+                <li data-en="Custom learning schedules" data-sk="Vlastné plány učenia">Custom learning schedules</li>
+            </ul>
+        </div>
+
+        <div class="form-section">
+            <h2 data-en="Change Email" data-sk="Zmeniť Email">Change Email</h2>
+            <form id="changeEmailForm">
+                <div class="form-group">
+                    <label for="newEmail" data-en="New Email Address:" data-sk="Nová emailová adresa:">New Email Address:</label>
+                    <input type="email" id="newEmail" name="newEmail" required 
+                           data-en-placeholder="Enter new email address" 
+                           data-sk-placeholder="Zadajte novú emailovú adresu">
+                </div>
+                <div class="form-group">
+                    <label for="currentPasswordEmail" data-en="Current Password:" data-sk="Aktuálne heslo:">Current Password:</label>
+                    <input type="password" id="currentPasswordEmail" name="currentPassword" required 
+                           data-en-placeholder="Enter your current password" 
+                           data-sk-placeholder="Zadajte aktuálne heslo">
+                </div>
+                <button type="submit" class="btn-full" data-en="Update Email" data-sk="Aktualizovať Email">Update Email</button>
+            </form>
+        </div>
+
+        <div class="form-section">
+            <h2 data-en="Change Password" data-sk="Zmeniť Heslo">Change Password</h2>
+            <form id="changePasswordForm">
+                <div class="form-group">
+                    <label for="currentPassword" data-en="Current Password:" data-sk="Aktuálne heslo:">Current Password:</label>
+                    <input type="password" id="currentPassword" name="currentPassword" required 
+                           data-en-placeholder="Enter your current password" 
+                           data-sk-placeholder="Zadajte aktuálne heslo">
+                </div>
+                <div class="form-group">
+                    <label for="newPassword" data-en="New Password:" data-sk="Nové heslo:">New Password:</label>
+                    <input type="password" id="newPassword" name="newPassword" required 
+                           data-en-placeholder="Enter new password" 
+                           data-sk-placeholder="Zadajte nové heslo">
+                    <div class="password-requirements" id="passwordRequirements">
+                        <div class="requirement unmet" id="reqLength" data-en="At least 8 characters" data-sk="Aspoň 8 znakov">At least 8 characters</div>
+                        <div class="requirement unmet" id="reqUpper" data-en="One uppercase letter" data-sk="Jedno veľké písmeno">One uppercase letter</div>
+                        <div class="requirement unmet" id="reqLower" data-en="One lowercase letter" data-sk="Jedno malé písmeno">One lowercase letter</div>
+                        <div class="requirement unmet" id="reqNumber" data-en="One number" data-sk="Jedno číslo">One number</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword" data-en="Confirm New Password:" data-sk="Potvrdiť nové heslo:">Confirm New Password:</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" required 
+                           data-en-placeholder="Confirm your new password" 
+                           data-sk-placeholder="Potvrdte nové heslo">
+                </div>
+                <button type="submit" class="btn-full" data-en="Update Password" data-sk="Aktualizovať Heslo">Update Password</button>
+            </form>
+        </div>
+
+
+
+        <div class="form-section">
+            <h2 data-en="Account Management" data-sk="Správa účtu">Account Management</h2>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <button onclick="exportData()" data-en="Export My Data" data-sk="Exportovať dáta">Export My Data</button>
+                <button onclick="deleteAccount()" style="background-color: var(--error-red);" 
+                        data-en="Delete Account" data-sk="Zmazať účet">Delete Account</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Language management
+        document.addEventListener('DOMContentLoaded', function() {
+            const langButtons = document.querySelectorAll('.lang-btn');
+            const currentLang = localStorage.getItem('preferredLang') || 'en';
+            
+            setActiveLanguage(currentLang);
+            
+            langButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const lang = this.getAttribute('data-lang');
+                    setActiveLanguage(lang);
+                    localStorage.setItem('preferredLang', lang);
+                });
+            });
+            
+            function setActiveLanguage(lang) {
+                langButtons.forEach(btn => {
+                    btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+                });
+                
+                document.querySelectorAll('[data-en], [data-sk]').forEach(element => {
+                    if (element.hasAttribute(`data-${lang}`)) {
+                        const text = element.getAttribute(`data-${lang}`);
+                        if (element.tagName === 'TITLE') {
+                            document.title = text;
+                        } else {
+                            element.textContent = text;
+                        }
+                    }
+                });
+
+                // Update placeholders
+                document.querySelectorAll('[data-en-placeholder], [data-sk-placeholder]').forEach(element => {
+                    if (element.hasAttribute(`data-${lang}-placeholder`)) {
+                        element.placeholder = element.getAttribute(`data-${lang}-placeholder`);
+                    }
+                });
+            }
+
+            // Load user profile data
+            loadUserProfile();
+            setupPasswordValidation();
+            setupForms();
+            loadPlusStatus();
+        });
+
+        async function loadUserProfile() {
+            try {
+                // Get user data from API
+                const userResponse = await fetch('/api/user');
+                if (userResponse.ok) {
+                    const userData = await userResponse.json();
+                    document.getElementById('userId').textContent = '#' + userData.id;
+                    document.getElementById('userEmail').textContent = userData.email;
+                    document.getElementById('newEmail').value = userData.email;
+                    document.getElementById('memberSince').textContent = new Date().toLocaleDateString();
+                } else {
+                    console.error('Failed to load user data');
+                    // Redirect to login if not authenticated
+                    window.location.href = '/login';
+                    return;
+                }
+
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                showMessage('Error loading profile data', 'error');
+            }
+        }
+
+        async function loadPlusStatus() {
+            try {
+                const response = await fetch('/api/user');
+                if (response.ok) {
+                    const userData = await response.json();
+                    updatePlusDisplay(userData.is_plus);
+                } else {
+                    console.error('Failed to load user data');
+                    updatePlusDisplay(false);
+                }
+            } catch (error) {
+                console.error('Error loading Plus status:', error);
+                // Default to inactive
+                updatePlusDisplay(false);
+            }
+        }
+
+        function updatePlusDisplay(isPlus) {
+            const plusStatus = document.getElementById('plusStatus');
+            const plusFeatures = document.getElementById('plusFeatures');
+            const currentLang = localStorage.getItem('preferredLang') || 'en';
+            
+            if (isPlus) {
+                plusStatus.textContent = currentLang === 'sk' ? 'Aktívny' : 'Active';
+                plusStatus.className = 'status-badge status-active';
+                plusFeatures.style.display = 'block';
+            } else {
+                plusStatus.textContent = currentLang === 'sk' ? 'Neaktívny' : 'Inactive';
+                plusStatus.className = 'status-badge status-inactive';
+                plusFeatures.style.display = 'none';
+            }
+        }
+
+        async function togglePlus() {
+            try {
+                const currentLang = localStorage.getItem('preferredLang') || 'en';
+
+                const response = await fetch('/api/user/plus', {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    updatePlusDisplay(data.is_plus);
+                    showMessage(
+                        data.is_plus ?
+                        (currentLang === 'sk' ? 'Plus účet aktivovaný!' : 'Plus account activated!') :
+                        (currentLang === 'sk' ? 'Plus účet deaktivovaný!' : 'Plus account deactivated!'),
+                        'success'
+                    );
+                } else {
+                    throw new Error('Failed to update Plus status');
+                }
+
+            } catch (error) {
+                console.error('Error toggling Plus:', error);
+                showMessage('Error updating Plus status', 'error');
+            }
+        }
+
+        function setupPasswordValidation() {
+            const newPassword = document.getElementById('newPassword');
+            const confirmPassword = document.getElementById('confirmPassword');
+
+            newPassword.addEventListener('input', function() {
+                validatePassword(this.value);
+            });
+
+            confirmPassword.addEventListener('input', function() {
+                validatePasswordConfirmation();
+            });
+        }
+
+        function validatePassword(password) {
+            const requirements = {
+                length: password.length >= 8,
+                upper: /[A-Z]/.test(password),
+                lower: /[a-z]/.test(password),
+                number: /[0-9]/.test(password)
+            };
+
+            document.getElementById('reqLength').className = requirements.length ? 'requirement met' : 'requirement unmet';
+            document.getElementById('reqUpper').className = requirements.upper ? 'requirement met' : 'requirement unmet';
+            document.getElementById('reqLower').className = requirements.lower ? 'requirement met' : 'requirement unmet';
+            document.getElementById('reqNumber').className = requirements.number ? 'requirement met' : 'requirement unmet';
+
+            return Object.values(requirements).every(req => req);
+        }
+
+        function validatePasswordConfirmation() {
+            const password = document.getElementById('newPassword').value;
+            const confirm = document.getElementById('confirmPassword').value;
+            return password === confirm && password.length > 0;
+        }
+
+        function setupForms() {
+            // Change Email Form
+            document.getElementById('changeEmailForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const newEmail = document.getElementById('newEmail').value;
+                const currentPassword = document.getElementById('currentPasswordEmail').value;
+
+                if (!newEmail || !currentPassword) {
+                    showMessage('Please fill all fields', 'error');
+                    return;
+                }
+
+                try {
+                    // Simulate API call (replace with actual implementation)
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                    showMessage('Email updated successfully!', 'success');
+                    localStorage.setItem('user_email', newEmail);
+                    document.getElementById('userEmail').textContent = newEmail;
+                    this.reset();
+                    document.getElementById('newEmail').value = newEmail;
+
+                } catch (error) {
+                    showMessage('Error updating email', 'error');
+                }
+            });
+
+            // Change Password Form
+            document.getElementById('changePasswordForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const currentPassword = document.getElementById('currentPassword').value;
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+
+                if (!validatePassword(newPassword)) {
+                    showMessage('Password does not meet requirements', 'error');
+                    return;
+                }
+
+                if (!validatePasswordConfirmation()) {
+                    showMessage('Passwords do not match', 'error');
+                    return;
+                }
+
+                try {
+                    // Simulate API call (replace with actual implementation)
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                    showMessage('Password updated successfully!', 'success');
+                    this.reset();
+
+                } catch (error) {
+                    showMessage('Error updating password', 'error');
+                }
+            });
+        }
+
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = message;
+            messageDiv.className = type;
+            messageDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        function logout() {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('user_email');
+            window.location.href = '/';
+        }
+
+        async function exportData() {
+            try {
+                const currentLang = localStorage.getItem('preferredLang') || 'en';
+                const response = await fetch('/api/user/export');
+
+                if (response.ok) {
+                    // Create a download link for the file
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+
+                    // Get filename from response headers
+                    const contentDisposition = response.headers.get('content-disposition');
+                    let filename = 'wordkeeper_export.json';
+                    if (contentDisposition) {
+                        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+                        if (filenameMatch) {
+                            filename = filenameMatch[1];
+                        }
+                    }
+                    a.download = filename;
+
+                    // Trigger download
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+
+                    showMessage(
+                        currentLang === 'sk' ? 'Údaje boli úspešne exportované!' : 'Data exported successfully!',
+                        'success'
+                    );
+                } else {
+                    throw new Error('Export failed');
+                }
+            } catch (error) {
+                console.error('Export error:', error);
+                const currentLang = localStorage.getItem('preferredLang') || 'en';
+                showMessage(
+                    currentLang === 'sk' ? 'Chyba pri exporte údajov!' : 'Error exporting data!',
+                    'error'
+                );
+            }
+        }
+
+        async function deleteAccount() {
+            const currentLang = localStorage.getItem('preferredLang') || 'en';
+            const message = currentLang === 'sk'
+                ? 'Naozaj chcete zmazať svoj účet? Táto akcia je nevratná a odstráni všetky vaše kategórie a slovíčka.'
+                : 'Are you sure you want to delete your account? This action cannot be undone and will delete all your categories and words.';
+
+            if (confirm(message)) {
+                try {
+                    const response = await fetch('/api/user', {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        showMessage(
+                            currentLang === 'sk' ? 'Účet bol úspešne zmazaný!' : 'Account deleted successfully!',
+                            'success'
+                        );
+                        // Redirect to home page after a short delay
+                        setTimeout(() => {
+                            window.location.href = '/';
+                        }, 2000);
+                    } else {
+                        throw new Error('Failed to delete account');
+                    }
+
+                } catch (error) {
+                    console.error('Error deleting account:', error);
+                    showMessage(
+                        currentLang === 'sk' ? 'Chyba pri mazaní účtu!' : 'Error deleting account!',
+                        'error'
+                    );
+                }
+            }
+        }
+    </script>
+</body>
+</html>
