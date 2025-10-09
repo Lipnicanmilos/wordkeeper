@@ -356,9 +356,14 @@ async def delete_user(request: Request, db: Session = Depends(get_db)):
 
 # KATEGÓRIE S DATABÁZOU
 @app.get("/api/v1/categories", response_model=list[CategoryResponse])
-async def get_categories(db: Session = Depends(get_db)):
-    categories = db.query(Category).all()
-    print(f"Loaded {len(categories)} categories from database")
+async def get_categories(request: Request, db: Session = Depends(get_db)):
+    user_session = request.session.get('user')
+    if not user_session:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    user_id = user_session['id']
+    categories = db.query(Category).filter(Category.user_id == user_id).all()
+    print(f"Loaded {len(categories)} categories for user_id {user_id} from database")
     return categories
 
 @app.post("/api/v1/categories", response_model=CategoryResponse)
