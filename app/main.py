@@ -300,7 +300,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         jwt_token = create_access_token(data={"sub": user.email})
 
         # Redirect to callback page with token
-        callback_url = f"{request.base_url}auth/callback?token={jwt_token}&new_user={'1' if new_user else '0'}&email={email}"
+        callback_url = f"{request.base_url}auth/callback?token={jwt_token}&new_user={'1' if new_user else '0'}&email={email}&name={name}"
         print(f"Redirecting to callback: {callback_url}")
         return RedirectResponse(url=callback_url)
 

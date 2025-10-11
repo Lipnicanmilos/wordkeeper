@@ -552,31 +552,30 @@
 
         async function loadUserData() {
             try {
-                const userEmail = localStorage.getItem('user_email');
-                const userName = localStorage.getItem('user_name');
-
-                if (!userEmail) {
+                // Always fetch user data from API
+                const response = await fetch('/api/user');
+                if (!response.ok) {
+                    console.error('Not authenticated, redirecting to login');
                     window.location.href = '/login';
                     return;
                 }
 
-                // Zobrazenie emailu alebo mena používateľa
-                const displayName = userName || userEmail;
+                const userData = await response.json();
+                
+                // Set localStorage for future use
+                localStorage.setItem('user_email', userData.email);
+                localStorage.setItem('user_name', userData.name || '');
+                localStorage.setItem('user_id', userData.id.toString());
+
+                // Display name or email
+                const displayName = userData.name || userData.email;
                 document.getElementById('userEmail').textContent = displayName;
 
-                // Load user data from API to get user_id
-                const response = await fetch('/api/user');
-                if (response.ok) {
-                    const userData = await response.json();
-                    window.currentUserId = userData.id;
-                } else {
-                    console.error('Failed to load user data');
-                    window.location.href = '/login';
-                }
+                window.currentUserId = userData.id;
 
             } catch (error) {
                 console.error('Error loading user data:', error);
-                showMessage(getTranslatedMessage('error_loading_data'), 'error');
+                window.location.href = '/login';
             }
         }
 

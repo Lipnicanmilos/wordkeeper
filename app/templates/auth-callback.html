@@ -57,6 +57,14 @@
 
             if (token) {
                 localStorage.setItem('token', token);
+                const email = urlParams.get('email');
+                const name = urlParams.get('name');
+                if (email) {
+                    localStorage.setItem('user_email', email);
+                }
+                if (name) {
+                    localStorage.setItem('user_name', name);
+                }
             }
 
             if (error) {
