@@ -299,9 +299,8 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         # Generate JWT token for API auth (as expected by frontend)
         jwt_token = create_access_token(data={"sub": user.email})
 
-        # Redirect to frontend callback page with token
-        frontend_url = os.getenv("FRONTEND_URL", "http://127.0.0.1:3000")
-        callback_url = f"{frontend_url}/auth/callback?token={jwt_token}&new_user={'1' if new_user else '0'}&email={email}"
+        # Redirect to callback page with token
+        callback_url = f"{request.base_url}auth/callback?token={jwt_token}&new_user={'1' if new_user else '0'}&email={email}"
         print(f"Redirecting to callback: {callback_url}")
         return RedirectResponse(url=callback_url)
 
