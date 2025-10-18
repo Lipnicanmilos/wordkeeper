@@ -500,7 +500,7 @@
     </main>
 
     <footer>
-        <p>&copy; 2024 WordKeeper. <span data-en="All rights reserved." data-sk="Všetky práva vyhradené.">All rights reserved.</span></p>
+        <p>&copy; 2025 WordKeeper. <span data-en="All rights reserved." data-sk="Všetky práva vyhradené.">All rights reserved.</span></p>
     </footer>
 
     <script>
@@ -639,7 +639,7 @@
 
         function displayCategories(categories) {
             const categoriesList = document.getElementById('categoriesList');
-            
+
             if (!categories || categories.length === 0) {
                 categoriesList.innerHTML = '<li class="category-item" data-en="No categories yet." data-sk="Žiadne kategórie zatiaľ neexistujú.">No categories yet.</li>';
                 return;
@@ -649,13 +649,19 @@
                 <li class="category-item">
                     <strong><a href="/category/${category.id}/words" style="color: var(--dark-green); text-decoration: none;">${category.name}</a></strong>
                     ${category.description ? `<br><span style="color: #666; font-size: 0.9em;">${category.description}</span>` : ''}
+                    <div style="margin-top: 0.5rem; font-size: 0.9em; color: var(--dark-green);">
+                        <span data-en="Words:" data-sk="Slovíčka:">Words:</span> ${category.total_words || 0}
+                    </div>
                     <div class="test-levels">
-                        <a href="/test?category=${category.id}&level=dont_know" class="test-link level-1"
-                        data-en="Repeat Don't Know" data-sk="Opakovanie Neviem">Don't Know</a>
-                        <a href="/test?category=${category.id}&level=learning" class="test-link level-2"
-                        data-en="Repeat Learning" data-sk="Opakovanie Učím sa">Learning</a>
-                        <a href="/test?category=${category.id}&level=know" class="test-link level-3"
-                        data-en="Repeat Know" data-sk="Opakovanie Viem">Know</a>
+                        <a href="/test?category=${category.id}&level=dont_know" class="test-link level-1">
+                            <span data-en="Don't Know" data-sk="Neviem">Don't Know</span> (${category.level_percentages?.dont_know || 0}%)
+                        </a>
+                        <a href="/test?category=${category.id}&level=learning" class="test-link level-2">
+                            <span data-en="Learning" data-sk="Učím sa">Learning</span> (${category.level_percentages?.learning || 0}%)
+                        </a>
+                        <a href="/test?category=${category.id}&level=know" class="test-link level-3">
+                            <span data-en="Know" data-sk="Viem">Know</span> (${category.level_percentages?.know || 0}%)
+                        </a>
                         <button class="delete-btn" onclick="deleteCategory(${category.id})"
                         data-en="Delete" data-sk="Zmazať">Delete</button>
                     </div>
@@ -754,6 +760,8 @@
                         const newWord = await response.json();
                         showMessage(getTranslatedMessage('word_added_successfully'), 'success');
                         this.reset();
+                        // Reload categories to update word counts and percentages
+                        await loadCategories();
                     } else {
                         const errorData = await response.json();
                         showMessage(errorData.detail || getTranslatedMessage('failed_to_add_word'), 'error');

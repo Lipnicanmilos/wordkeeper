@@ -381,8 +381,48 @@ async def get_categories(request: Request, db: Session = Depends(get_db)):
 
     user_id = user_session['id']
     categories = db.query(Category).filter(Category.user_id == user_id).all()
-    print(f"Loaded {len(categories)} categories for user_id {user_id} from database")
-    return categories
+
+    # Pridaj štatistiky pre každú kategóriu
+    from app.models.word import KnowledgeLevel
+    from sqlalchemy import func
+
+    result = []
+    for category in categories:
+        # Spočítaj celkový počet slovíčok v kategórii
+        total_words = db.query(func.count(Word.id)).filter(Word.category_id == category.id).scalar() or 0
+
+        # Spočítaj počet slovíčok podľa levelov
+        level_counts = {}
+        for level in KnowledgeLevel:
+            count = db.query(func.count(Word.id)).filter(
+                Word.category_id == category.id,
+                Word.knowledge_level == level.value
+            ).scalar() or 0
+            level_counts[level.value] = count
+
+        # Vypočítaj percentá
+        level_percentages = {}
+        if total_words > 0:
+            for level, count in level_counts.items():
+                level_percentages[level] = round((count / total_words) * 100, 1)
+        else:
+            # Ak nie sú žiadne slovíčka, všetky percentá sú 0
+            for level in KnowledgeLevel:
+                level_percentages[level.value] = 0.0
+
+        # Vytvor odpoveď s dodatočnými údajmi
+        category_response = CategoryResponse(
+            id=category.id,
+            name=category.name,
+            description=category.description,
+            user_id=category.user_id,
+            total_words=total_words,
+            level_percentages=level_percentages
+        )
+        result.append(category_response)
+
+    print(f"Loaded {len(result)} categories for user_id {user_id} from database")
+    return result
 
 @app.post("/api/v1/categories", response_model=CategoryResponse)
 async def create_category(category_data: CategoryCreate, db: Session = Depends(get_db)):
@@ -417,11 +457,45 @@ async def delete_category(category_id: int, db: Session = Depends(get_db)):
     category = db.query(Category).filter(Category.id == category_id).first()
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
-    
+
     db.delete(category)
     db.commit()
-    
+
     return {"message": "Category deleted successfully"}
+
+@app.get("/api/v1/categories/{category_id}/stats")
+async def get_category_stats(category_id: int, request: Request, db: Session = Depends(get_db)):
+    user_session = request.session.get('user')
+    if not user_session:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    # Verify category belongs to user
+    category = db.query(Category).filter(Category.id == category_id, Category.user_id == user_session['id']).first()
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found")
+
+    # Get total words count
+    total_words = db.query(func.count(Word.id)).filter(Word.category_id == category_id).scalar() or 0
+
+    # Get counts by knowledge level
+    from app.models.word import KnowledgeLevel
+    level_counts = {}
+    for level in KnowledgeLevel:
+        count = db.query(func.count(Word.id)).filter(
+            Word.category_id == category_id,
+            Word.knowledge_level == level.value
+        ).scalar() or 0
+        level_counts[level.value] = count
+
+    # Calculate percentages
+    stats = {
+        "total_words": total_words,
+        "dont_know_percentage": round((level_counts.get('dont_know', 0) / total_words * 100), 1) if total_words > 0 else 0,
+        "learning_percentage": round((level_counts.get('learning', 0) / total_words * 100), 1) if total_words > 0 else 0,
+        "know_percentage": round((level_counts.get('know', 0) / total_words * 100), 1) if total_words > 0 else 0
+    }
+
+    return JSONResponse(stats)
 
 # Endpoint na získanie používateľov
 @app.get("/api/v1/users")

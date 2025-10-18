@@ -445,6 +445,9 @@
         <div class="category-info">
             <h2 id="categoryName">{{ category.name }}</h2>
             <p id="categoryDescription">{{ category.description or "No description" }}</p>
+            <div id="categoryStats" style="margin-top: 1rem; font-size: 0.9em; color: var(--dark-green);">
+                <!-- Category stats will be loaded dynamically -->
+            </div>
             <div class="category-actions">
                 <a href="/test?category={{ category.id }}&level=dont_know" class="start-test-btn" data-en="Repeat Don't Know" data-sk="Opakovanie Neviem">Test Don't Know</a>
                 <a href="/test?category={{ category.id }}&level=learning" class="start-test-btn" data-en="Repeat Learning" data-sk="Opakovanie Učím sa">Test Learning</a>
@@ -489,7 +492,7 @@
     </main>
 
     <footer>
-        <p>&copy; 2024 WordKeeper. <span data-en="All rights reserved." data-sk="Všetky práva vyhradené.">All rights reserved.</span></p>
+        <p>&copy; 2025 WordKeeper. <span data-en="All rights reserved." data-sk="Všetky práva vyhradené.">All rights reserved.</span></p>
     </footer>
 
     <script>
@@ -550,6 +553,7 @@
             // Load user data and words
             loadUserData();
             loadWords();
+            loadCategoryStats();
             setupForms();
         });
 
@@ -582,6 +586,7 @@
                     const data = await response.json();
                     console.log('Words loaded:', data);
                     displayWords(data.words);
+                    await loadCategoryStats(); // Reload stats after loading words
                 } else {
                     console.error('Failed to load words, status:', response.status);
                     displayWords([]);
@@ -589,6 +594,78 @@
             } catch (error) {
                 console.error('Error loading words:', error);
                 displayWords([]);
+            }
+        }
+
+        async function loadCategoryStats() {
+            try {
+                console.log('Loading category stats for category:', currentCategoryId);
+                const response = await fetch(`/api/v1/categories/${currentCategoryId}/stats`);
+
+                if (response.ok) {
+                    const stats = await response.json();
+                    console.log('Category stats loaded:', stats);
+                    displayCategoryStats(stats);
+                } else {
+                    console.error('Failed to load category stats, status:', response.status);
+                    displayCategoryStats(null);
+                }
+            } catch (error) {
+                console.error('Error loading category stats:', error);
+                displayCategoryStats(null);
+            }
+        }
+
+        function displayCategoryStats(stats) {
+            const statsDiv = document.getElementById('categoryStats');
+
+            if (!stats) {
+                statsDiv.innerHTML = '';
+                return;
+            }
+
+            const currentLang = localStorage.getItem('preferredLang') || 'en';
+            const translations = {
+                en: {
+                    total_words: 'Total words',
+                    dont_know: 'Don\'t know',
+                    learning: 'Learning',
+                    know: 'Know',
+                    test_dont_know: 'Test Don\'t Know',
+                    test_learning: 'Test Learning',
+                    test_know: 'Test Know'
+                },
+                sk: {
+                    total_words: 'Celkový počet slovíčok',
+                    dont_know: 'Neviem',
+                    learning: 'Učím sa',
+                    know: 'Viem',
+                    test_dont_know: 'Opakovanie Neviem',
+                    test_learning: 'Opakovanie Učím sa',
+                    test_know: 'Opakovanie Viem'
+                }
+            };
+
+            const t = translations[currentLang];
+
+            statsDiv.innerHTML = `
+                <div><strong>${t.total_words}:</strong> ${stats.total_words}</div>
+
+            `;
+
+            // Update test button texts with percentages
+            const dontKnowBtn = document.querySelector('a[href*="/test?category={{ category.id }}&level=dont_know"]');
+            const learningBtn = document.querySelector('a[href*="/test?category={{ category.id }}&level=learning"]');
+            const knowBtn = document.querySelector('a[href*="/test?category={{ category.id }}&level=know"]');
+
+            if (dontKnowBtn) {
+                dontKnowBtn.textContent = `${t.test_dont_know} (${stats.dont_know_percentage}%)`;
+            }
+            if (learningBtn) {
+                learningBtn.textContent = `${t.test_learning} (${stats.learning_percentage}%)`;
+            }
+            if (knowBtn) {
+                knowBtn.textContent = `${t.test_know} (${stats.know_percentage}%)`;
             }
         }
 
@@ -770,7 +847,8 @@
 
                 if (response.ok) {
                     showMessage(getTranslatedMessage('knowledge_level_updated_successfully'), 'success');
-                    // No need to reload words, the dropdown already shows the new value
+                    // Reload category stats to update percentages in test buttons
+                    await loadCategoryStats();
                 } else {
                     const errorData = await response.json();
                     showMessage(errorData.detail || getTranslatedMessage('failed_to_update_knowledge_level'), 'error');

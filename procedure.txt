@@ -58,3 +58,9 @@ Pole	Odporúčané nastavenie
 Build context directory	/
 Entrypoint	uvicorn app.main:app --host 0.0.0.0 --port $PORT
 Function target	Prázdne
+
+google autentifikacia
+https://console.cloud.google.com/auth/clients?project=grand-object-333523
+
+google console
+https://console.cloud.google.com/run/detail/europe-west3/wordkeeper/observability/metrics?chat=true&project=grand-object-333523
