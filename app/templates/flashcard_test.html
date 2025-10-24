@@ -182,11 +182,9 @@
         }
 
         .test-controls {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
+            display: block;
             margin-top: 2rem;
-            flex-wrap: wrap;
+            text-align: center;
         }
 
         .control-btn {
@@ -197,7 +195,8 @@
             font-weight: 600;
             font-size: 1rem;
             transition: all 0.3s ease;
-            min-width: 120px;
+            width: 200px;
+            text-align: center;
         }
 
         .btn-change-level {
@@ -207,6 +206,16 @@
 
         .btn-change-level:hover {
             background-color: #1976D2;
+            transform: translateY(-2px);
+        }
+
+        .btn-previous {
+            background-color: #9C27B0;
+            color: white;
+        }
+
+        .btn-previous:hover {
+            background-color: #7B1FA2;
             transform: translateY(-2px);
         }
 
@@ -570,8 +579,11 @@
                     <div class="click-hint" data-en="Click to reveal translation" data-sk="Kliknite pre zobrazenie prekladu">Click to reveal translation</div>
                 </div>
                 <div class="test-controls">
-                    <button class="control-btn btn-change-level" onclick="showLevelSelector()" data-en="Change Level" data-sk="Zmeniť úroveň">Change Level</button>
                     <button class="control-btn btn-next" onclick="nextWord()" data-en="Next Word" data-sk="Ďalšie slovíčko">Next Word</button>
+                </div>
+                <div class="test-controls">
+                    <button class="control-btn btn-previous" onclick="previousWord()" data-en="Previous Word" data-sk="Predchádzajúce slovíčko" ${currentWordIndex === 0 ? 'disabled' : ''}>Previous Word</button>
+                    <button class="control-btn btn-change-level" onclick="showLevelSelector()" data-en="Change Level" data-sk="Zmeniť úroveň">Change Level</button>
                     <button class="control-btn btn-end-test" onclick="endTest()" data-en="End Test" data-sk="Ukončiť test">End Test</button>
                 </div>
             `;
@@ -626,6 +638,13 @@
             } catch (error) {
                 console.error('Error updating word level:', error);
                 showMessage('Error updating word level', 'error');
+            }
+        }
+
+        function previousWord() {
+            if (currentWordIndex > 0) {
+                currentWordIndex--;
+                displayCurrentWord();
             }
         }
 
