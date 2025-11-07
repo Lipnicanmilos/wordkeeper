@@ -18,14 +18,34 @@
             --success-bg: #E8F5E9;
             --plus-gold: #FFD700;
             --plus-dark: #FFA000;
+            /* Dark mode variables */
+            --bg-color: #F5F5F5;
+            --text-color: #333;
+            --card-bg: #FFFFFF;
+            --input-bg: #FFFFFF;
+            --input-border: #ccc;
+            --modal-bg: #fefefe;
+            --modal-header-bg: #f8f9fa;
+            --modal-footer-bg: #f8f9fa;
+        }
+
+        body.dark-mode {
+            --bg-color: #1a1a1a;
+            --text-color: #e0e0e0;
+            --card-bg: #2d2d2d;
+            --input-bg: #3d3d3d;
+            --input-border: #555;
+            --modal-bg: #2d2d2d;
+            --modal-header-bg: #3d3d3d;
+            --modal-footer-bg: #3d3d3d;
         }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: var(--light-gray);
-            color: #333;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             line-height: 1.6;
         }
 
@@ -87,7 +107,7 @@
             max-width: 600px;
             margin: 80px auto 2rem;
             padding: 2rem;
-            background: var(--white);
+            background: var(--card-bg);
             border-radius: 8px;
             box-shadow: 0 2px 15px rgba(0,0,0,0.05);
         }
@@ -344,7 +364,7 @@
         }
 
         .modal-content {
-            background-color: #fefefe;
+            background-color: var(--modal-bg);
             margin: 15% auto;
             padding: 0;
             border: 1px solid #888;
@@ -357,13 +377,13 @@
         .modal-header {
             padding: 1rem;
             border-bottom: 1px solid #ddd;
-            background-color: #f8f9fa;
+            background-color: var(--modal-header-bg);
             border-radius: 8px 8px 0 0;
         }
 
         .modal-header h3 {
             margin: 0;
-            color: #333;
+            color: var(--text-color);
             font-size: 1.2rem;
         }
 
@@ -373,14 +393,14 @@
 
         .modal-body p {
             margin: 0;
-            color: #666;
+            color: var(--text-color);
             line-height: 1.5;
         }
 
         .modal-footer {
             padding: 1rem;
             border-top: 1px solid #ddd;
-            background-color: #f8f9fa;
+            background-color: var(--modal-footer-bg);
             border-radius: 0 0 8px 8px;
             display: flex;
             justify-content: flex-end;
@@ -472,6 +492,15 @@
                     <span id="plusStatus" class="status-badge"></span>
                     <button type="button" onclick="togglePlus()" id="plusToggleBtn" class="plus-toggle-btn">
                         <span data-en="Toggle Plus" data-sk="Prepnúť Plus">Toggle Plus</span>
+                    </button>
+                </span>
+            </div>
+            <div class="user-info-item">
+                <span class="info-label" data-en="Dark Mode:" data-sk="Tmavý režim:">Dark Mode:</span>
+                <span class="info-value">
+                    <span id="darkModeStatus" class="status-badge"></span>
+                    <button type="button" onclick="toggleDarkMode()" id="darkModeToggleBtn" class="plus-toggle-btn">
+                        <span data-en="Toggle Dark Mode" data-sk="Prepnúť tmavý režim">Toggle Dark Mode</span>
                     </button>
                 </span>
             </div>
@@ -616,6 +645,7 @@
             setupPasswordValidation();
             setupForms();
             loadPlusStatus();
+            loadDarkModeStatus();
         });
 
         async function loadUserProfile() {
@@ -658,11 +688,28 @@
             }
         }
 
+        async function loadDarkModeStatus() {
+            try {
+                const response = await fetch('/api/user');
+                if (response.ok) {
+                    const userData = await response.json();
+                    updateDarkModeDisplay(userData.dark_mode);
+                } else {
+                    console.error('Failed to load user data');
+                    updateDarkModeDisplay(false);
+                }
+            } catch (error) {
+                console.error('Error loading Dark Mode status:', error);
+                // Default to inactive
+                updateDarkModeDisplay(false);
+            }
+        }
+
         function updatePlusDisplay(isPlus) {
             const plusStatus = document.getElementById('plusStatus');
             const plusFeatures = document.getElementById('plusFeatures');
             const currentLang = localStorage.getItem('preferredLang') || 'en';
-            
+
             if (isPlus) {
                 plusStatus.textContent = currentLang === 'sk' ? 'Aktívny' : 'Active';
                 plusStatus.className = 'status-badge status-active';
@@ -671,6 +718,22 @@
                 plusStatus.textContent = currentLang === 'sk' ? 'Neaktívny' : 'Inactive';
                 plusStatus.className = 'status-badge status-inactive';
                 plusFeatures.style.display = 'none';
+            }
+        }
+
+        function updateDarkModeDisplay(isDarkMode) {
+            const darkModeStatus = document.getElementById('darkModeStatus');
+            const body = document.body;
+            const currentLang = localStorage.getItem('preferredLang') || 'en';
+
+            if (isDarkMode) {
+                darkModeStatus.textContent = currentLang === 'sk' ? 'Aktívny' : 'Active';
+                darkModeStatus.className = 'status-badge status-active';
+                body.classList.add('dark-mode');
+            } else {
+                darkModeStatus.textContent = currentLang === 'sk' ? 'Neaktívny' : 'Inactive';
+                darkModeStatus.className = 'status-badge status-inactive';
+                body.classList.remove('dark-mode');
             }
         }
 
@@ -701,6 +764,36 @@
             } catch (error) {
                 console.error('Error toggling Plus:', error);
                 showMessage('Error updating Plus status', 'error');
+            }
+        }
+
+        async function toggleDarkMode() {
+            try {
+                const currentLang = localStorage.getItem('preferredLang') || 'en';
+
+                const response = await fetch('/api/user/dark-mode', {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    updateDarkModeDisplay(data.dark_mode);
+                    showMessage(
+                        data.dark_mode ?
+                        (currentLang === 'sk' ? 'Tmavý režim aktivovaný!' : 'Dark mode activated!') :
+                        (currentLang === 'sk' ? 'Tmavý režim deaktivovaný!' : 'Dark mode deactivated!'),
+                        'success'
+                    );
+                } else {
+                    throw new Error('Failed to update Dark Mode status');
+                }
+
+            } catch (error) {
+                console.error('Error toggling Dark Mode:', error);
+                showMessage('Error updating Dark Mode status', 'error');
             }
         }
 

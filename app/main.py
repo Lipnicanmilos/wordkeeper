@@ -102,7 +102,8 @@ async def category_words_page(request: Request, category_id: int, db: Session = 
     return templates.TemplateResponse("category_words.html", {
         "request": request,
         "email": user.get('email', ''),
-        "category": category
+        "category": category,
+        "dark_mode": user.get('dark_mode', False)
     })
 
 @app.get("/test")
@@ -164,7 +165,8 @@ async def register(request: Request, db: Session = Depends(get_db)):
                 "id": new_user.id,
                 "email": new_user.email,
                 "name": new_user.name,
-                "is_plus": new_user.is_plus
+                "is_plus": new_user.is_plus,
+                "dark_mode": new_user.dark_mode
             }
 
             request.session['user'] = session_user
@@ -218,7 +220,8 @@ async def login(request: Request, db: Session = Depends(get_db)):
                 "id": user.id,
                 "email": user.email,
                 "name": user.name,
-                "is_plus": user.is_plus
+                "is_plus": user.is_plus,
+                "dark_mode": user.dark_mode
             }
 
             request.session['user'] = session_user
@@ -322,7 +325,8 @@ async def get_current_user(request: Request):
             "email": user['email'],
             "name": user.get('name', ''),
             "picture": user.get('picture', ''),
-            "is_plus": user.get('is_plus', False)
+            "is_plus": user.get('is_plus', False),
+            "dark_mode": user.get('dark_mode', False)
         })
     else:
         raise HTTPException(status_code=401, detail="Not authenticated")
@@ -349,6 +353,30 @@ async def toggle_user_plus(request: Request, db: Session = Depends(get_db)):
     return JSONResponse({
         "message": "Plus status updated successfully",
         "is_plus": user.is_plus
+    })
+
+@app.patch("/api/user/dark-mode")
+async def toggle_user_dark_mode(request: Request, db: Session = Depends(get_db)):
+    user_session = request.session.get('user')
+    if not user_session:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    user = db.query(User).filter(User.id == user_session['id']).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Toggle the dark_mode status
+    user.dark_mode = not user.dark_mode
+    db.commit()
+    db.refresh(user)
+
+    # Update session
+    user_session['dark_mode'] = user.dark_mode
+    request.session['user'] = user_session
+
+    return JSONResponse({
+        "message": "Dark mode status updated successfully",
+        "dark_mode": user.dark_mode
     })
 
 @app.delete("/api/user")

@@ -13,6 +13,28 @@
             --light-gray: #F5F5F5;
             --gray: #9E9E9E;
             --red: #f44336;
+            /* Dark mode variables */
+            --bg-color: #F5F5F5;
+            --text-color: #333;
+            --card-bg: #FFFFFF;
+            --input-bg: #FFFFFF;
+            --input-border: #ccc;
+            --modal-bg: #fefefe;
+            --modal-header-bg: #f8f9fa;
+            --modal-footer-bg: #f8f9fa;
+            --modal-border: #888;
+            --modal-border-light: #ddd;
+        }
+
+        body.dark-mode {
+            --bg-color: #1a1a1a;
+            --text-color: #e0e0e0;
+            --card-bg: #2d2d2d;
+            --input-bg: #3d3d3d;
+            --input-border: #555;
+            --modal-bg: #2d2d2d;
+            --modal-header-bg: #3d3d3d;
+            --modal-footer-bg: #3d3d3d;
         }
 
         .flash-messages {
@@ -44,8 +66,8 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: var(--light-gray);
-            color: #333;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             line-height: 1.6;
         }
 
@@ -119,7 +141,7 @@
         .user-info {
             text-align: center;
             padding: 15px;
-            background-color: var(--white);
+            background-color: var(--card-bg);
             margin-bottom: 20px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
             color: var(--dark-green);
@@ -130,7 +152,7 @@
             max-width: 900px;
             margin: 0 auto;
             padding: 2rem;
-            background: var(--white);
+            background: var(--card-bg);
             border-radius: 8px;
             box-shadow: 0 2px 15px rgba(0,0,0,0.05);
         }
@@ -201,7 +223,7 @@
         .category-item {
             padding: 1rem;
             border-bottom: 1px solid var(--light-gray);
-            background: var(--white);
+            background: var(--card-bg);
             margin-bottom: 0.5rem;
             border-radius: 6px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
@@ -269,10 +291,10 @@
         }
 
         .modal-content {
-            background-color: var(--white);
+            background-color: var(--modal-bg);
             margin: 15% auto;
             padding: 0;
-            border: 1px solid #888;
+            border: 1px solid var(--modal-border);
             width: 90%;
             max-width: 400px;
             border-radius: 8px;
@@ -281,8 +303,8 @@
 
         .modal-header {
             padding: 1rem;
-            background-color: var(--light-gray);
-            border-bottom: 1px solid #ddd;
+            background-color: var(--modal-header-bg);
+            border-bottom: 1px solid var(--modal-border-light);
             border-radius: 8px 8px 0 0;
         }
 
@@ -292,8 +314,8 @@
 
         .modal-footer {
             padding: 1rem;
-            background-color: var(--light-gray);
-            border-top: 1px solid #ddd;
+            background-color: var(--modal-footer-bg);
+            border-top: 1px solid var(--modal-border-light);
             border-radius: 0 0 8px 8px;
             display: flex;
             justify-content: flex-end;
@@ -367,7 +389,7 @@
         }
 
         .stat-card {
-            background: var(--white);
+            background: var(--card-bg);
             padding: 1.5rem;
             border-radius: 8px;
             text-align: center;
@@ -396,7 +418,7 @@
         }
 
         .level-card {
-            background: var(--white);
+            background: var(--card-bg);
             padding: 1rem;
             border-radius: 8px;
             text-align: center;
@@ -661,6 +683,13 @@
                 // Display name or email
                 const displayName = userData.name || userData.email;
                 document.getElementById('userEmail').textContent = displayName;
+
+                // Apply dark mode if enabled
+                if (userData.dark_mode) {
+                    document.body.classList.add('dark-mode');
+                } else {
+                    document.body.classList.remove('dark-mode');
+                }
 
                 window.currentUserId = userData.id;
 

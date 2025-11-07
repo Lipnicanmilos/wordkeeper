@@ -11,7 +11,8 @@ class User(Base):
     name = Column(String(100), nullable=True)
     password = Column(String(255), nullable=False)
     is_plus = Column(Boolean, default=False)
+    dark_mode = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    
+
     # Relácie
     categories = relationship("Category", back_populates="user", cascade="all, delete-orphan")

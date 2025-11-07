@@ -5,14 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vocabulary Test - WordKeeper</title>
     <style>
+        :root {
+            --primary-green: #4CAF50;
+            --light-green: #E8F5E9;
+            --dark-green: #2E7D32;
+            --white: #FFFFFF;
+            --light-gray: #F5F5F5;
+            --gray: #9E9E9E;
+            --red: #f44336;
+            --orange: #ff9800;
+            --bg-color: var(--light-gray);
+            --text-color: #333;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --text-color: #e0e0e0;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 0;
-            background: #f5f5f5;
+            background: var(--bg-color);
+            color: var(--text-color);
         }
         .header {
-            background: white;
+            background: var(--white);
             padding: 1rem 2rem;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             display: flex;
@@ -30,7 +49,7 @@
             padding: 0 2rem;
         }
         .test-config {
-            background: white;
+            background: var(--white);
             padding: 2rem;
             border-radius: 10px;
             margin-bottom: 2rem;
@@ -82,7 +101,7 @@
             background: #45a049;
         }
         .test-card {
-            background: white;
+            background: var(--white);
             padding: 2rem;
             border-radius: 10px;
             margin-bottom: 1rem;
@@ -125,7 +144,7 @@
         .btn-incorrect { background: #f44336; }
         .btn-skip { background: #ff9800; }
         .results {
-            background: white;
+            background: var(--white);
             padding: 2rem;
             border-radius: 10px;
             text-align: center;
@@ -148,6 +167,7 @@
     <div class="header">
         <div class="logo">WORDKEEPER</div>
         <div class="nav-links">
+            <button id="themeToggle" onclick="toggleTheme()" style="background: none; border: none; color: var(--text-color); cursor: pointer; font-size: 1.2rem; margin-right: 1rem;">🌙 Dark Mode</button>
             <a href="/dashboard">Dashboard</a>
             <a href="/profile">Profile</a>
         </div>
@@ -392,6 +412,39 @@
             } else {
                 console.warn('Speech synthesis not supported in this browser');
                 alert('Speech synthesis not supported in this browser');
+            }
+        }
+
+        async function toggleTheme() {
+            const body = document.body;
+            const themeToggle = document.getElementById('themeToggle');
+            const isDarkMode = body.hasAttribute('data-theme');
+
+            if (isDarkMode) {
+                body.removeAttribute('data-theme');
+                themeToggle.textContent = '🌙 Dark Mode';
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                themeToggle.textContent = '☀️ Light Mode';
+            }
+
+            // Update user preference on server
+            try {
+                const response = await fetch('/api/user/dark-mode', {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        dark_mode: !isDarkMode
+                    })
+                });
+
+                if (!response.ok) {
+                    console.error('Failed to update dark mode preference on server');
+                }
+            } catch (error) {
+                console.error('Error updating dark mode preference:', error);
             }
         }
     </script>

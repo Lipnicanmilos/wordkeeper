@@ -1,3 +1,0 @@
-- [x] Pridať ikonu reproduktora a funkciu speakWord do flashcard_test.html
-- [x] Pridať ikonu reproduktora a funkciu speakWord do test.html
-- [x] Otestovať funkčnosť v prehliadači (server beží na http://127.0.0.1:8000)

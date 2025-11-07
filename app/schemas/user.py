@@ -14,8 +14,9 @@ class UserLogin(UserBase):
 class UserResponse(UserBase):
     id: int
     is_plus: bool  # Pridané späť
+    dark_mode: bool
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
