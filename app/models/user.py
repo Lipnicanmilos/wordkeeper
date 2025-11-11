@@ -13,6 +13,7 @@ class User(Base):
     is_plus = Column(Boolean, default=False)
     dark_mode = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    last_login = Column(DateTime(timezone=True), nullable=True)
 
     # Relácie
     categories = relationship("Category", back_populates="user", cascade="all, delete-orphan")

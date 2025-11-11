@@ -19,6 +19,7 @@ from app.models.word import Word
 from app.routers import words  # Import words routeru
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from datetime import datetime
 
 load_dotenv()
 
@@ -215,6 +216,10 @@ async def login(request: Request, db: Session = Depends(get_db)):
             if not verified:
                 raise HTTPException(status_code=400, detail="Incorrect password")
 
+            # Aktualizujte last_login timestamp
+            user.last_login = datetime.utcnow()
+            db.commit()
+
             # Uložte do session
             session_user = {
                 "id": user.id,
@@ -286,6 +291,9 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
             if not user.name and name:
                 user.name = name
                 db.commit()
+            # Aktualizujte last_login timestamp
+            user.last_login = datetime.utcnow()
+            db.commit()
             print(f"Existing user found: {user.email}")
 
         # Set session for web auth
