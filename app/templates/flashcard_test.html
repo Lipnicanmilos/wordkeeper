@@ -693,7 +693,7 @@
                         <span>${questionWord}</span>
                         <span class="speaker-icon" onclick="speakWord('${questionWord}'); event.stopPropagation();">🔊</span>
                     </div>
-                    <div class="translation-text">${answerWord}</div>
+                    <div class="translation-text">${answerWord} <span class="speaker-icon" onclick="speakWord('${answerWord}'); event.stopPropagation();">🔊</span></div>
                     <div class="click-hint" data-en="${hintText}" data-sk="${isReverse ? 'Kliknite pre zobrazenie pôvodného slova' : 'Kliknite pre zobrazenie prekladu'}">${hintText}</div>
                 </div>
                 <div class="test-controls">
