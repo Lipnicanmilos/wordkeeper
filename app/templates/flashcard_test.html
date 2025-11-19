@@ -193,6 +193,19 @@
             color: var(--dark-green);
         }
 
+        /* Disable speaker icon in translation until card is flipped */
+        .translation-text .speaker-icon {
+            pointer-events: none;
+            color: var(--gray);
+            cursor: default;
+        }
+
+        .flashcard.flipped .translation-text .speaker-icon {
+            pointer-events: auto;
+            color: var(--primary-green);
+            cursor: pointer;
+        }
+
         .translation-text {
             font-size: 1.8rem;
             color: #666;

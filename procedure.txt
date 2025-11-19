@@ -52,6 +52,11 @@ git add .
 git commit -m "Add new feature: user authentication"
 git push
 
+Natvrdo resetni lokálnu vetvu na požadovaný commit: Toto zahodí všetky lokálne zmeny a odstráni z lokálnej histórie commity, ktoré nasledovali po 967572f.
+Bash
+git reset --hard 967572f59d5c580f29e0fdc2b411d926cc01281b
+
+
 Súhrn pre FastAPI/Uvicorn:
 
 Pole	Odporúčané nastavenie
