@@ -532,7 +532,7 @@
                 </div>
                 <div class="stat-card">
                     <div class="stat-number" id="totalCategories">0</div>
-                    <div class="stat-label" data-en="Categories" data-sk="Kategórií">Categories</div>
+                    <div class="stat-label" data-en="Total Topics" data-sk="Celkom tém">Topics</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-number" id="testsTaken">0</div>
@@ -567,16 +567,16 @@
         <div id="message"></div>
 
         <form id="createCategoryForm">
-            <input type="text" name="name" placeholder="Category name" data-en-placeholder="Category name" data-sk-placeholder="Názov kategórie" required>
+            <input type="text" name="name" placeholder="Category name" data-en-placeholder="Category name" data-sk-placeholder="Názov témy" required>
             <input type="text" name="description" placeholder="Description (optional)" data-en-placeholder="Description (optional)" data-sk-placeholder="Popis (voliteľné)">
-            <button type="submit" data-en="Create Category" data-sk="Vytvoriť kategóriu">Create Category</button>
+            <button type="submit" data-en="Create Topic" data-sk="Vytvoriť tému">Create Topic</button>
         </form>
 
-        <h2 data-en="Your Categories" data-sk="Tvoje kategórie">Your Categories</h2>
+        <h2 data-en="Your Topics" data-sk="Tvoje témy">Your Topics</h2>
 
         <ul class="category-list" id="categoriesList">
             <!-- Categories will be loaded dynamically -->
-            <li class="category-item" data-en="No categories yet." data-sk="Žiadne kategórie zatiaľ neexistujú.">No categories yet.</li>
+            <li class="category-item" data-en="No topics yet." data-sk="Žiadne témy zatiaľ neexistujú.">No topics yet.</li>
         </ul>
 
 
@@ -591,8 +591,8 @@
                 <h3 data-en="Confirm Deletion" data-sk="Potvrdiť zmazanie">Confirm Deletion</h3>
             </div>
             <div class="modal-body">
-                <p data-en="Are you sure you want to delete this category? This action cannot be undone and will delete all words in this category." data-sk="Naozaj chcete zmazať túto kategóriu? Táto akcia je nevratná a odstráni všetky slovíčka v tejto kategórii.">
-                    Are you sure you want to delete this category? This action cannot be undone and will delete all words in this category.
+                <p data-en="Are you sure you want to delete this topics? This action cannot be undone and will delete all words in this topics." data-sk="Naozaj chcete zmazať túto tému? Táto akcia je nevratná a odstráni všetky slovíčka v tejto téme.">
+                    Are you sure you want to delete this topics? This action cannot be undone and will delete all words in this topics.
                 </p>
             </div>
             <div class="modal-footer">
@@ -909,16 +909,16 @@
                     sk: 'Používateľ nie je overený'
                 },
                 'category_created_successfully': {
-                    en: 'Category created successfully!',
-                    sk: 'Kategória bola úspešne vytvorená!'
+                    en: 'Topic created successfully!',
+                    sk: 'Téma bola úspešne vytvorená!'
                 },
                 'failed_to_create_category': {
-                    en: 'Failed to create category',
-                    sk: 'Nepodarilo sa vytvoriť kategóriu'
+                    en: 'Failed to create topic',
+                    sk: 'Nepodarilo sa vytvoriť tému'
                 },
                 'error_creating_category': {
-                    en: 'Error creating category',
-                    sk: 'Chyba pri vytváraní kategórie'
+                    en: 'Error creating topic',
+                    sk: 'Chyba pri vytváraní tému'
                 },
                 'word_added_successfully': {
                     en: 'Word added successfully!',
@@ -933,16 +933,16 @@
                     sk: 'Chyba pri pridávaní slovíčka'
                 },
                 'category_deleted_successfully': {
-                    en: 'Category deleted successfully!',
-                    sk: 'Kategória bola úspešne zmazaná!'
+                    en: 'Topic deleted successfully!',
+                    sk: 'Téma bola úspešne zmazaná!'
                 },
                 'failed_to_delete_category': {
-                    en: 'Failed to delete category',
-                    sk: 'Nepodarilo sa zmazať kategóriu'
+                    en: 'Failed to delete topic',
+                    sk: 'Nepodarilo sa zmazať tému'
                 },
                 'error_deleting_category': {
-                    en: 'Error deleting category',
-                    sk: 'Chyba pri mazaní kategórie'
+                    en: 'Error deleting topic',
+                    sk: 'Chyba pri mazaní tému'
                 }
             };
 
