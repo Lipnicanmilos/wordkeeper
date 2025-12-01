@@ -643,16 +643,36 @@
                     <b>${c.total_words || 0}</b> <span data-en="words" data-sk="slovíčok">words</span>
                 </div>
 
-                <div class="test-levels" style="margin-top:0.8rem;">
-                    <a class="level-1" href="/test?category=${c.id}&level=dont_know" data-en="Don't Know (${c.level_percentages.dont_know || 0}%)" data-sk="Neviem (${c.level_percentages.dont_know || 0}%)">
-                        Don't Know (${c.level_percentages.dont_know || 0}%)
-                    </a>
-                    <a class="level-2" href="/test?category=${c.id}&level=learning" data-en="Learning (${c.level_percentages.learning || 0}%)" data-sk="Učím sa (${c.level_percentages.learning || 0}%)">
-                        Learning (${c.level_percentages.learning || 0}%)
-                    </a>
-                    <a class="level-3" href="/test?category=${c.id}&level=know" data-en="Know (${c.level_percentages.know || 0}%)" data-sk="Viem (${c.level_percentages.know || 0}%)">
-                        Know (${c.level_percentages.know || 0}%)
-                    </a>
+                <div style="margin-top:0.8rem;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong data-en="Practice" data-sk="Karticky">Practice</strong>
+                    </div>
+                    <div class="test-levels">
+                        <a class="level-1" href="/test?category=${c.id}&level=dont_know" data-en="Don't Know (${c.level_percentages.dont_know || 0}%)" data-sk="Neviem (${c.level_percentages.dont_know || 0}%)">
+                            Don't Know (${c.level_percentages.dont_know || 0}%)
+                        </a>
+                        <a class="level-2" href="/test?category=${c.id}&level=learning" data-en="Learning (${c.level_percentages.learning || 0}%)" data-sk="Učím sa (${c.level_percentages.learning || 0}%)">
+                            Learning (${c.level_percentages.learning || 0}%)
+                        </a>
+                        <a class="level-3" href="/test?category=${c.id}&level=know" data-en="Know (${c.level_percentages.know || 0}%)" data-sk="Viem (${c.level_percentages.know || 0}%)">
+                            Know (${c.level_percentages.know || 0}%)
+                        </a>
+                    </div>
+
+                    <div style="margin-top: 1rem; margin-bottom: 0.5rem;">
+                        <strong data-en="Auto-Play" data-sk="Opakovanie">Auto-Play</strong>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <a href="/repeat?category=${c.id}&level=dont_know" class="level-1" style="padding: 0.4rem 0.8rem; border-radius: 50px; text-decoration: none; font-size: 0.8rem; font-weight: 600; display: inline-block;" data-en="🔄 Don't Know" data-sk="🔄 Neviem">
+                            🔄 Don't Know
+                        </a>
+                        <a href="/repeat?category=${c.id}&level=learning" class="level-2" style="padding: 0.4rem 0.8rem; border-radius: 50px; text-decoration: none; font-size: 0.8rem; font-weight: 600; display: inline-block;" data-en="🔄 Learning" data-sk="🔄 Učím sa">
+                            🔄 Learning
+                        </a>
+                        <a href="/repeat?category=${c.id}&level=know" class="level-3" style="padding: 0.4rem 0.8rem; border-radius: 50px; text-decoration: none; font-size: 0.8rem; font-weight: 600; display: inline-block;" data-en="🔄 Know" data-sk="🔄 Viem">
+                            🔄 Know
+                        </a>
+                    </div>
 
                     <button class="delete-btn" onclick="deleteCategory(${c.id})"
                         data-en="Delete" data-sk="Zmazať">Delete</button>

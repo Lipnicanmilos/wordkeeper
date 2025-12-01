@@ -207,7 +207,7 @@ def start_test(
     current_user: User = Depends(get_current_user)
 ):
     """Začína test so slovíčkami podľa konfigurácie"""
-    query = db.query(Word)
+    query = db.query(Word).filter(Word.user_id == current_user.id)
 
     # Filtre podľa konfigurácie
     if test_config.knowledge_levels:
@@ -228,12 +228,6 @@ def start_test(
         Word.knowledge_level,
         Word.last_tested.asc()  # Najprv slová ktoré boli testované najdlhšie
     ).limit(test_config.limit).all()
-
-    if not words:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No words found for test with given criteria"
-        )
 
     # Ak je test_direction "translation_to_original", vymeníme original_word a translation
     if test_config.test_direction == "translation_to_original":

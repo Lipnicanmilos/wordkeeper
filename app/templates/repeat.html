@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-en="Repeat Vocabulary" data-sk="Opakovanie slovíčok">Repeat Vocabulary - WordKeeper</title>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(45deg, #40ffaa, #4079ff, #40ffaa, #4079ff);
+            --input-bg: #f8f9fa;
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --bg-color: #f0f2f5;
+            --text-color: #333;
+            --accent: #4079ff;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --text-color: #e0e0e0;
+            --card-bg: rgba(30, 30, 30, 0.95);
+            --input-bg: #333;
+            --accent: #40aaff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            perspective: 1000px;
+            overflow-x: hidden;
+        }
+
+        /* Background shapes */
+        .background-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .shape {
+            position: absolute;
+            color: rgba(64, 121, 255, 0.15);
+            font-weight: bold;
+            user-select: none;
+            animation: floatUp linear infinite;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.5; }
+            90% { opacity: 0.5; }
+            100% { transform: translateY(-20vh) rotate(360deg); opacity: 0; }
+        }
+
+        /* Main container */
+        .repeat-container {
+            background: var(--card-bg);
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 800px;
+            margin: 3rem auto;
+            border-radius: 25px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(15px);
+            transform-style: preserve-3d;
+            position: relative;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: cardPop 0.8s ease forwards;
+        }
+
+        @keyframes cardPop {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Header bar */
+        .header-bar {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 10px;
+        }
+
+        .lang-btn {
+            padding: 0.4rem 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #666;
+        }
+        .lang-btn.active {
+            background: #4079ff;
+            color: white;
+            border-color: #4079ff;
+        }
+
+        .small-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            background: white;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            transition: 0.3s;
+            font-weight: 600;
+        }
+        .small-btn:hover {
+            background: #4079ff;
+            color: white;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            margin-top: 3rem;
+        }
+
+        h1 {
+            font-size: 2.4rem;
+            text-align: center;
+            background: var(--primary-gradient);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientShift 4s ease infinite;
+            margin-bottom: 0.5rem;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .subtitle {
+            color: var(--text-color);
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Language selector */
+        .language-selector {
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .language-selector select {
+            padding: 0.5rem 1rem;
+            border: 2px solid var(--input-bg);
+            border-radius: 10px;
+            background: var(--input-bg);
+            color: var(--text-color);
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .language-selector select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        /* Flashcard */
+        .flashcard {
+            background: var(--input-bg);
+            border-radius: 20px;
+            padding: 2rem;
+            margin: 2rem 0;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            text-align: center;
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+
+        .flashcard:hover {
+            transform: translateY(-5px);
+        }
+
+        .flashcard.flipped {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .card-content {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .card-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--input-bg);
+            color: var(--text-color);
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #f44336, #d32f2f);
+            color: white;
+        }
+
+        .btn-play {
+            background: linear-gradient(45deg, #FF6B35, #F7931E);
+            color: white;
+        }
+
+        .btn-stop {
+            background: linear-gradient(45deg, #666, #999);
+            color: white;
+        }
+
+        /* Progress */
+        .progress {
+            margin: 2rem 0;
+            text-align: center;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: var(--input-bg);
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary-gradient);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            font-size: 0.9rem;
+            color: var(--text-color);
+        }
+
+        /* Messages */
+        .message {
+            padding: 1rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+            display: none;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-color);
+        }
+
+        .spinner {
+            border: 4px solid var(--input-bg);
+            border-top: 4px solid var(--accent);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .repeat-container {
+                padding: 1.5rem;
+                margin: 1rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .flashcard {
+                padding: 1.5rem;
+                min-height: 250px;
+            }
+
+            .card-content {
+                font-size: 1.5rem;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn {
+                width: 100%;
+                max-width: 200px;
+            }
+
+            .language-selector {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .header-bar {
+                position: static;
+                justify-content: center;
+                margin-bottom: 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="background-shapes" id="bgShapes"></div>
+
+    <div class="repeat-container">
+        <!-- Top Controls -->
+        <div class="header-bar">
+            <button class="lang-btn active" data-lang="en">EN</button>
+            <button class="lang-btn" data-lang="sk">SK</button>
+        </div>
+
+        <div class="header">
+            <h1 data-en="Repeat Vocabulary" data-sk="Opakovanie slovíčok">Repeat Vocabulary</h1>
+            <div class="subtitle" id="categoryInfo">Loading...</div>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <div data-en="Loading words..." data-sk="Načítavam slovíčka...">Loading words...</div>
+        </div>
+
+        <div id="content" style="display: none;">
+            <div class="language-selector" style="margin-bottom: 1rem; text-align: center; display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap;">
+                <div>
+                    <label for="originalLangSelect" style="font-size: 0.9rem; margin-right: 0.5rem;">Original:</label>
+                    <select id="originalLangSelect">
+                        <option value="en-US">English</option>
+                        <option value="sk-SK">Slovenčina</option>
+                        <option value="de-DE">Deutsch</option>
+                        <option value="fr-FR">Français</option>
+                        <option value="es-ES">Español</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="translationLangSelect" style="font-size: 0.9rem; margin-right: 0.5rem;">Translation:</label>
+                    <select id="translationLangSelect">
+                        <option value="sk-SK">Slovenčina</option>
+                        <option value="en-US">English</option>
+                        <option value="de-DE">Deutsch</option>
+                        <option value="fr-FR">Français</option>
+                        <option value="es-ES">Español</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="progress">
+                <div class="progress-bar">
+                    <div class="progressFill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText">0 / 0 words</div>
+            </div>
+
+            <div class="flashcard" id="flashcard" onclick="flipCard()">
+                <div class="card-content" id="cardContent">Click to start</div>
+                <div class="card-label" id="cardLabel" data-en="Word" data-sk="Slovíčko">Word</div>
+            </div>
+
+            <div class="controls" style="justify-content: center;">
+                <button class="btn btn-play" id="autoPlayBtn" onclick="startAutoPlay()" data-en="Auto Play" data-sk="Automatické prehrávanie">Auto Play</button>
+                <button class="btn btn-stop" id="stopBtn" onclick="stopAutoPlay()" style="display: none;" data-en="Stop" data-sk="Zastaviť">Stop</button>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-secondary" id="prevBtn" onclick="previousWord()" data-en="Previous" data-sk="Predchádzajúce">Previous</button>
+                <button class="btn btn-secondary" id="nextBtn" onclick="nextWord()" data-en="Next" data-sk="Ďalšie">Next</button>
+            </div>
+        </div>
+
+        <div id="message" class="message"></div>
+
+        <div class="controls" style="justify-content: center; margin-top: 2rem;">
+            <button class="btn btn-secondary" onclick="goBack()" data-en="Back to Dashboard" data-sk="Späť na dashboard">Back to Dashboard</button>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let words = [];
+        let currentIndex = 0;
+        let isFlipped = false;
+        let categoryId = null;
+        let level = null;
+        let currentUserId = null;
+        let speechSynthesis = window.speechSynthesis;
+        let autoPlayInterval = null;
+        let isAutoPlaying = false;
+        let originalLanguage = 'en-US'; // Default language for original words
+        let translationLanguage = 'sk-SK'; // Default language for translations
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Create floating shapes
+            const bg = document.getElementById('bgShapes');
+            const chars = ['A', 'B', 'C', '1', '?', '!', '@', '#'];
+
+            function createShape() {
+                const s = document.createElement('div');
+                s.className = 'shape';
+                s.textContent = chars[Math.floor(Math.random() * chars.length)];
+                s.style.left = Math.random() * 100 + 'vw';
+                s.style.fontSize = (Math.random() * 30 + 10) + 'px';
+                s.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                bg.appendChild(s);
+                setTimeout(() => s.remove(), 15000);
+            }
+
+            for (let i = 0; i < 15; i++) setTimeout(createShape, i * 300);
+            setInterval(createShape, 1200);
+
+            // Get URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            categoryId = urlParams.get('category');
+            level = urlParams.get('level');
+
+            if (!categoryId || !level) {
+                showMessage('Invalid parameters', 'error');
+                return;
+            }
+
+            // Load dark mode preference
+            loadDarkModePreference();
+
+            // Load user data and then words
+            loadUserData();
+
+            // Set up language selectors
+            const originalLangSelect = document.getElementById('originalLangSelect');
+            const translationLangSelect = document.getElementById('translationLangSelect');
+
+            originalLangSelect.addEventListener('change', function() {
+                originalLanguage = this.value;
+            });
+
+            translationLangSelect.addEventListener('change', function() {
+                translationLanguage = this.value;
+            });
+
+            // Set up language switching
+            const langButtons = document.querySelectorAll('.lang-btn');
+            const currentLang = localStorage.getItem('preferredLang') || 'en';
+            setActiveLanguage(currentLang);
+
+            langButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const lang = btn.dataset.lang;
+                    setActiveLanguage(lang);
+                    localStorage.setItem('preferredLang', lang);
+                });
+            });
+
+            // Dark mode is now loaded from DB only
+        });
+
+        function setActiveLanguage(lang) {
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+
+            document.querySelectorAll('[data-en], [data-sk]').forEach(el => {
+                if (el.hasAttribute(`data-${lang}`)) el.textContent = el.getAttribute(`data-${lang}`);
+            });
+
+            document.querySelectorAll('[data-en-placeholder], [data-sk-placeholder]').forEach(el => {
+                if (el.hasAttribute(`data-${lang}-placeholder`)) {
+                    el.placeholder = el.getAttribute(`data-${lang}-placeholder`);
+                }
+            });
+        }
+
+
+
+        async function loadUserData() {
+            try {
+                const response = await fetch('/api/user', {
+                    credentials: 'same-origin'
+                });
+                if (!response.ok) {
+                    window.location.href = '/login';
+                    return;
+                }
+
+                const user = await response.json();
+                currentUserId = user.id;
+
+                // Load category info
+                await loadCategoryInfo();
+
+                // Load words
+                await loadWords();
+
+            } catch (err) {
+                console.error('User load failed:', err);
+                window.location.href = '/login';
+            }
+        }
+
+        async function loadCategoryInfo() {
+            try {
+                const response = await fetch(`/api/v1/categories/${categoryId}`, {
+                    credentials: 'same-origin'
+                });
+                if (response.ok) {
+                    const category = await response.json();
+                    const levelText = {
+                        'dont_know': 'Don\'t Know',
+                        'learning': 'Learning',
+                        'know': 'Know'
+                    }[level] || level;
+
+                    document.getElementById('categoryInfo').textContent =
+                        `${category.name} - ${levelText} (${category.level_percentages[level] || 0}%)`;
+                }
+            } catch (err) {
+                console.error('Category info load failed:', err);
+            }
+        }
+
+        async function loadWords() {
+            try {
+                const response = await fetch('/api/v1/words/test/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        category_id: parseInt(categoryId),
+                        knowledge_levels: [level],
+                        limit: 50,
+                        test_direction: "original_to_translation"
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load words');
+                }
+
+                words = await response.json();
+
+                if (words.length === 0) {
+                    showMessage('No words found for this level', 'error');
+                    return;
+                }
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+
+                updateProgress();
+                showCurrentWord();
+
+            } catch (err) {
+                console.error('Words load failed:', err);
+                showMessage('Failed to load words', 'error');
+            }
+        }
+
+        function showCurrentWord() {
+            if (words.length === 0 || currentIndex >= words.length) return;
+
+            const word = words[currentIndex];
+            const card = document.getElementById('flashcard');
+            const content = document.getElementById('cardContent');
+            const label = document.getElementById('cardLabel');
+
+            card.classList.remove('flipped');
+            isFlipped = false;
+
+            content.textContent = word.original_word;
+            label.textContent = 'Word';
+
+            updateNavigationButtons();
+        }
+
+        function flipCard() {
+            if (words.length === 0) return;
+
+            const card = document.getElementById('flashcard');
+            const content = document.getElementById('cardContent');
+            const label = document.getElementById('cardLabel');
+
+            if (!isFlipped) {
+                card.classList.add('flipped');
+                content.textContent = words[currentIndex].translation;
+                label.textContent = 'Translation';
+            }
+
+            isFlipped = !isFlipped;
+        }
+
+        function markCorrect() {
+            // For repeat mode, we don't change knowledge levels
+            // Just move to next word
+            nextWord();
+        }
+
+        function markIncorrect() {
+            // For repeat mode, we don't change knowledge levels
+            // Just move to next word
+            nextWord();
+        }
+
+        function nextWord() {
+            if (currentIndex < words.length - 1) {
+                currentIndex++;
+                updateProgress();
+                showCurrentWord();
+            } else {
+                // Finished all words
+                showMessage('Congratulations! You\'ve reviewed all words.', 'success');
+                stopAutoPlay(); // Stop auto-play if running
+            }
+        }
+
+        function previousWord() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                updateProgress();
+                showCurrentWord();
+            }
+        }
+
+        function updateProgress() {
+            const progress = ((currentIndex + 1) / words.length) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+            document.getElementById('progressText').textContent =
+                `${currentIndex + 1} / ${words.length} words`;
+        }
+
+        function updateNavigationButtons() {
+            document.getElementById('prevBtn').disabled = currentIndex === 0;
+            document.getElementById('nextBtn').disabled = currentIndex === words.length - 1;
+        }
+
+        function showMessage(msg, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = msg;
+            messageEl.className = `message ${type}`;
+            messageEl.style.display = 'block';
+            setTimeout(() => messageEl.style.display = 'none', 5000);
+        }
+
+        function goBack() {
+            window.location.href = '/dashboard';
+        }
+
+        async function loadDarkModePreference() {
+            try {
+                const response = await fetch('/api/user');
+                if (response.ok) {
+                    const userData = await response.json();
+                    if (userData.dark_mode) {
+                        document.body.setAttribute('data-theme', 'dark');
+                        localStorage.setItem('theme', 'dark');
+                    } else {
+                        document.body.setAttribute('data-theme', 'light');
+                        localStorage.setItem('theme', 'light');
+                    }
+                } else {
+                    console.error('Failed to load user data for dark mode');
+                    const savedTheme = localStorage.getItem('theme') || 'light';
+                    document.body.setAttribute('data-theme', savedTheme);
+                }
+            } catch (error) {
+                console.error('Error loading dark mode preference:', error);
+                const savedTheme = localStorage.getItem('theme') || 'light';
+                document.body.setAttribute('data-theme', savedTheme);
+            }
+        }
+
+        // Auto-play functionality
+        function startAutoPlay() {
+            if (words.length === 0 || isAutoPlaying) return;
+
+            isAutoPlaying = true;
+
+            // Hide auto-play button, show stop button
+            document.getElementById('autoPlayBtn').style.display = 'none';
+            document.getElementById('stopBtn').style.display = 'inline-block';
+
+            // Start from current word
+            playCurrentWord();
+        }
+
+        function stopAutoPlay() {
+            isAutoPlaying = false;
+
+            // Clear any running intervals
+            if (autoPlayInterval) {
+                clearInterval(autoPlayInterval);
+                autoPlayInterval = null;
+            }
+
+            // Stop any ongoing speech
+            speechSynthesis.cancel();
+
+            // Show auto-play button, hide stop button
+            document.getElementById('autoPlayBtn').style.display = 'inline-block';
+            document.getElementById('stopBtn').style.display = 'none';
+        }
+
+        function playCurrentWord() {
+            if (!isAutoPlaying || words.length === 0 || currentIndex >= words.length) {
+                stopAutoPlay();
+                return;
+            }
+
+            const word = words[currentIndex];
+
+            // Show original word and try to play audio
+            showCurrentWord();
+            try {
+                speakWord(word.original_word, true); // true = original word
+            } catch (e) {
+                console.log('Speech synthesis not available');
+            }
+
+            // After 3 seconds, show translation and try to play audio
+            setTimeout(() => {
+                if (!isAutoPlaying) return; // Check if still playing
+
+                flipCard();
+                try {
+                    speakWord(word.translation, false); // false = translation
+                } catch (e) {
+                    console.log('Speech synthesis not available');
+                }
+
+                // After another 3 seconds, move to next word
+                setTimeout(() => {
+                    if (!isAutoPlaying) return; // Check if still playing
+
+                    if (currentIndex < words.length - 1) {
+                        nextWord();
+                        // Continue with next word after a brief pause
+                        setTimeout(() => {
+                            if (isAutoPlaying) {
+                                playCurrentWord();
+                            }
+                        }, 500);
+                    } else {
+                        // Finished all words
+                        stopAutoPlay();
+                        showMessage('Auto-play completed! All words reviewed.', 'success');
+                    }
+                }, 3000);
+            }, 3000);
+        }
+
+        function speakWord(text, isOriginal = true) {
+            if (!speechSynthesis) return;
+
+            // Cancel any ongoing speech
+            speechSynthesis.cancel();
+
+            // Create utterance
+            const utterance = new SpeechSynthesisUtterance(text);
+
+            // Use appropriate language based on whether it's original or translation
+            utterance.lang = isOriginal ? originalLanguage : translationLanguage;
+
+            // Speak
+            speechSynthesis.speak(utterance);
+        }
+    </script>
+</body>
+</html>

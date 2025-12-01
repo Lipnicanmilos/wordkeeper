@@ -69,3 +69,10 @@ https://console.cloud.google.com/auth/clients?project=grand-object-333523
 
 google console
 https://console.cloud.google.com/run/detail/europe-west3/wordkeeper/observability/metrics?chat=true&project=grand-object-333523
+
+
+----------------------------------------------
+Chcete pridať tlačidlo „Opakovať slovicka ktore neviem“ 
+„Opakovať slovicka ktore sa ucitm “ a 
+„Opakovať slovicka ktore viem“vedľa existujúcich testovacích tlačidiel v riadiacom paneli pre každú úroveň kategórie? 
+Funkcia opakovania bude automaticky prechádzať náhodne vybranými slovami, zobrazovať originál po dobu 2 sekúnd, potom preklad po dobu 3 sekúnd a tak ďalej až do konca ale pritom kazde jedno bude aj audio sprevadzane

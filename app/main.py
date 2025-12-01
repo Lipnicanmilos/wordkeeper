@@ -168,6 +168,26 @@ async def test_page(request: Request, category: int = None, level: str = None, d
         "level": level
     })
 
+@app.get("/repeat")
+async def repeat_page(request: Request, category: int = None, level: str = None, db: Session = Depends(get_db)):
+    user = request.session.get('user')
+    if not user:
+        return RedirectResponse(url='/login', status_code=303)
+
+    # Get category details if provided
+    category_data = None
+    if category:
+        category_data = db.query(Category).filter(Category.id == category).first()
+        if not category_data:
+            return RedirectResponse(url='/dashboard', status_code=303)
+
+    return templates.TemplateResponse("repeat.html", {
+        "request": request,
+        "email": user.get('email', ''),
+        "category": category_data,
+        "level": level
+    })
+
 from app.services.auth_service import hash_password, verify_password, create_access_token
 from passlib.hash import argon2
 
