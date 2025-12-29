@@ -464,6 +464,8 @@
         let isAutoPlaying = false;
         let originalLanguage = 'en-US'; // Default language for original words
         let translationLanguage = 'sk-SK'; // Default language for translations
+        let shuffledIndices = []; // For random order during auto-play
+        let autoPlayIndex = 0; // Current index in shuffled array during auto-play
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
@@ -749,11 +751,20 @@
 
             isAutoPlaying = true;
 
+            // Create shuffled array of indices for random order
+            shuffledIndices = Array.from({length: words.length}, (_, i) => i);
+            // Fisher-Yates shuffle algorithm
+            for (let i = shuffledIndices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffledIndices[i], shuffledIndices[j]] = [shuffledIndices[j], shuffledIndices[i]];
+            }
+            autoPlayIndex = 0;
+
             // Hide auto-play button, show stop button
             document.getElementById('autoPlayBtn').style.display = 'none';
             document.getElementById('stopBtn').style.display = 'inline-block';
 
-            // Start from current word
+            // Start from first word in shuffled order
             playCurrentWord();
         }
 
@@ -769,21 +780,45 @@
             // Stop any ongoing speech
             speechSynthesis.cancel();
 
+            // Reset shuffled indices
+            shuffledIndices = [];
+            autoPlayIndex = 0;
+
+            // Show current word in normal mode (restore card state)
+            if (words.length > 0 && currentIndex < words.length) {
+                showCurrentWord();
+            }
+
             // Show auto-play button, hide stop button
             document.getElementById('autoPlayBtn').style.display = 'inline-block';
             document.getElementById('stopBtn').style.display = 'none';
         }
 
         function playCurrentWord() {
-            if (!isAutoPlaying || words.length === 0 || currentIndex >= words.length) {
+            if (!isAutoPlaying || words.length === 0 || autoPlayIndex >= shuffledIndices.length) {
                 stopAutoPlay();
                 return;
             }
 
-            const word = words[currentIndex];
+            // Use shuffled index to get the word
+            const shuffledWordIndex = shuffledIndices[autoPlayIndex];
+            const word = words[shuffledWordIndex];
 
+            // Update progress based on auto-play position
+            const progress = ((autoPlayIndex + 1) / words.length) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+            document.getElementById('progressText').textContent =
+                `${autoPlayIndex + 1} / ${words.length} words`;
+            
             // Show original word and try to play audio
-            showCurrentWord();
+            const card = document.getElementById('flashcard');
+            const content = document.getElementById('cardContent');
+            const label = document.getElementById('cardLabel');
+            card.classList.remove('flipped');
+            isFlipped = false;
+            content.textContent = word.original_word;
+            label.textContent = 'Word';
+
             try {
                 speakWord(word.original_word, true); // true = original word
             } catch (e) {
@@ -794,7 +829,11 @@
             setTimeout(() => {
                 if (!isAutoPlaying) return; // Check if still playing
 
-                flipCard();
+                card.classList.add('flipped');
+                content.textContent = word.translation;
+                label.textContent = 'Translation';
+                isFlipped = true;
+
                 try {
                     speakWord(word.translation, false); // false = translation
                 } catch (e) {
@@ -805,8 +844,8 @@
                 setTimeout(() => {
                     if (!isAutoPlaying) return; // Check if still playing
 
-                    if (currentIndex < words.length - 1) {
-                        nextWord();
+                    if (autoPlayIndex < shuffledIndices.length - 1) {
+                        autoPlayIndex++;
                         // Continue with next word after a brief pause
                         setTimeout(() => {
                             if (isAutoPlaying) {
