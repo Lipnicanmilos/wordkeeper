@@ -319,13 +319,13 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
     print("Google callback started")
     try:
         token = await oauth.google.authorize_access_token(request)
-        user_info = token.get('userinfo')
+        user_info = await oauth.google.userinfo(token=token)
         print(f"User info: {user_info}")
 
         if not user_info or not user_info.get('email'):
             raise HTTPException(status_code=400, detail="Failed to get user info from Google")
 
-        email = user_info.email
+        email = user_info['email']
         name = user_info.get('name', email.split('@')[0])
         picture = user_info.get('picture', '')
 
