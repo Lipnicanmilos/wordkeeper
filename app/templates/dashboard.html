@@ -298,7 +298,7 @@
         let allCategories = [];
         let currentLang = localStorage.getItem('preferredLang') || 'sk';
 
-        document.addEventListener('DOMContentLoaded', async () => {
+        window.addEventListener('pageshow', async () => {
             initBackground();
             await loadUserData(); // Počkáme na načítanie usera (kvôli is_plus)
             loadUserStats();
