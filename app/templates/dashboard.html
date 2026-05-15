@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-en="Dashboard" data-sk="Dashboard">Dashboard</title>
 
-    <!-- ✅ FIX: Dark mode sa aplikuje OKAMŽITE pred akýmkoľvek renderom - žiadne blikanie -->
+    <!-- 1. BLESKOVÝ START: Skript v head bez "defer", aby sa vykonal pred vykreslením -->
     <script>
         (function() {
             if (localStorage.getItem('darkMode') === 'true') {
@@ -46,6 +46,11 @@
             color: var(--text-main);
             margin: 0;
             min-height: 100vh;
+            /* ✅ transition tu nie je, aby to pri načítaní nepreblikávalo */
+        }
+
+        /* ✅ Animáciu farieb zapneme až po úplnom načítaní stránky */
+        body.theme-ready {
             transition: background-color 0.3s ease, color 0.3s ease;
         }
 
@@ -244,7 +249,7 @@
         <ul id="categoriesList" class="category-grid"></ul>
     </div>
 
-    <!-- Modaly -->
+    <!-- Modaly ... (zostávajú nezmenené) ... -->
     <div id="createModal" class="modal">
         <div class="modal-content">
             <h3 data-en="Create New Category" data-sk="Vytvoriť kategóriu">Vytvoriť kategóriu</h3>
@@ -305,8 +310,36 @@
             loadUserStats();
             loadCategories();
             setupLanguages();
+            
+            // ✅ Až teraz zapneme CSS prechody, aby dark mode neblikal pri štarte
+            setTimeout(() => {
+                document.body.classList.add('theme-ready');
+            }, 100);
         });
 
+        async function loadUserData() {
+            try {
+                const res = await fetch('/api/user');
+                const user = await res.json();
+                document.getElementById('userEmail').textContent = user.name || user.email;
+                currentUserId = user.id;
+                currentUserIsPlus = user.is_plus;
+
+                // ✅ Synchronizácia: Iba ak sa líši nastavenie na serveri od local, zmeníme to.
+                // To zabráni zbytočnému prepisovaniu už aplikovanej témy.
+                const isDarkServer = user.dark_mode;
+                const isDarkLocal = localStorage.getItem('darkMode') === 'true';
+
+                if (isDarkServer !== isDarkLocal) {
+                    localStorage.setItem('darkMode', isDarkServer);
+                    document.documentElement.setAttribute('data-theme', isDarkServer ? 'dark' : '');
+                }
+
+            } catch (err) { window.location.href = '/login'; }
+        }
+
+        // ... zvyšok tvojho JS (loadUserStats, displayCategories, atď.) zostáva rovnaký ...
+        
         function initBackground() {
             const bg = document.getElementById('bgShapes');
             const chars = ['A', 'B', 'C', '1', '?', '!'];
@@ -320,22 +353,6 @@
                 bg.appendChild(s);
                 setTimeout(() => s.remove(), 15000);
             }, 1200);
-        }
-
-        async function loadUserData() {
-            try {
-                const res = await fetch('/api/user');
-                const user = await res.json();
-                document.getElementById('userEmail').textContent = user.name || user.email;
-                currentUserId = user.id;
-                currentUserIsPlus = user.is_plus;
-
-                // ✅ Synchronizuj dark mode zo servera a ulož do localStorage
-                const isDark = user.dark_mode;
-                localStorage.setItem('darkMode', isDark);
-                document.documentElement.setAttribute('data-theme', isDark ? 'dark' : '');
-
-            } catch (err) { window.location.href = '/login'; }
         }
 
         async function loadUserStats() {
@@ -427,7 +444,9 @@
         }
 
         function createMiniChart(c) {
-            const ctx = document.getElementById(`chart-${c.id}`).getContext('2d');
+            const el = document.getElementById(`chart-${c.id}`);
+            if (!el) return;
+            const ctx = el.getContext('2d');
             new Chart(ctx, {
                 type: 'doughnut',
                 data: {
