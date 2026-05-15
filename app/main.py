@@ -27,10 +27,9 @@ load_dotenv()
 app = FastAPI()
 
 # Pripojenie statických súborov (pre CSS, JS, obrázky, favicon)
-# Predpokladá sa, že priečinok 'static' je vnútri priečinka 'app'
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
-# Endpoint pre favicon.ico na vyriešenie chyby ConnectionResetError v prehliadači
+# Endpoint pre favicon.ico
 @app.get('/favicon.ico', include_in_schema=False)
 async def favicon():
     return FileResponse("app/static/favicon.ico")
@@ -38,17 +37,29 @@ async def favicon():
 # Pridajte words router do aplikácie - IBA RAZ
 app.include_router(words.router)
 
-# CORS middleware
+# ✅ FIX 1: Session middleware MUSÍ byť pridaný PRED CORSMiddleware
+# (Starlette spracováva middleware v opačnom poradí ako sú pridané)
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.getenv("SESSION_SECRET", "your-secret-key-12345"),
+    https_only=True,    # ✅ FIX 2: Potrebné pre Cloud Run (HTTPS)
+    same_site="lax",    # ✅ FIX 3: Potrebné pre Google OAuth redirect
+    max_age=3600,       # ✅ FIX 4: Session vydrží 1 hodinu
+)
+
+# ✅ FIX 5: CORS middleware s produkčnou URL
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8000"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:8000",
+        "https://wordkeeper-1096007793591.us-central1.run.app",  # ✅ Produkčná URL
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Session middleware
-app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "your-secret-key-12345"))
 
 # OAuth configuration
 config = Config('.env')
@@ -72,7 +83,30 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
-# Routes
+# Auth service imports
+from app.services.auth_service import hash_password, verify_password, create_access_token
+from passlib.hash import argon2
+
+# Email imports
+from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
+from datetime import datetime, timedelta
+import secrets
+
+mail_config = ConnectionConfig(
+    MAIL_USERNAME=os.getenv("MAIL_USERNAME"),
+    MAIL_PASSWORD=os.getenv("MAIL_PASSWORD"),
+    MAIL_FROM=os.getenv("MAIL_FROM"),
+    MAIL_PORT=587,
+    MAIL_SERVER="smtp.gmail.com",
+    MAIL_STARTTLS=True,
+    MAIL_SSL_TLS=False,
+    USE_CREDENTIALS=True
+)
+
+# ============================================================
+# PAGE ROUTES
+# ============================================================
+
 @app.get("/")
 async def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
@@ -81,7 +115,7 @@ async def read_root(request: Request):
 async def login_page(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
-@app.get("/register")  # PRIDAJTE TENTO ENDPOINT
+@app.get("/register")
 async def register_page(request: Request):
     return templates.TemplateResponse("register.html", {"request": request})
 
@@ -98,11 +132,13 @@ async def profile_page(request: Request, db: Session = Depends(get_db)):
     if not user_session:
         return RedirectResponse(url='/login', status_code=303)
 
+    # ✅ FIX 6: Vždy načítavaj user dáta z DB, nie len zo session
     user = db.query(User).filter(User.id == user_session['id']).first()
     if not user:
+        request.session.clear()
         return RedirectResponse(url='/login', status_code=303)
 
-    context = {"request": request, "email": user.email, "user": user}  # Add user to the context
+    context = {"request": request, "email": user.email, "user": user}
     return templates.TemplateResponse("profile.html", context)
 
 @app.get("/category/{category_id}/words")
@@ -112,7 +148,13 @@ async def category_words_page(request: Request, category_id: int, db: Session = 
         return RedirectResponse(url='/login', status_code=303)
 
     user_id = user['id']
-    is_plus_user = user.get('is_plus', False)
+
+    # ✅ FIX 7: is_plus vždy čítaj z DB, nie zo session (session môže byť stará)
+    db_user = db.query(User).filter(User.id == user_id).first()
+    if not db_user:
+        request.session.clear()
+        return RedirectResponse(url='/login', status_code=303)
+    is_plus_user = db_user.is_plus
 
     # Get category details
     category = db.query(Category).filter(Category.id == category_id, Category.user_id == user_id).first()
@@ -121,16 +163,11 @@ async def category_words_page(request: Request, category_id: int, db: Session = 
 
     # Security check: Non-plus users can only access their newest category.
     if not is_plus_user:
-        # Find the newest category for this user
         newest_category = db.query(Category)\
             .filter(Category.user_id == user_id)\
             .order_by(Category.created_at.desc())\
             .first()
-
-        # If a newest category exists and its ID doesn't match the requested one, deny access.
-        # This prevents manually changing the URL to access locked categories.
         if newest_category and newest_category.id != category_id:
-            # Redirect to dashboard, as the category is locked for this user.
             return RedirectResponse(url='/dashboard', status_code=303)
 
     # Calculate level percentages for the category
@@ -154,7 +191,6 @@ async def category_words_page(request: Request, category_id: int, db: Session = 
         for level in KnowledgeLevel:
             level_percentages[level.value] = 0.0
 
-    # Create category dict with level_percentages
     category_data = {
         "id": category.id,
         "name": category.name,
@@ -166,7 +202,7 @@ async def category_words_page(request: Request, category_id: int, db: Session = 
         "request": request,
         "email": user.get('email', ''),
         "category": category_data,
-        "dark_mode": user.get('dark_mode', False)
+        "dark_mode": db_user.dark_mode  # ✅ FIX 8: dark_mode vždy z DB
     })
 
 @app.get("/test")
@@ -176,22 +212,25 @@ async def test_page(request: Request, category: int = None, level: str = None, d
         return RedirectResponse(url='/login', status_code=303)
 
     user_id = user['id']
-    is_plus_user = user.get('is_plus', False)
 
-    # Get category details if provided
+    # ✅ is_plus z DB
+    db_user = db.query(User).filter(User.id == user_id).first()
+    if not db_user:
+        request.session.clear()
+        return RedirectResponse(url='/login', status_code=303)
+    is_plus_user = db_user.is_plus
+
     category_data = None
     if category:
         category_data = db.query(Category).filter(Category.id == category, Category.user_id == user_id).first()
         if not category_data:
             return RedirectResponse(url='/dashboard', status_code=303)
 
-        # Security check: Non-plus users can only access their newest category.
         if not is_plus_user:
             newest_category = db.query(Category)\
                 .filter(Category.user_id == user_id)\
                 .order_by(Category.created_at.desc())\
                 .first()
-
             if newest_category and newest_category.id != category:
                 return RedirectResponse(url='/dashboard', status_code=303)
 
@@ -209,22 +248,25 @@ async def repeat_page(request: Request, category: int = None, level: str = None,
         return RedirectResponse(url='/login', status_code=303)
 
     user_id = user['id']
-    is_plus_user = user.get('is_plus', False)
 
-    # Get category details if provided
+    # ✅ is_plus z DB
+    db_user = db.query(User).filter(User.id == user_id).first()
+    if not db_user:
+        request.session.clear()
+        return RedirectResponse(url='/login', status_code=303)
+    is_plus_user = db_user.is_plus
+
     category_data = None
     if category:
         category_data = db.query(Category).filter(Category.id == category, Category.user_id == user_id).first()
         if not category_data:
             return RedirectResponse(url='/dashboard', status_code=303)
 
-        # Security check: Non-plus users can only access their newest category.
         if not is_plus_user:
             newest_category = db.query(Category)\
                 .filter(Category.user_id == user_id)\
                 .order_by(Category.created_at.desc())\
                 .first()
-
             if newest_category and newest_category.id != category:
                 return RedirectResponse(url='/dashboard', status_code=303)
 
@@ -235,30 +277,27 @@ async def repeat_page(request: Request, category: int = None, level: str = None,
         "level": level
     })
 
-from app.services.auth_service import hash_password, verify_password, create_access_token
-from passlib.hash import argon2
+# ============================================================
+# AUTH API ENDPOINTS
+# ============================================================
 
-# REGISTER ENDPOINT - PRIDAJTE TENTO ENDPOINT
 @app.post("/api/v1/register")
 async def register(request: Request, db: Session = Depends(get_db)):
     try:
         data = await request.json()
         email = data.get('email')
         password = data.get('password')
-        name = data.get('name', email.split('@')[0])  # Použije email ak meno nie je zadané
+        name = data.get('name', email.split('@')[0])
 
         print(f"Register attempt: {email}")
 
         if email and password:
-            # Skontrolujte či používateľ už existuje
             existing_user = db.query(User).filter(User.email == email).first()
             if existing_user:
                 raise HTTPException(status_code=400, detail="User with this email already exists")
 
-            # Hashovanie hesla pomocou bcrypt
             hashed_password = hash_password(password)
 
-            # Vytvorte nového používateľa
             new_user = User(
                 email=email,
                 name=name,
@@ -269,14 +308,13 @@ async def register(request: Request, db: Session = Depends(get_db)):
             db.commit()
             db.refresh(new_user)
 
-            # Odošli uvítací email
+            # Uvítací email
             from app.services.email_service import send_welcome_email
             try:
                 send_welcome_email(new_user.email, new_user.name)
             except Exception as e:
                 print(f"Welcome email error: {e}")
 
-            # Uložte do session
             session_user = {
                 "id": new_user.id,
                 "email": new_user.email,
@@ -284,7 +322,6 @@ async def register(request: Request, db: Session = Depends(get_db)):
                 "is_plus": new_user.is_plus,
                 "dark_mode": new_user.dark_mode
             }
-
             request.session['user'] = session_user
 
             return JSONResponse({
@@ -294,11 +331,13 @@ async def register(request: Request, db: Session = Depends(get_db)):
         else:
             raise HTTPException(status_code=400, detail="Email and password required")
 
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"Registration error: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
-# LOGIN ENDPOINT
+
 @app.post("/api/v1/login")
 async def login(request: Request, db: Session = Depends(get_db)):
     try:
@@ -309,7 +348,6 @@ async def login(request: Request, db: Session = Depends(get_db)):
         print(f"Login attempt: {email}")
 
         if email and password:
-            # Skontrolujte či používateľ už existuje v DB
             user = db.query(User).filter(User.email == email).first()
 
             if not user:
@@ -321,9 +359,7 @@ async def login(request: Request, db: Session = Depends(get_db)):
                 if verify_password(password, user.password):
                     verified = True
             except ValueError:
-                # Skús argon2
                 if argon2.verify(password, user.password):
-                    # Migruj na bcrypt
                     user.password = hash_password(password)
                     db.commit()
                     verified = True
@@ -331,11 +367,9 @@ async def login(request: Request, db: Session = Depends(get_db)):
             if not verified:
                 raise HTTPException(status_code=400, detail="Incorrect password")
 
-            # Aktualizujte last_login timestamp
             user.last_login = datetime.utcnow()
             db.commit()
 
-            # Uložte do session
             session_user = {
                 "id": user.id,
                 "email": user.email,
@@ -343,7 +377,6 @@ async def login(request: Request, db: Session = Depends(get_db)):
                 "is_plus": user.is_plus,
                 "dark_mode": user.dark_mode
             }
-
             request.session['user'] = session_user
 
             return JSONResponse({
@@ -353,20 +386,28 @@ async def login(request: Request, db: Session = Depends(get_db)):
         else:
             raise HTTPException(status_code=400, detail="Email and password required")
 
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"Login error: {e}")
         raise HTTPException(status_code=400, detail=str(e))
+
 
 @app.get("/api/v1/logout")
 async def logout(request: Request):
     request.session.clear()
     return {"message": "Logged out successfully"}
 
-# Google OAuth routes
+
+# ============================================================
+# GOOGLE OAUTH
+# ============================================================
+
 @app.get('/auth/google')
 async def google_login(request: Request):
     redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://127.0.0.1:8000/auth/google/callback")
     return await oauth.google.authorize_redirect(request, redirect_uri)
+
 
 @app.get('/auth/google/callback', name='google_callback')
 async def google_callback(request: Request, db: Session = Depends(get_db)):
@@ -383,12 +424,10 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         name = user_info.get('name', email.split('@')[0])
         picture = user_info.get('picture', '')
 
-        # Find or create user
         user = db.query(User).filter(User.email == email).first()
         new_user = False
 
         if not user:
-            # Create new user with dummy password
             hashed_password = hash_password("google_auth_dummy_password")
             user = User(
                 email=email,
@@ -401,6 +440,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
             db.refresh(user)
             new_user = True
             print(f"New user created: {user.email}")
+
             # Uvítací email pre nového Google užívateľa
             try:
                 message = MessageSchema(
@@ -408,31 +448,27 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
                     recipients=[email],
                     body=f"""Ahoj {name},
 
-            vitajte v WordKeeper! Sme radi, že ste sa k nám pridali cez Google.
+vitajte v WordKeeper! Sme radi, že ste sa k nám pridali cez Google.
 
-            Začnite učiť nové slovíčka ešte dnes:
-            https://wordkeeper-1096007793591.us-central1.run.app/dashboard
+Začnite učiť nové slovíčka ešte dnes:
+https://wordkeeper-1096007793591.us-central1.run.app/dashboard
 
-            S pozdravom,
-            Tím WordKeeper
-            """,
+S pozdravom,
+Tím WordKeeper
+""",
                     subtype="plain"
                 )
                 fm = FastMail(mail_config)
                 await fm.send_message(message)
             except Exception as e:
-                print(f"Welcome email error: {e}")  # Neprerušiť registráciu ak email zlyhá
+                print(f"Welcome email error: {e}")
         else:
-            # Update name if not set
             if not user.name and name:
                 user.name = name
-                db.commit()
-            # Aktualizujte last_login timestamp
             user.last_login = datetime.utcnow()
             db.commit()
             print(f"Existing user found: {user.email}")
 
-        # Set session for web auth
         session_user = {
             "id": user.id,
             "email": user.email,
@@ -444,10 +480,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         request.session['user'] = session_user
         print(f"Session set for user: {user.email}")
 
-        # Generate JWT token for API auth (as expected by frontend)
         jwt_token = create_access_token(data={"sub": user.email})
-
-        # Redirect to callback page with token
         callback_url = f"{request.base_url}auth/callback?token={jwt_token}&new_user={'1' if new_user else '0'}&email={email}&name={name}"
         print(f"Redirecting to callback: {callback_url}")
         return RedirectResponse(url=callback_url)
@@ -456,11 +489,16 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         print(f"Google auth error: {e}")
         return RedirectResponse(url='/login?error=google_auth_failed')
 
+
 @app.get("/auth/callback")
 async def auth_callback(request: Request):
     return templates.TemplateResponse("auth-callback.html", {"request": request})
 
-# API endpoints
+
+# ============================================================
+# USER API ENDPOINTS
+# ============================================================
+
 @app.get("/api/user")
 async def get_current_user(request: Request, db: Session = Depends(get_db)):
     user_session = request.session.get('user')
@@ -481,6 +519,7 @@ async def get_current_user(request: Request, db: Session = Depends(get_db)):
         "created_at": user.created_at.isoformat() if user.created_at else None
     })
 
+
 @app.patch("/api/user/plus")
 async def toggle_user_plus(request: Request, db: Session = Depends(get_db)):
     user_session = request.session.get('user')
@@ -491,12 +530,11 @@ async def toggle_user_plus(request: Request, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Toggle the is_plus status
     user.is_plus = not user.is_plus
     db.commit()
     db.refresh(user)
 
-    # Update session
+    # ✅ Aktualizuj session
     user_session['is_plus'] = user.is_plus
     request.session['user'] = user_session
 
@@ -504,6 +542,7 @@ async def toggle_user_plus(request: Request, db: Session = Depends(get_db)):
         "message": "Plus status updated successfully",
         "is_plus": user.is_plus
     })
+
 
 @app.patch("/api/user/dark-mode")
 async def toggle_user_dark_mode(request: Request, db: Session = Depends(get_db)):
@@ -515,12 +554,11 @@ async def toggle_user_dark_mode(request: Request, db: Session = Depends(get_db))
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Toggle the dark_mode status
     user.dark_mode = not user.dark_mode
     db.commit()
     db.refresh(user)
 
-    # Update session
+    # ✅ Aktualizuj session
     user_session['dark_mode'] = user.dark_mode
     request.session['user'] = user_session
 
@@ -528,6 +566,7 @@ async def toggle_user_dark_mode(request: Request, db: Session = Depends(get_db))
         "message": "Dark mode status updated successfully",
         "dark_mode": user.dark_mode
     })
+
 
 @app.delete("/api/user")
 async def delete_user(request: Request, db: Session = Depends(get_db)):
@@ -539,316 +578,15 @@ async def delete_user(request: Request, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Delete the user (cascade will delete categories and words)
     db.delete(user)
     db.commit()
-
-    # Clear session
     request.session.clear()
 
     return JSONResponse({
         "message": "User account and associated data deleted successfully"
     })
 
-# KATEGÓRIE S DATABÁZOU
-@app.get("/api/v1/categories", response_model=list[CategoryResponse])
-async def get_categories(request: Request, db: Session = Depends(get_db)):
-    user_session = request.session.get('user')
-    if not user_session:
-        raise HTTPException(status_code=401, detail="Not authenticated")
 
-    user_id = user_session['id']
-    categories = db.query(Category).filter(Category.user_id == user_id).all()
-
-    # Pridaj štatistiky pre každú kategóriu
-    from app.models.word import KnowledgeLevel
-    from sqlalchemy import func
-
-    result = []
-    for category in categories:
-        # Spočítaj celkový počet slovíčok v kategórii
-        total_words = db.query(func.count(Word.id)).filter(Word.category_id == category.id, Word.user_id == user_id).scalar() or 0
-
-        # Spočítaj počet slovíčok podľa levelov
-        level_counts = {}
-        for level in KnowledgeLevel:
-            count = db.query(func.count(Word.id)).filter(
-                Word.category_id == category.id,
-                Word.knowledge_level == level.value,
-                Word.user_id == user_id
-            ).scalar() or 0
-            level_counts[level.value] = count
-
-        # Vypočítaj percentá
-        level_percentages = {}
-        if total_words > 0:
-            for level, count in level_counts.items():
-                level_percentages[level] = round((count / total_words) * 100, 1)
-        else:
-            # Ak nie sú žiadne slovíčka, všetky percentá sú 0
-            for level in KnowledgeLevel:
-                level_percentages[level.value] = 0.0
-
-        # Vytvor odpoveď s dodatočnými údajmi 
-        category_response = CategoryResponse(
-            id=category.id,
-            name=category.name,
-            description=category.description,
-            user_id=category.user_id,
-            created_at=category.created_at,
-            total_words=total_words,
-            level_counts=level_counts,
-            level_percentages=level_percentages
-        )
-        result.append(category_response)
-
-
-    return result
-
-@app.post("/api/v1/categories", response_model=CategoryResponse)
-async def create_category(category_data: CategoryCreate, db: Session = Depends(get_db)):
-    # Skontrolujte či používateľ existuje
-    user = db.query(User).filter(User.id == category_data.user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    # Check category limit
-    category_count = db.query(Category).filter(Category.user_id == category_data.user_id).count()
-    
-    if category_count >= 5:
-        raise HTTPException(status_code=400, detail="Maximum limit of 5 categories reached")
-
-    existing_category = db.query(Category).filter(
-        Category.name == category_data.name,
-        Category.user_id == category_data.user_id
-    ).first()
-    
-    if existing_category:
-        raise HTTPException(status_code=400, detail="Category with this name already exists")
-    
-    new_category = Category(
-        name=category_data.name,
-        description=category_data.description,
-        user_id=category_data.user_id
-    )
-    
-    db.add(new_category)
-    db.commit()
-    db.refresh(new_category)
-    
-    print(f"Category saved to database with ID: {new_category.id}")
-    return new_category
-
-@app.put("/api/v1/categories/{category_id}", response_model=CategoryResponse)
-async def update_category(category_id: int, category_update: CategoryUpdate, request: Request, db: Session = Depends(get_db)):
-    user_session = request.session.get('user')
-    if not user_session:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-
-    user_id = user_session['id']
-    category = db.query(Category).filter(Category.id == category_id, Category.user_id == user_id).first()
-    if not category:
-        raise HTTPException(status_code=404, detail="Category not found")
-
-    # Update fields
-    for field, value in category_update.dict(exclude_unset=True).items():
-        setattr(category, field, value)
-
-    db.commit()
-    db.refresh(category)
-
-    # Recalculate stats
-    from app.models.word import KnowledgeLevel
-    from sqlalchemy import func
-
-    total_words = db.query(func.count(Word.id)).filter(Word.category_id == category.id, Word.user_id == user_id).scalar() or 0
-
-    level_counts = {}
-    for level in KnowledgeLevel:
-        count = db.query(func.count(Word.id)).filter(
-            Word.category_id == category.id,
-            Word.knowledge_level == level.value,
-            Word.user_id == user_id
-        ).scalar() or 0
-        level_counts[level.value] = count
-
-    level_percentages = {}
-    if total_words > 0:
-        for level, count in level_counts.items():
-            level_percentages[level] = round((count / total_words) * 100, 1)
-    else:
-        for level in KnowledgeLevel:
-            level_percentages[level.value] = 0.0
-
-    return CategoryResponse(
-        id=category.id,
-        name=category.name,
-        description=category.description,
-        created_at=category.created_at,
-        user_id=category.user_id,
-        total_words=total_words,
-        level_counts=level_counts,
-        level_percentages=level_percentages
-    )
-
-@app.delete("/api/v1/categories/{category_id}")
-async def delete_category(category_id: int, db: Session = Depends(get_db)):
-    category = db.query(Category).filter(Category.id == category_id).first()
-    if not category:
-        raise HTTPException(status_code=404, detail="Category not found")
-
-    db.delete(category)
-    db.commit()
-
-    return {"message": "Category deleted successfully"}
-
-@app.get("/api/v1/categories/{category_id}", response_model=CategoryResponse)
-async def get_category_detail(category_id: int, request: Request, db: Session = Depends(get_db)):
-    user_session = request.session.get('user')
-    if not user_session:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-
-    user_id = user_session['id']
-    category = db.query(Category).filter(Category.id == category_id, Category.user_id == user_id).first()
-
-    if not category:
-        raise HTTPException(status_code=404, detail="Category not found")
-
-    # Pridaj štatistiky pre kategóriu
-    from app.models.word import KnowledgeLevel
-    from sqlalchemy import func
-
-    total_words = db.query(func.count(Word.id)).filter(Word.category_id == category.id, Word.user_id == user_id).scalar() or 0
-
-    level_counts = {}
-    for level in KnowledgeLevel:
-        count = db.query(func.count(Word.id)).filter(
-            Word.category_id == category.id,
-            Word.knowledge_level == level.value,
-            Word.user_id == user_id
-        ).scalar() or 0
-        level_counts[level.value] = count
-
-    level_percentages = {}
-    if total_words > 0:
-        for level, count in level_counts.items():
-            level_percentages[level] = round((count / total_words) * 100, 1)
-    else:
-        for level in KnowledgeLevel:
-            level_percentages[level.value] = 0.0
-
-    response_data = CategoryResponse(
-        id=category.id, name=category.name, description=category.description,
-        user_id=category.user_id,
-        created_at=category.created_at,
-        total_words=total_words,
-        level_counts=level_counts,
-        level_percentages=level_percentages
-    )
-    return response_data
-
-@app.get("/api/v1/categories/{category_id}/stats")
-async def get_category_stats(category_id: int, request: Request, db: Session = Depends(get_db)):
-    user_session = request.session.get('user')
-    if not user_session:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-
-    # Verify category belongs to user
-    category = db.query(Category).filter(Category.id == category_id, Category.user_id == user_session['id']).first()
-    if not category:
-        raise HTTPException(status_code=404, detail="Category not found")
-
-    # Get total words count
-    total_words = db.query(func.count(Word.id)).filter(Word.category_id == category_id, Word.user_id == user_session['id']).scalar() or 0
-
-    # Get counts by knowledge level
-    from app.models.word import KnowledgeLevel
-    level_counts = {}
-    for level in KnowledgeLevel:
-        count = db.query(func.count(Word.id)).filter(
-            Word.category_id == category_id,
-            Word.knowledge_level == level.value,
-            Word.user_id == user_session['id']
-        ).scalar() or 0
-        level_counts[level.value] = count
-
-    # Calculate percentages
-    stats = {
-        "total_words": total_words,
-        "dont_know_percentage": round((level_counts.get('dont_know', 0) / total_words * 100), 1) if total_words > 0 else 0,
-        "learning_percentage": round((level_counts.get('learning', 0) / total_words * 100), 1) if total_words > 0 else 0,
-        "know_percentage": round((level_counts.get('know', 0) / total_words * 100), 1) if total_words > 0 else 0
-    }
-
-    return JSONResponse(stats)
-
-# Endpoint na získanie používateľov
-@app.get("/api/v1/users")
-async def get_users(db: Session = Depends(get_db)):
-    users = db.query(User).all()
-    return [
-        {"id": user.id, "email": user.email, "name": user.name}
-        for user in users
-    ]
-
-# Debug endpointy
-@app.get("/api/debug/categories")
-async def debug_categories(db: Session = Depends(get_db)):
-    categories = db.query(Category).all()
-    return {
-        "total_categories": len(categories),
-        "categories": [
-            {"id": cat.id, "name": cat.name, "description": cat.description, "user_id": cat.user_id}
-            for cat in categories
-        ]
-    }
-
-@app.get("/api/debug/users")
-async def debug_users(db: Session = Depends(get_db)):
-    users = db.query(User).all()
-    return {
-        "total_users": len(users),
-        "users": [
-            {"id": user.id, "email": user.email, "name": user.name}
-            for user in users
-        ]
-    }
-
-# Automaticky vytvor tabuľky pri štarte
-@app.on_event("startup")
-async def startup_event():
-    # Najprv vytvoríme všetky tabuľky
-    #Base.metadata.create_all(bind=engine)
-    print("Database tables created")
-
-    # Potom vytvoríme alebo aktualizujeme testovacieho používateľa
-    db = SessionLocal()
-    try:
-        test_user = db.query(User).filter(User.email == "test@example.com").first()
-        hashed_password = hash_password("test123")
-        if not test_user:
-            test_user = User(email="test@example.com", name="Test User", is_plus=False, password=hashed_password)
-            db.add(test_user)
-            print("Test user created with password 'test123'")
-        else:
-            # Update password to ensure it's using bcrypt hash
-            if not verify_password("test123", test_user.password):
-                test_user.password = hashed_password
-                db.commit()
-                print("Test user password updated to bcrypt hash")
-            else:
-                print("Test user already exists with correct password")
-        db.commit()
-    except Exception as e:
-        print(f"Error creating/updating test user: {e}")
-    finally:
-        db.close()
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
-
-# New endpoint to get user statistics
 @app.get("/api/user/stats")
 async def get_user_stats(request: Request, db: Session = Depends(get_db)):
     user_session = request.session.get('user')
@@ -857,22 +595,15 @@ async def get_user_stats(request: Request, db: Session = Depends(get_db)):
 
     user_id = user_session['id']
 
-    # Count words for user
     words_count = db.query(func.count(Word.id)).filter(Word.user_id == user_id).scalar() or 0
-
-    # Count categories for user
     categories_count = db.query(func.count(Category.id)).filter(Category.user_id == user_id).scalar() or 0
-
-    # Sum tests taken and times correct for user's words
     tests_taken = db.query(func.coalesce(func.sum(Word.times_tested), 0)).filter(Word.user_id == user_id).scalar() or 0
     times_correct = db.query(func.coalesce(func.sum(Word.times_correct), 0)).filter(Word.user_id == user_id).scalar() or 0
 
-    # Calculate success rate
     success_rate = 0
     if tests_taken > 0:
         success_rate = round((times_correct / tests_taken) * 100, 2)
 
-    # Count words by knowledge level
     from app.schemas.word import KnowledgeLevel
     level_counts = {}
     for level in KnowledgeLevel:
@@ -890,9 +621,9 @@ async def get_user_stats(request: Request, db: Session = Depends(get_db)):
         "words_by_level": level_counts
     })
 
+
 from fastapi.responses import StreamingResponse
 import json
-from datetime import datetime
 
 @app.get("/api/user/export")
 async def export_user_data(request: Request, db: Session = Depends(get_db)):
@@ -902,18 +633,13 @@ async def export_user_data(request: Request, db: Session = Depends(get_db)):
 
     user_id = user_session['id']
 
-    # Get user data
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Get all categories for user
     categories = db.query(Category).filter(Category.user_id == user_id).all()
-
-    # Get all words for user
     words = db.query(Word).filter(Word.user_id == user_id).all()
 
-    # Prepare export data
     export_data = {
         "export_info": {
             "exported_at": datetime.utcnow().isoformat(),
@@ -947,7 +673,6 @@ async def export_user_data(request: Request, db: Session = Depends(get_db)):
         ]
     }
 
-    # Create JSON response for download
     def generate():
         yield json.dumps(export_data, indent=2, ensure_ascii=False)
 
@@ -960,28 +685,305 @@ async def export_user_data(request: Request, db: Session = Depends(get_db)):
     )
 
 
-############### EMAIL ENDPOINT ###############
-from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
-from datetime import datetime, timedelta
-import secrets
+# ============================================================
+# CATEGORIES API ENDPOINTS
+# ============================================================
 
-mail_config = ConnectionConfig(
-    MAIL_USERNAME=os.getenv("MAIL_USERNAME"),
-    MAIL_PASSWORD=os.getenv("MAIL_PASSWORD"),
-    MAIL_FROM=os.getenv("MAIL_FROM"),
-    MAIL_PORT=587,
-    MAIL_SERVER="smtp.gmail.com",
-    MAIL_STARTTLS=True,
-    MAIL_SSL_TLS=False,
-    USE_CREDENTIALS=True
-)
+@app.get("/api/v1/categories", response_model=list[CategoryResponse])
+async def get_categories(request: Request, db: Session = Depends(get_db)):
+    user_session = request.session.get('user')
+    if not user_session:
+        raise HTTPException(status_code=401, detail="Not authenticated")
 
-# 1. Stránka kde user zadá email
+    user_id = user_session['id']
+    categories = db.query(Category).filter(Category.user_id == user_id).all()
+
+    from app.models.word import KnowledgeLevel
+
+    result = []
+    for category in categories:
+        total_words = db.query(func.count(Word.id)).filter(Word.category_id == category.id, Word.user_id == user_id).scalar() or 0
+
+        level_counts = {}
+        for level in KnowledgeLevel:
+            count = db.query(func.count(Word.id)).filter(
+                Word.category_id == category.id,
+                Word.knowledge_level == level.value,
+                Word.user_id == user_id
+            ).scalar() or 0
+            level_counts[level.value] = count
+
+        level_percentages = {}
+        if total_words > 0:
+            for level, count in level_counts.items():
+                level_percentages[level] = round((count / total_words) * 100, 1)
+        else:
+            for level in KnowledgeLevel:
+                level_percentages[level.value] = 0.0
+
+        category_response = CategoryResponse(
+            id=category.id,
+            name=category.name,
+            description=category.description,
+            user_id=category.user_id,
+            created_at=category.created_at,
+            total_words=total_words,
+            level_counts=level_counts,
+            level_percentages=level_percentages
+        )
+        result.append(category_response)
+
+    return result
+
+
+@app.post("/api/v1/categories", response_model=CategoryResponse)
+async def create_category(category_data: CategoryCreate, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == category_data.user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    category_count = db.query(Category).filter(Category.user_id == category_data.user_id).count()
+    if category_count >= 5:
+        raise HTTPException(status_code=400, detail="Maximum limit of 5 categories reached")
+
+    existing_category = db.query(Category).filter(
+        Category.name == category_data.name,
+        Category.user_id == category_data.user_id
+    ).first()
+    if existing_category:
+        raise HTTPException(status_code=400, detail="Category with this name already exists")
+
+    new_category = Category(
+        name=category_data.name,
+        description=category_data.description,
+        user_id=category_data.user_id
+    )
+    db.add(new_category)
+    db.commit()
+    db.refresh(new_category)
+
+    print(f"Category saved to database with ID: {new_category.id}")
+    return new_category
+
+
+@app.put("/api/v1/categories/{category_id}", response_model=CategoryResponse)
+async def update_category(category_id: int, category_update: CategoryUpdate, request: Request, db: Session = Depends(get_db)):
+    user_session = request.session.get('user')
+    if not user_session:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    user_id = user_session['id']
+    category = db.query(Category).filter(Category.id == category_id, Category.user_id == user_id).first()
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found")
+
+    for field, value in category_update.dict(exclude_unset=True).items():
+        setattr(category, field, value)
+
+    db.commit()
+    db.refresh(category)
+
+    from app.models.word import KnowledgeLevel
+
+    total_words = db.query(func.count(Word.id)).filter(Word.category_id == category.id, Word.user_id == user_id).scalar() or 0
+
+    level_counts = {}
+    for level in KnowledgeLevel:
+        count = db.query(func.count(Word.id)).filter(
+            Word.category_id == category.id,
+            Word.knowledge_level == level.value,
+            Word.user_id == user_id
+        ).scalar() or 0
+        level_counts[level.value] = count
+
+    level_percentages = {}
+    if total_words > 0:
+        for level, count in level_counts.items():
+            level_percentages[level] = round((count / total_words) * 100, 1)
+    else:
+        for level in KnowledgeLevel:
+            level_percentages[level.value] = 0.0
+
+    return CategoryResponse(
+        id=category.id,
+        name=category.name,
+        description=category.description,
+        created_at=category.created_at,
+        user_id=category.user_id,
+        total_words=total_words,
+        level_counts=level_counts,
+        level_percentages=level_percentages
+    )
+
+
+@app.delete("/api/v1/categories/{category_id}")
+async def delete_category(category_id: int, db: Session = Depends(get_db)):
+    category = db.query(Category).filter(Category.id == category_id).first()
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found")
+
+    db.delete(category)
+    db.commit()
+
+    return {"message": "Category deleted successfully"}
+
+
+@app.get("/api/v1/categories/{category_id}", response_model=CategoryResponse)
+async def get_category_detail(category_id: int, request: Request, db: Session = Depends(get_db)):
+    user_session = request.session.get('user')
+    if not user_session:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    user_id = user_session['id']
+    category = db.query(Category).filter(Category.id == category_id, Category.user_id == user_id).first()
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found")
+
+    from app.models.word import KnowledgeLevel
+
+    total_words = db.query(func.count(Word.id)).filter(Word.category_id == category.id, Word.user_id == user_id).scalar() or 0
+
+    level_counts = {}
+    for level in KnowledgeLevel:
+        count = db.query(func.count(Word.id)).filter(
+            Word.category_id == category.id,
+            Word.knowledge_level == level.value,
+            Word.user_id == user_id
+        ).scalar() or 0
+        level_counts[level.value] = count
+
+    level_percentages = {}
+    if total_words > 0:
+        for level, count in level_counts.items():
+            level_percentages[level] = round((count / total_words) * 100, 1)
+    else:
+        for level in KnowledgeLevel:
+            level_percentages[level.value] = 0.0
+
+    return CategoryResponse(
+        id=category.id,
+        name=category.name,
+        description=category.description,
+        user_id=category.user_id,
+        created_at=category.created_at,
+        total_words=total_words,
+        level_counts=level_counts,
+        level_percentages=level_percentages
+    )
+
+
+@app.get("/api/v1/categories/{category_id}/stats")
+async def get_category_stats(category_id: int, request: Request, db: Session = Depends(get_db)):
+    user_session = request.session.get('user')
+    if not user_session:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    category = db.query(Category).filter(Category.id == category_id, Category.user_id == user_session['id']).first()
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found")
+
+    total_words = db.query(func.count(Word.id)).filter(Word.category_id == category_id, Word.user_id == user_session['id']).scalar() or 0
+
+    from app.models.word import KnowledgeLevel
+    level_counts = {}
+    for level in KnowledgeLevel:
+        count = db.query(func.count(Word.id)).filter(
+            Word.category_id == category_id,
+            Word.knowledge_level == level.value,
+            Word.user_id == user_session['id']
+        ).scalar() or 0
+        level_counts[level.value] = count
+
+    stats = {
+        "total_words": total_words,
+        "dont_know_percentage": round((level_counts.get('dont_know', 0) / total_words * 100), 1) if total_words > 0 else 0,
+        "learning_percentage": round((level_counts.get('learning', 0) / total_words * 100), 1) if total_words > 0 else 0,
+        "know_percentage": round((level_counts.get('know', 0) / total_words * 100), 1) if total_words > 0 else 0
+    }
+
+    return JSONResponse(stats)
+
+
+# ============================================================
+# MISC API ENDPOINTS
+# ============================================================
+
+@app.get("/api/v1/users")
+async def get_users(db: Session = Depends(get_db)):
+    users = db.query(User).all()
+    return [
+        {"id": user.id, "email": user.email, "name": user.name}
+        for user in users
+    ]
+
+
+@app.get("/api/debug/categories")
+async def debug_categories(db: Session = Depends(get_db)):
+    categories = db.query(Category).all()
+    return {
+        "total_categories": len(categories),
+        "categories": [
+            {"id": cat.id, "name": cat.name, "description": cat.description, "user_id": cat.user_id}
+            for cat in categories
+        ]
+    }
+
+
+@app.get("/api/debug/users")
+async def debug_users(db: Session = Depends(get_db)):
+    users = db.query(User).all()
+    return {
+        "total_users": len(users),
+        "users": [
+            {"id": user.id, "email": user.email, "name": user.name}
+            for user in users
+        ]
+    }
+
+
+# ============================================================
+# STARTUP EVENT
+# ============================================================
+
+@app.on_event("startup")
+async def startup_event():
+    print("Database tables created")
+    db = SessionLocal()
+    try:
+        test_user = db.query(User).filter(User.email == "test@example.com").first()
+        hashed_password = hash_password("test123")
+        if not test_user:
+            test_user = User(email="test@example.com", name="Test User", is_plus=False, password=hashed_password)
+            db.add(test_user)
+            print("Test user created with password 'test123'")
+        else:
+            if not verify_password("test123", test_user.password):
+                test_user.password = hashed_password
+                db.commit()
+                print("Test user password updated to bcrypt hash")
+            else:
+                print("Test user already exists with correct password")
+        db.commit()
+    except Exception as e:
+        print(f"Error creating/updating test user: {e}")
+    finally:
+        db.close()
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+
+
+# ============================================================
+# EMAIL / PASSWORD RESET ENDPOINTS
+# ============================================================
+
 @app.get("/forgot-password")
 async def forgot_password_page(request: Request):
     return templates.TemplateResponse("forgot_password.html", {"request": request})
 
-# 2. Odošle reset email
+
 @app.post("/api/v1/forgot-password")
 async def forgot_password(request: Request, db: Session = Depends(get_db)):
     data = await request.json()
@@ -989,16 +991,13 @@ async def forgot_password(request: Request, db: Session = Depends(get_db)):
 
     user = db.query(User).filter(User.email == email).first()
     if not user:
-        # Vrátime success aj keď user neexistuje (bezpečnosť)
         return JSONResponse({"message": "Ak email existuje, poslali sme odkaz."})
 
-    # Vygeneruj token
     token = secrets.token_urlsafe(32)
     user.reset_token = token
     user.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
     db.commit()
 
-    # Pošli email
     reset_url = f"{request.base_url}reset-password?token={token}"
     message = MessageSchema(
         subject="Reset hesla – WordKeeper",
@@ -1011,12 +1010,12 @@ async def forgot_password(request: Request, db: Session = Depends(get_db)):
 
     return JSONResponse({"message": "Ak email existuje, poslali sme odkaz."})
 
-# 3. Stránka kde user zadá nové heslo
+
 @app.get("/reset-password")
 async def reset_password_page(request: Request, token: str):
     return templates.TemplateResponse("reset_password.html", {"request": request, "token": token})
 
-# 4. Uloží nové heslo
+
 @app.post("/api/v1/reset-password")
 async def reset_password(request: Request, db: Session = Depends(get_db)):
     data = await request.json()
