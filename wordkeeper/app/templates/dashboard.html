@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-en="Dashboard" data-sk="Dashboard">Dashboard</title>
+
+    <!-- 1. BLESKOVÝ START: Skript v head bez "defer", aby sa vykonal pred vykreslením -->
+    <script>
+        (function() {
+            if (localStorage.getItem('darkMode') === 'true') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
+    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #4079ff;
+            --primary-light: #40ffaa;
+            --primary-gradient: linear-gradient(135deg, #4079ff, #40ffaa);
+            --bg-color: #f4f7fe;
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --input-bg: #ffffff;
+            --danger: #ff5555;
+            --shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.95);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --input-bg: #1e293b;
+            --shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            min-height: 100vh;
+            /* ✅ transition tu nie je, aby to pri načítaní nepreblikávalo */
+        }
+
+        /* ✅ Animáciu farieb zapneme až po úplnom načítaní stránky */
+        body.theme-ready {
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .background-shapes { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+        .shape { position: absolute; color: var(--primary); opacity: 0.1; font-weight: bold; animation: floatUp linear infinite; }
+
+        @keyframes floatUp {
+            0% { transform: translateY(110vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.2; }
+            100% { transform: translateY(-20vh) rotate(360deg); opacity: 0; }
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+        .navbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem; }
+        .header-controls { display: flex; gap: 10px; align-items: center; }
+
+        .lang-btn {
+            padding: 0.5rem 1rem; border-radius: 10px; border: 1px solid var(--text-muted);
+            background: var(--card-bg); color: var(--text-main); cursor: pointer; font-weight: 600;
+        }
+        .lang-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        .icon-btn {
+            padding: 0.6rem 1rem; border-radius: 12px; border: none;
+            background: var(--card-bg); color: var(--text-main);
+            box-shadow: var(--shadow); cursor: pointer; transition: 0.3s;
+            display: flex; align-items: center; gap: 8px; text-decoration: none;
+            font-size: 0.9rem; font-weight: 600;
+        }
+        .icon-btn:hover { background: var(--primary); color: white; }
+
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem; margin-bottom: 3rem;
+        }
+        .stat-card {
+            background: var(--card-bg); padding: 1.5rem; border-radius: 20px;
+            box-shadow: var(--shadow); display: flex; align-items: center; gap: 1.2rem;
+            backdrop-filter: blur(10px);
+        }
+        .stat-icon {
+            width: 50px; height: 50px; border-radius: 12px;
+            background: var(--primary-gradient);
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 1.2rem;
+        }
+
+        .category-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem; padding: 0; list-style: none;
+        }
+        .category-item {
+            background: var(--card-bg); border-radius: 24px; padding: 1.5rem;
+            box-shadow: var(--shadow); transition: 0.3s; position: relative;
+            cursor: pointer; border: 1px solid transparent;
+        }
+        .category-item:hover { transform: translateY(-5px); border-color: var(--primary-light); }
+        .category-name { font-size: 1.3rem; font-weight: 700; color: var(--primary); margin: 0 0 0.5rem 0; }
+        .category-desc { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem; min-height: 2.5rem; }
+
+        .chart-row {
+            display: flex; align-items: center; gap: 1rem;
+            border-top: 1px solid rgba(128,128,128,0.1); padding-top: 1rem;
+        }
+
+        .card-actions { position: absolute; top: 1rem; right: 1rem; display: flex; gap: 5px; opacity: 0; transition: 0.2s; }
+        .category-item:hover .card-actions { opacity: 1; }
+
+        .category-item.locked {
+            opacity: 0.6;
+            filter: grayscale(0.9);
+            cursor: default;
+            background: var(--bg-color);
+        }
+        .category-item.locked:hover {
+            transform: none;
+            border-color: transparent;
+        }
+
+        .modal {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);
+            z-index: 1000; align-items: center; justify-content: center;
+        }
+        .modal-content { background: var(--card-bg); padding: 2.5rem; border-radius: 25px; width: 90%; max-width: 450px; }
+
+        input, textarea {
+            width: 100%; padding: 0.8rem; margin: 0.5rem 0 1.5rem 0;
+            border-radius: 12px; border: 2px solid transparent;
+            background: var(--input-bg); color: var(--text-main); box-sizing: border-box;
+        }
+        input:focus { border-color: var(--primary); outline: none; }
+        .btn-primary {
+            background: var(--primary-gradient); color: white; padding: 0.8rem 2rem;
+            border: none; border-radius: 15px; font-weight: 700; cursor: pointer; width: 100%;
+        }
+
+        .mini-chart { width: 70px !important; height: 70px !important; }
+        
+        @media (max-width: 600px) {
+            .navbar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1.5rem;
+            }
+            .header-controls {
+                display: inline-grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+                width: 100%;
+            }
+            .header-controls .icon-btn {
+                justify-content: center;
+            }
+            .lang-btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+
+        #message {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateX(calc(100% + 20px));
+            transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+            opacity: 0;
+        }
+        #message.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        #message i { font-size: 1.2rem; }
+    </style>
+</head>
+<body>
+
+    <div class="background-shapes" id="bgShapes"></div>
+
+    <div class="container">
+        <nav class="navbar">
+            <div>
+                <h1 style="margin:0; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Flashcards</h1>
+                <p style="margin:0; font-size: 0.9rem; color: var(--text-muted)">
+                    <i class="fa-solid fa-user-circle"></i> <span id="userEmail">Načítavam...</span>
+                </p>
+            </div>
+            <div class="header-controls">
+                <button class="lang-btn" data-lang="en">EN</button>
+                <button class="lang-btn" data-lang="sk">SK</button>
+                
+                <a href="/profile" class="icon-btn">
+                    <i class="fa-solid fa-user-gear"></i>
+                    <span data-en="Profile" data-sk="Profil">Profil</span>
+                </a>
+
+                <button class="icon-btn" onclick="logout()" style="color: var(--danger)">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
+            </div>
+        </nav>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fa-solid fa-folder"></i></div>
+                <div>
+                    <div id="statsTotalCategories" style="font-size: 1.5rem; font-weight: 800;">0</div>
+                    <div style="color: var(--text-muted); font-size: 0.8rem;" data-en="Categories" data-sk="Kategórie">Kategórie</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fa-solid fa-spell-check"></i></div>
+                <div>
+                    <div id="statsTotalWords" style="font-size: 1.5rem; font-weight: 800;">0</div>
+                    <div style="color: var(--text-muted); font-size: 0.8rem;" data-en="Total Words" data-sk="Slovíčka spolu">Slovíčka spolu</div>
+                </div>
+            </div>
+            <div id="statsWordsByLevel" class="stat-card" style="justify-content: space-around;"></div>
+        </div>
+
+        <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+            <h2 data-en="Your Categories" data-sk="Tvoje kategórie">Tvoje kategórie</h2>
+            <button onclick="openCreateModal()" class="btn-primary" style="width: auto;">
+                <i class="fa-solid fa-plus"></i> <span data-en="New Category" data-sk="Nová kategória">Nová kategória</span>
+            </button>
+        </div>
+
+        <ul id="categoriesList" class="category-grid"></ul>
+    </div>
+
+    <!-- Modaly ... (zostávajú nezmenené) ... -->
+    <div id="createModal" class="modal">
+        <div class="modal-content">
+            <h3 data-en="Create New Category" data-sk="Vytvoriť kategóriu">Vytvoriť kategóriu</h3>
+            <form id="createCategoryForm">
+                <label data-en="Name" data-sk="Názov">Názov</label>
+                <input type="text" id="createName" name="name" required>
+                <label data-en="Description" data-sk="Popis">Popis</label>
+                <textarea id="createDescription" name="description" rows="3"></textarea>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" onclick="closeCreateModal()" class="lang-btn" style="flex: 1;" data-en="Cancel" data-sk="Zrušiť">Zrušiť</button>
+                    <button type="submit" class="btn-primary" style="flex: 2;" data-en="Create" data-sk="Vytvoriť">Vytvoriť</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <h3 data-en="Edit Category" data-sk="Upraviť kategóriu">Upraviť kategóriu</h3>
+            <form id="editCategoryForm">
+                <input type="hidden" id="editCategoryId">
+                <label data-en="Name" data-sk="Názov">Názov</label>
+                <input type="text" id="editName" name="name" required>
+                <label data-en="Description" data-sk="Popis">Popis</label>
+                <textarea id="editDescription" name="description" rows="3"></textarea>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" onclick="closeEditModal()" class="lang-btn" style="flex: 1;" data-en="Cancel" data-sk="Zrušiť">Zrušiť</button>
+                    <button type="submit" class="btn-primary" style="flex: 2;" data-en="Save Changes" data-sk="Uložiť zmeny">Uložiť zmeny</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="deleteModal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <i class="fa-solid fa-triangle-exclamation" style="font-size: 3rem; color: var(--danger); margin-bottom: 1rem;"></i>
+            <h3 data-en="Are you sure?" data-sk="Ste si istý?">Ste si istý?</h3>
+            <p data-en="This will delete all words in this category." data-sk="Týmto vymažete všetky slovíčka v kategórii.">Týmto vymažete všetky slovíčka v kategórii.</p>
+            <div style="display: flex; gap: 10px; margin-top: 2rem;">
+                <button onclick="closeDeleteModal()" class="lang-btn" style="flex: 1;" data-en="Cancel" data-sk="Zrušiť">Zrušiť</button>
+                <button onclick="confirmDelete()" class="btn-primary" style="flex: 1; background: var(--danger);" data-en="Delete" data-sk="Vymazať">Vymazať</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="message"><i id="messageIcon" class="fa-solid"></i><span id="messageText"></span></div>
+
+    <script>
+        let currentUserId = null;
+        let currentUserIsPlus = false;
+        let categoryToDelete = null;
+        let allCategories = [];
+        let currentLang = localStorage.getItem('preferredLang') || 'sk';
+
+        window.addEventListener('pageshow', async () => {
+            initBackground();
+            await loadUserData();
+            loadUserStats();
+            loadCategories();
+            setupLanguages();
+            
+            // ✅ Až teraz zapneme CSS prechody, aby dark mode neblikal pri štarte
+            setTimeout(() => {
+                document.body.classList.add('theme-ready');
+            }, 100);
+        });
+
+        async function loadUserData() {
+            try {
+                const res = await fetch('/api/user');
+                const user = await res.json();
+                document.getElementById('userEmail').textContent = user.name || user.email;
+                currentUserId = user.id;
+                currentUserIsPlus = user.is_plus;
+
+                // ✅ Synchronizácia: Iba ak sa líši nastavenie na serveri od local, zmeníme to.
+                // To zabráni zbytočnému prepisovaniu už aplikovanej témy.
+                const isDarkServer = user.dark_mode;
+                const isDarkLocal = localStorage.getItem('darkMode') === 'true';
+
+                if (isDarkServer !== isDarkLocal) {
+                    localStorage.setItem('darkMode', isDarkServer);
+                    document.documentElement.setAttribute('data-theme', isDarkServer ? 'dark' : '');
+                }
+
+            } catch (err) { window.location.href = '/login'; }
+        }
+
+        // ... zvyšok tvojho JS (loadUserStats, displayCategories, atď.) zostáva rovnaký ...
+        
+        function initBackground() {
+            const bg = document.getElementById('bgShapes');
+            const chars = ['A', 'B', 'C', '1', '?', '!'];
+            setInterval(() => {
+                const s = document.createElement('div');
+                s.className = 'shape';
+                s.textContent = chars[Math.floor(Math.random() * chars.length)];
+                s.style.left = Math.random() * 100 + 'vw';
+                s.style.fontSize = (Math.random() * 30 + 10) + 'px';
+                s.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                bg.appendChild(s);
+                setTimeout(() => s.remove(), 15000);
+            }, 1200);
+        }
+
+        async function loadUserStats() {
+            try {
+                const res = await fetch('/api/user/stats');
+                const stats = await res.json();
+                document.getElementById('statsTotalCategories').textContent = stats.total_categories;
+                document.getElementById('statsTotalWords').textContent = stats.total_words;
+                
+                const labels = {
+                    sk: { dk: "Neviem", lr: "Učím sa", kn: "Viem" },
+                    en: { dk: "Don't Know", lr: "Learning", kn: "Know" }
+                };
+                const l = labels[currentLang];
+
+                document.getElementById('statsWordsByLevel').innerHTML = `
+                    <div style="text-align:center"><div style="color:#d9534f; font-weight:800">${stats.words_by_level.dont_know}</div><small>${l.dk}</small></div>
+                    <div style="text-align:center"><div style="color:#f0ad4e; font-weight:800">${stats.words_by_level.learning}</div><small>${l.lr}</small></div>
+                    <div style="text-align:center"><div style="color:#5cb85c; font-weight:800">${stats.words_by_level.know}</div><small>${l.kn}</small></div>
+                `;
+            } catch (err) {}
+        }
+
+        async function loadCategories() {
+            try {
+                const res = await fetch('/api/v1/categories');
+                allCategories = res.ok ? await res.json() : [];
+                displayCategories(allCategories);
+            } catch (err) { displayCategories([]); }
+        }
+
+        function displayCategories(categories) {
+            const list = document.getElementById('categoriesList');
+            const labels = {
+                sk: { dk: "Neviem", lr: "Učím sa", kn: "Viem", words: "SLOV" },
+                en: { dk: "Don't Know", lr: "Learning", kn: "Know", words: "WORDS" }
+            };
+            const l = labels[currentLang];
+
+            categories.sort((a, b) => {
+                const dateA = a.created_at ? new Date(a.created_at) : new Date(0);
+                const dateB = b.created_at ? new Date(b.created_at) : new Date(0);
+                return dateB - dateA;
+            });
+
+            const formatDate = (dateString) => {
+                if (!dateString) return '';
+                const d = new Date(dateString);
+                const pad = (n) => String(n).padStart(2, '0');
+                return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()}`;
+            };
+
+            const newestId = categories.length > 0 ? categories[0].id : null;
+
+            list.innerHTML = categories.map(c => `
+                <li class="category-item ${(!currentUserIsPlus && c.id !== newestId) ? 'locked' : ''}" 
+                    onclick="handleCategoryClick(event, ${c.id}, ${(!currentUserIsPlus && c.id !== newestId)})">
+                    <div class="card-actions">
+                        ${(!currentUserIsPlus && c.id !== newestId) ? '<i class="fa-solid fa-lock" style="padding: 0.5rem; color: var(--text-muted);"></i>' : ''}
+                        <button class="icon-btn" style="padding: 0.5rem;" onclick="openEditModal(${c.id}, '${c.name.replace(/'/g, "\\'")}')"><i class="fa-solid fa-pen"></i></button>
+                        <button class="icon-btn" style="padding: 0.5rem; color:var(--danger)" onclick="openDeleteModal(${c.id})"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                    <h3 class="category-name">${c.name}</h3>
+                    <p class="category-desc">${c.description || ''}</p>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1rem; display: flex; align-items: center; gap: 5px;">
+                        <i class="fa-regular fa-calendar"></i> 
+                        <span>${formatDate(c.created_at)}</span>
+                    </div>
+                    <div class="chart-row">
+                        <canvas id="chart-${c.id}" class="mini-chart"></canvas>
+                        <div style="font-size: 0.75rem; flex-grow: 1;">
+                            <div style="color:#d9534f">● ${l.dk}: ${c.level_counts?.dont_know || 0}</div>
+                            <div style="color:#f0ad4e">● ${l.lr}: ${c.level_counts?.learning || 0}</div>
+                            <div style="color:#5cb85c">● ${l.kn}: ${c.level_counts?.know || 0}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-weight: 800;">${c.total_words || 0}</div>
+                            <small style="color: var(--text-muted); font-size: 0.6rem;">${l.words}</small>
+                        </div>
+                    </div>
+                </li>
+            `).join('');
+            categories.forEach(c => setTimeout(() => createMiniChart(c), 50));
+        }
+
+        function handleCategoryClick(event, id, isLocked) {
+            if (event.target.closest('button')) return;
+            if (!isLocked) window.location.href = `/category/${id}/words`;
+        }
+
+        function createMiniChart(c) {
+            const el = document.getElementById(`chart-${c.id}`);
+            if (!el) return;
+            const ctx = el.getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [c.level_counts?.dont_know || 0, c.level_counts?.learning || 0, c.level_counts?.know || 0],
+                        backgroundColor: ['#d9534f', '#f0ad4e', '#5cb85c'],
+                        borderWidth: 0
+                    }]
+                },
+                options: { cutout: '70%', plugins: { legend: { display: false } } }
+            });
+        }
+
+        function setupLanguages() {
+            document.querySelectorAll('.lang-btn').forEach(b => {
+                b.addEventListener('click', () => {
+                    currentLang = b.dataset.lang;
+                    setLang(currentLang);
+                    loadUserStats();
+                    displayCategories(allCategories);
+                });
+            });
+            setLang(currentLang);
+        }
+
+        function setLang(lang) {
+            localStorage.setItem('preferredLang', lang);
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+            document.querySelectorAll('[data-en]').forEach(el => {
+                const text = el.getAttribute(`data-${lang}`);
+                if (text) el.textContent = text;
+            });
+        }
+
+        function showMessage(text, type = 'success') {
+            const messageEl = document.getElementById('message');
+            const messageText = document.getElementById('messageText');
+            const messageIcon = document.getElementById('messageIcon');
+            messageText.textContent = text;
+            messageEl.style.background = type === 'success' ? '#5cb85c' : 'var(--danger)';
+            messageIcon.className = type === 'success' ? 'fa-solid fa-check-circle' : 'fa-solid fa-exclamation-circle';
+            messageEl.classList.add('show');
+            setTimeout(() => messageEl.classList.remove('show'), 3000);
+        }
+
+        function openEditModal(id, name) {
+            const cat = allCategories.find(c => c.id === id);
+            document.getElementById('editCategoryId').value = id;
+            document.getElementById('editName').value = name;
+            document.getElementById('editDescription').value = cat ? (cat.description || '') : '';
+            document.getElementById('editModal').style.display = 'flex';
+            setLang(currentLang);
+        }
+
+        function openCreateModal() {
+            const limit = 5;
+            if (allCategories.length >= limit) {
+                const msg = currentLang === 'sk'
+                    ? `Dosiahli ste maximálny počet kategórií (${limit}).`
+                    : `You have reached the maximum number of categories (${limit}).`;
+                showMessage(msg, 'error');
+                return;
+            }
+            document.getElementById('createModal').style.display = 'flex';
+            setLang(currentLang);
+        }
+
+        function openDeleteModal(id) {
+            categoryToDelete = id;
+            document.getElementById('deleteModal').style.display = 'flex';
+            setLang(currentLang);
+        }
+
+        function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
+        function closeCreateModal() { document.getElementById('createModal').style.display = 'none'; }
+        function closeDeleteModal() { document.getElementById('deleteModal').style.display = 'none'; }
+
+        document.getElementById('editCategoryForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('editCategoryId').value;
+            const res = await fetch(`/api/v1/categories/${id}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    name: document.getElementById('editName').value,
+                    description: document.getElementById('editDescription').value
+                })
+            });
+            if (res.ok) { 
+                closeEditModal(); 
+                loadCategories(); 
+                showMessage(currentLang === 'sk' ? 'Kategória upravená!' : 'Category updated!', 'success');
+            }
+        });
+
+        document.getElementById('createCategoryForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const res = await fetch('/api/v1/categories', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    name: document.getElementById('createName').value,
+                    description: document.getElementById('createDescription').value,
+                    user_id: currentUserId
+                })
+            });
+            if (res.ok) { 
+                closeCreateModal(); 
+                e.target.reset(); 
+                loadCategories(); 
+                loadUserStats(); 
+                showMessage(currentLang === 'sk' ? 'Kategória vytvorená!' : 'Category created!', 'success');
+            }
+        });
+
+        async function confirmDelete() {
+            const res = await fetch(`/api/v1/categories/${categoryToDelete}`, { method: 'DELETE' });
+            if (res.ok) { 
+                closeDeleteModal(); 
+                loadCategories(); 
+                loadUserStats(); 
+                showMessage(currentLang === 'sk' ? 'Kategória vymazaná!' : 'Category deleted!', 'success');
+            }
+        }
+
+        function logout() { fetch('/api/v1/logout', { method: 'GET' }).then(() => window.location.href = '/login'); }
+    </script>
+</body>
+</html>

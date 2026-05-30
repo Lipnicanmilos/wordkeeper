@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+
+<html lang="sk">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-en="Edit Profile" data-sk="Upraviť profil">Upraviť profil</title>
+
+<!-- ✅ OPRAVA 1: Dark mode sa aplikuje OKAMŽITE z localStorage, pred akýmkoľvek renderingom -->
+<script>
+  if (localStorage.getItem('darkMode') === 'true') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }
+</script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<!-- ✅ OPRAVA 2: Google Fonts načítavame non-blocking, aby neblokovalo rendering -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap"></noscript>
+
+<style>
+
+:root {
+  --primary: #4079ff;
+  --primary-light: #40ffaa;
+  --primary-gradient: linear-gradient(135deg, #4079ff, #40ffaa);
+  --bg-color: #f4f7fe;
+  --card-bg: rgba(255, 255, 255, 0.95);
+  --text-main: #2d3748;
+  --text-muted: #718096;
+  --input-bg: #ffffff;
+  --danger: #ff5555;
+  --shadow: 0 10px 25px rgba(0,0,0,0.05);
+  --plus-gold: #FFD700;
+}
+
+[data-theme="dark"] {
+  --bg-color: #0f172a;
+  --card-bg: rgba(30, 41, 59, 0.95);
+  --text-main: #f1f5f9;
+  --text-muted: #94a3b8;
+  --input-bg: #1e293b;
+  --shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  margin: 0;
+  min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.background-shapes { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+.shape { position: absolute; color: var(--primary); opacity: 0.1; font-weight: bold; animation: floatUp linear infinite; }
+@keyframes floatUp {
+  0% { transform: translateY(110vh) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.2; }
+  100% { transform: translateY(-20vh) rotate(360deg); opacity: 0; }
+}
+
+.container { max-width: 1000px; margin: 0 auto; padding: 2rem; }
+
+/* Navbar */
+.navbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem; }
+.header-controls { display: flex; gap: 10px; align-items: center; }
+.lang-btn {
+  padding: 0.5rem 1rem; border-radius: 10px; border: 1px solid var(--text-muted);
+  background: var(--card-bg); color: var(--text-main); cursor: pointer; font-weight: 600;
+}
+.lang-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+.icon-btn {
+  padding: 0.6rem 1rem; border-radius: 12px; border: none;
+  background: var(--card-bg); color: var(--text-main);
+  box-shadow: var(--shadow); cursor: pointer; transition: 0.3s;
+  display: flex; align-items: center; gap: 8px; text-decoration: none;
+  font-size: 0.9rem; font-weight: 600;
+}
+.icon-btn:hover { background: var(--primary); color: white; }
+
+/* Profile grid */
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  gap: 1.5rem;
+}
+
+.card-section {
+  background: var(--card-bg);
+  padding: 2rem;
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+  margin-bottom: 1.5rem;
+}
+
+h2, h3 {
+  margin-top: 0;
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Info rows */
+.user-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid rgba(128,128,128,0.1);
+}
+.user-row:last-child { border-bottom: none; }
+.label { color: var(--text-muted); font-weight: 600; font-size: 0.9rem; }
+.value { color: var(--text-main); font-weight: 700; }
+
+/* Forms */
+form { margin-top: 1.5rem; }
+label { display: block; font-weight: 600; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-muted); }
+input {
+  width: 100%; padding: 0.8rem; margin-bottom: 1.2rem;
+  border-radius: 12px; border: 2px solid transparent;
+  background: var(--input-bg); color: var(--text-main); box-sizing: border-box;
+  font-family: 'Inter', sans-serif; transition: 0.2s;
+}
+input:focus { border-color: var(--primary); outline: none; }
+.btn-primary {
+  background: var(--primary-gradient); color: white; padding: 0.9rem 2rem;
+  border: none; border-radius: 15px; font-weight: 700; cursor: pointer; width: 100%;
+  transition: 0.3s;
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(64, 121, 255, 0.3); }
+.btn-danger-outline {
+  background: transparent; color: var(--danger); border: 2px solid var(--danger);
+  padding: 0.7rem; border-radius: 12px; font-weight: 700; cursor: pointer; width: 100%; transition: 0.3s;
+}
+.btn-danger-outline:hover { background: var(--danger); color: white; }
+
+/* Plus Badge */
+.status-badge {
+  padding: 5px 12px; border-radius: 10px; font-size: 0.8rem; font-weight: 800; text-transform: uppercase;
+}
+
+/* Password strength */
+.password-requirements { font-size: 0.8rem; margin-bottom: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.requirement { color: var(--text-muted); display: flex; align-items: center; gap: 5px; }
+.requirement.met { color: #5cb85c; }
+.requirement i { font-size: 0.7rem; }
+
+/* Modals */
+.modal {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);
+  z-index: 1000; align-items: center; justify-content: center;
+}
+.modal-content { background: var(--card-bg); padding: 2.5rem; border-radius: 25px; width: 90%; max-width: 400px; text-align: center; }
+
+#message {
+  position: fixed; bottom: 20px; right: 20px; padding: 1rem 2rem; border-radius: 15px;
+  color: white; font-weight: 700; z-index: 2000; display: none; animation: slideIn 0.3s ease;
+}
+@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+
+@media (max-width: 850px) {
+  .profile-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 600px) {
+  .navbar { flex-direction: column; align-items: flex-start; gap: 1.5rem; }
+  .header-controls {
+    display: inline-grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    width: 100%;
+  }
+  .header-controls .icon-btn { justify-content: center; }
+  .lang-btn { width: 100%; text-align: center; }
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="background-shapes" id="bgShapes"></div>
+
+<div class="container">
+
+  <nav class="navbar">
+    <div>
+      <h1 style="margin:0; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Flashcards</h1>
+      <p style="margin:0; font-size: 0.9rem; color: var(--text-muted)" data-en="Profile Settings" data-sk="Nastavenia profilu">Nastavenia profilu</p>
+    </div>
+    <div class="header-controls">
+      <button class="lang-btn" data-lang="en">EN</button>
+      <button class="lang-btn" data-lang="sk">SK</button>
+      <a href="/dashboard" class="icon-btn">
+        <i class="fa-solid fa-house"></i>
+        <span data-en="Dashboard" data-sk="Domov">Domov</span>
+      </a>
+      <button class="icon-btn" onclick="logout()" style="color: var(--danger)">
+        <i class="fa-solid fa-right-from-bracket"></i>
+      </button>
+    </div>
+  </nav>
+
+  <div class="profile-grid">
+
+    <div class="left-column">
+
+      <div class="card-section">
+        <h2 data-en="Personal Information" data-sk="Osobné údaje">Osobné údaje</h2>
+        <div class="user-row">
+          <span class="label">ID:</span>
+          <span class="value" id="userId">#---</span>
+        </div>
+        <div class="user-row">
+          <span class="label" data-en="Email Address" data-sk="Emailová adresa">Emailová adresa</span>
+          <span class="value" id="userEmail">---</span>
+        </div>
+        <div class="user-row">
+          <span class="label" data-en="Member Since" data-sk="Členom od">Členom od</span>
+          <span class="value" id="memberSince">
+            {{ user.created_at.strftime('%d.%m.%Y') }}
+          </span>
+        </div>
+      </div>
+
+      <div class="card-section">
+        <h3 data-en="Security" data-sk="Zabezpečenie">Zabezpečenie</h3>
+        <form id="changePasswordForm">
+          <label data-en="Current Password" data-sk="Aktuálne heslo">Aktuálne heslo</label>
+          <input type="password" id="currentPassword" required>
+          <label data-en="New Password" data-sk="Nové heslo">Nové heslo</label>
+          <input type="password" id="newPassword" required>
+          <div class="password-requirements">
+            <div class="requirement" id="reqLength"><i class="fa-solid fa-circle"></i> 8+</div>
+            <div class="requirement" id="reqUpper"><i class="fa-solid fa-circle"></i> ABC</div>
+            <div class="requirement" id="reqLower"><i class="fa-solid fa-circle"></i> abc</div>
+            <div class="requirement" id="reqNum"><i class="fa-solid fa-circle"></i> 123</div>
+          </div>
+          <button type="submit" class="btn-primary" data-en="Change Password" data-sk="Zmeniť heslo">Zmeniť heslo</button>
+        </form>
+      </div>
+
+    </div>
+
+    <div class="right-column">
+
+      <div class="card-section" style="text-align: center;">
+        <h3 data-en="Account Status" data-sk="Stav účtu">Stav účtu</h3>
+        <div id="plusStatusBadge" class="status-badge" style="margin: 1rem 0; display: inline-block;">Standard</div>
+        <div style="margin-bottom: 1rem; font-size: 0.9rem; color: var(--text-muted);">
+          <span data-en="Categories:" data-sk="Kategórie:">Kategórie:</span>
+          <strong id="categoriesUsage" style="color: var(--text-main);">-- / --</strong>
+        </div>
+        <button onclick="togglePlus()" class="btn-primary" style="font-size: 0.8rem; padding: 0.5rem;" data-en="Upgrade to PLUS" data-sk="Aktivovať PLUS">Aktivovať PLUS</button>
+      </div>
+
+      <div class="card-section">
+        <h3 data-en="Preferences" data-sk="Preferencie">Preferencie</h3>
+        <div class="user-row">
+          <span class="label" data-en="Dark Mode" data-sk="Tmavý režim">Tmavý režim</span>
+          <button class="icon-btn" onclick="toggleDarkMode()" style="padding: 5px 10px;">
+            <i class="fa-solid fa-moon"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="card-section" style="border: 1px solid rgba(255, 85, 85, 0.2);">
+        <h3 style="background: var(--danger); -webkit-background-clip: text;" data-en="Danger Zone" data-sk="Nebezpečná zóna">Nebezpečná zóna</h3>
+        <p style="font-size: 0.8rem; color: var(--text-muted);" data-en="Export or delete your data permanently." data-sk="Exportujte alebo natrvalo zmažte svoje dáta.">Exportujte alebo natrvalo zmažte svoje dáta.</p>
+        <button onclick="exportData()" class="icon-btn" style="width: 100%; margin-bottom: 0.5rem; justify-content: center;">
+          <i class="fa-solid fa-download"></i> Export Data
+        </button>
+        <button onclick="openDeleteModal()" class="btn-danger-outline" data-en="Delete Account" data-sk="Zmazať účet">Zmazať účet</button>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<div id="deleteModal" class="modal">
+  <div class="modal-content">
+    <i class="fa-solid fa-triangle-exclamation" style="font-size: 3rem; color: var(--danger); margin-bottom: 1rem;"></i>
+    <h3 data-en="Are you sure?" data-sk="Ste si istý?">Ste si istý?</h3>
+    <p style="color: var(--text-muted)" data-en="This action is permanent!" data-sk="Táto akcia je nevratná!">Táto akcia je nevratná!</p>
+    <div style="display: flex; gap: 10px; margin-top: 2rem;">
+      <button onclick="closeDeleteModal()" class="lang-btn" style="flex: 1;" data-en="Cancel" data-sk="Zrušiť">Zrušiť</button>
+      <button onclick="confirmDeleteAccount()" class="btn-primary" style="flex: 1; background: var(--danger);" data-en="Delete" data-sk="Zmazať">Zmazať</button>
+    </div>
+  </div>
+</div>
+
+<div id="message"></div>
+
+<script>
+
+let currentLang = localStorage.getItem('preferredLang') || 'sk';
+
+document.addEventListener('DOMContentLoaded', () => {
+  initBackground();
+  loadUserProfile();
+  setupLanguages();
+  setupPasswordCheck();
+});
+
+function initBackground() {
+  const bg = document.getElementById('bgShapes');
+  const chars = ['A', 'B', 'C', '1', '?', '!'];
+  setInterval(() => {
+    const s = document.createElement('div');
+    s.className = 'shape';
+    s.textContent = chars[Math.floor(Math.random() * chars.length)];
+    s.style.left = Math.random() * 100 + 'vw';
+    s.style.fontSize = (Math.random() * 30 + 10) + 'px';
+    s.style.animationDuration = (Math.random() * 10 + 10) + 's';
+    bg.appendChild(s);
+    setTimeout(() => s.remove(), 15000);
+  }, 1200);
+}
+
+async function loadUserProfile() {
+  try {
+    const res = await fetch('/api/user');
+    if (!res.ok) { window.location.href = '/login'; return; }
+    const user = await res.json();
+
+    document.getElementById('userId').textContent = '#' + user.id;
+    document.getElementById('userEmail').textContent = user.email;
+
+    // Robustná oprava dátumu
+    if (user.created_at) {
+      try {
+        let cleanDate = user.created_at.replace(' ', 'T').split('.')[0];
+        const d = new Date(cleanDate);
+        if (!isNaN(d.getTime())) {
+          const locale = (localStorage.getItem('preferredLang') === 'sk') ? 'sk-SK' : 'en-US';
+          document.getElementById('memberSince').textContent = d.toLocaleDateString(locale);
+        } else {
+          document.getElementById('memberSince').textContent = user.created_at.split(' ')[0];
+        }
+      } catch (e) {
+        document.getElementById('memberSince').textContent = user.created_at;
+      }
+    }
+
+    // ✅ OPRAVA 3: dark_mode nastavujeme na documentElement + ukladáme do localStorage
+    if (user.dark_mode) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      localStorage.setItem('darkMode', 'true');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('darkMode', 'false');
+    }
+
+    updatePlusBadge(user.is_plus);
+    loadUserStats(user.is_plus);
+
+  } catch (err) {
+    console.error("Chyba pri načítaní profilu:", err);
+    document.getElementById('memberSince').textContent = new Date().toLocaleDateString();
+  }
+}
+
+async function loadUserStats(isPlus) {
+  try {
+    const res = await fetch('/api/user/stats');
+    if (res.ok) {
+      const stats = await res.json();
+      const limit = 5;
+      document.getElementById('categoriesUsage').textContent = `${stats.total_categories} / ${limit}`;
+    }
+  } catch(e) { console.error(e); }
+}
+
+function updatePlusBadge(isPlus) {
+  const badge = document.getElementById('plusStatusBadge');
+  if (isPlus) {
+    badge.textContent = 'PLUS ACTIVATED';
+    badge.style.background = 'var(--plus-gold)';
+    badge.style.color = '#000';
+  } else {
+    badge.textContent = 'Standard';
+    badge.style.background = 'var(--text-muted)';
+    badge.style.color = '#fff';
+  }
+}
+
+// ✅ OPRAVA 4: toggleDarkMode tiež ukladá do localStorage
+async function toggleDarkMode() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const newMode = !isDark;
+  await fetch('/api/user/dark-mode', { method: 'PATCH' });
+  if (newMode) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    localStorage.setItem('darkMode', 'true');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.setItem('darkMode', 'false');
+  }
+}
+
+async function togglePlus() {
+  const res = await fetch('/api/user/plus', { method: 'PATCH' });
+  const data = await res.json();
+  updatePlusBadge(data.is_plus);
+  loadUserStats(data.is_plus);
+  showMessage("Status updated!", "success");
+}
+
+function setupPasswordCheck() {
+  const input = document.getElementById('newPassword');
+  input.addEventListener('input', () => {
+    const val = input.value;
+    document.getElementById('reqLength').classList.toggle('met', val.length >= 8);
+    document.getElementById('reqUpper').classList.toggle('met', /[A-Z]/.test(val));
+    document.getElementById('reqLower').classList.toggle('met', /[a-z]/.test(val));
+    document.getElementById('reqNum').classList.toggle('met', /[0-9]/.test(val));
+  });
+}
+
+function setupLanguages() {
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      currentLang = b.dataset.lang;
+      setLang(currentLang);
+    });
+  });
+  setLang(currentLang);
+}
+
+function setLang(lang) {
+  localStorage.setItem('preferredLang', lang);
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+  document.querySelectorAll('[data-en]').forEach(el => {
+    const text = el.getAttribute(`data-${lang}`);
+    if (text) el.textContent = text;
+  });
+}
+
+function showMessage(text, type) {
+  const m = document.getElementById('message');
+  m.textContent = text;
+  m.style.background = type === 'success' ? '#5cb85c' : 'var(--danger)';
+  m.style.display = 'block';
+  setTimeout(() => m.style.display = 'none', 3000);
+}
+
+function openDeleteModal() { document.getElementById('deleteModal').style.display = 'flex'; }
+function closeDeleteModal() { document.getElementById('deleteModal').style.display = 'none'; }
+
+async function confirmDeleteAccount() {
+  const res = await fetch('/api/user', { method: 'DELETE' });
+  if (res.ok) window.location.href = '/login';
+}
+
+function logout() { fetch('/api/logout', { method: 'POST' }).then(() => window.location.href = '/login'); }
+
+async function exportData() {
+  const res = await fetch('/api/user/export');
+  const blob = await res.blob();
+  const a = document.createElement('a');
+  a.href = window.URL.createObjectURL(blob);
+  a.download = "flashcards_data.json";
+  a.click();
+}
+
+</script>
+
+</body>
+</html>

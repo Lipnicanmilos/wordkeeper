@@ -38,15 +38,7 @@ user02@user.com
 user03@user.com
 User1111
 
-deepseek
-https://chat.deepseek.com/a/chat/s/8fee7662-1cf6-4191-84d7-9d6f22d51755
-
-
-Service	SQLite Persist	FastAPI Support	Jednoduchosť	Free Limit
-Railway	✅ ÁNO	✅ ÁNO	🟢 VEĽMI	500h/mesiac
-Fly.io	✅ ÁNO	✅ ÁNO	🟡 STREDNÁ	3 CPU, 256MB
-Replit	✅ ÁNO	✅ ÁNO	🟢 VEĽMI	Neobmedzené
-Render	❌ NIE	✅ ÁNO	🟢 VEĽMI	750h/mesiac
+-----------------------------------------------------
 
 git add .
 git commit -m "Add new feature: user authentication"

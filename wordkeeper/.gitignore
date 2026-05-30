@@ -19,5 +19,3 @@ service_account*.json
 
 # Logs
 *.log
-
-procedure.txt

@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-en="Register" data-sk="Registrácia">Register</title>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(45deg, #40ffaa, #4079ff, #40ffaa, #4079ff);
+            --input-bg: #f8f9fa;
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --text-muted: #888;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            perspective: 1000px;
+            overflow-x: hidden;
+        }
+
+        /* Animované pozadie */
+        .background-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .shape {
+            position: absolute;
+            color: rgba(64, 121, 255, 0.1);
+            font-weight: bold;
+            user-select: none;
+            animation: floatUp linear infinite;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.5; }
+            90% { opacity: 0.5; }
+            100% { transform: translateY(-20vh) rotate(360deg); opacity: 0; }
+        }
+        
+        .register-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 450px;
+            margin: 1rem;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.1s ease-out;
+            
+            /* Vstupná animácia */
+            opacity: 0;
+            transform: translateY(30px);
+            animation: containerPop 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+
+        @keyframes containerPop {
+            to { opacity: 1; transform: translateY(0) rotateX(0) rotateY(0); }
+        }
+
+        /* Staggered animácia prvkov */
+        .animate-item {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.6s ease;
+        }
+
+        .animate-item.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .language-switcher {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            z-index: 10;
+        }
+        
+        .lang-btn {
+            padding: 0.4rem 0.8rem;
+            background-color: transparent;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #888;
+        }
+        
+        .lang-btn.active {
+            background-color: #4079ff;
+            color: white;
+            border-color: #4079ff;
+            box-shadow: 0 4px 10px rgba(64, 121, 255, 0.3);
+        }
+        
+        h1 {
+            background: var(--primary-gradient);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 4s ease infinite;
+            text-align: center;
+            margin-bottom: 2rem;
+            margin-top: 1rem;
+            font-size: 2rem;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .form-group {
+            margin-bottom: 1.2rem;
+            text-align: left;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.4rem;
+            color: #555;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-left: 4px;
+        }
+        
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 2px solid transparent;
+            background-color: var(--input-bg);
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s;
+            box-sizing: border-box;
+        }
+        
+        input[type="email"]:focus,
+        input[type="password"]:focus {
+            background-color: white;
+            border-color: #4079ff;
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(64, 121, 255, 0.1);
+        }
+        
+        button[type="submit"] {
+            width: 100%;
+            padding: 1rem;
+            background: var(--primary-gradient);
+            background-size: 200% auto;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(64, 121, 255, 0.3);
+            margin-top: 1rem;
+        }
+        
+        button[type="submit"]:hover {
+            background-position: right center;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(64, 121, 255, 0.4);
+        }
+
+        /* Google Button */
+        .social-register {
+            margin: 0 0 1.5rem 0;
+        }
+
+        .google-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            padding: 0.8rem;
+            background: white;
+            border: 2px solid #f0f0f0;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #444;
+            transition: all 0.3s ease;
+        }
+        
+        .google-btn:hover {
+            border-color: #4079ff;
+            background: #fff;
+            color: #4079ff;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+
+        .google-btn img { width: 22px; height: 22px; }
+
+        .divider {
+            text-align: center;
+            margin: 1.5rem 0;
+            position: relative;
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .divider:before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #eee;
+            z-index: 1;
+        }
+
+        .divider span {
+            background: rgba(255,255,255,0.95);
+            padding: 0 1rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Password requirements styling */
+        .password-requirements {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 0.8rem;
+            background: #f8f9fa;
+            padding: 0.8rem;
+            border-radius: 10px;
+        }
+
+        .requirement {
+            margin: 0.3rem 0;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .requirement::before {
+            content: '●';
+            font-size: 0.6rem;
+        }
+
+        .requirement.met {
+            color: var(--success-color);
+            font-weight: 500;
+        }
+        .requirement.met::before {
+            content: '✓';
+            font-size: 0.8rem;
+        }
+
+        .requirement.unmet {
+            color: var(--text-muted); /* Jemnejšia farba pre nesplnené */
+        }
+        
+        #message {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 12px;
+            display: none;
+            font-weight: 500;
+            animation: slideDown 0.3s ease;
+        }
+        
+        .success { color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; }
+        .error { color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; }
+        
+        .login-link, .home-button {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: #666;
+            font-size: 0.95rem;
+        }
+        
+        .login-link a, .home-button a {
+            color: #4079ff;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+        
+        .login-link a:hover, .home-button a:hover {
+            color: #2e5bbf;
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 480px) {
+            .register-container {
+                padding: 2rem 1.5rem;
+                width: 95%;
+                transform: none !important;
+            }
+            h1 { font-size: 1.8rem; }
+            .language-switcher {
+                position: static;
+                margin-bottom: 1rem;
+                display: flex;
+                justify-content: center;
+                gap: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-shapes" id="bgShapes"></div>
+
+    <div class="register-container" id="card">
+        <div class="language-switcher animate-item">
+            <button class="lang-btn active" data-lang="en">EN</button>
+            <button class="lang-btn" data-lang="sk">SK</button>
+        </div>
+        
+        <h1 class="animate-item" data-en="Register" data-sk="Zaregistrovať sa">Register</h1>
+        
+        <div class="social-register animate-item">
+            <button class="google-btn" onclick="handleGoogleRegister()">
+                <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google">
+                <span data-en="Sign up with Google" data-sk="Registrovať sa s Google">Sign up with Google</span>
+            </button>
+        </div>
+
+        <div class="divider animate-item">
+            <span data-en="Or register with email" data-sk="Alebo sa zaregistrujte emailom">Or register with email</span>
+        </div>
+        
+        <form id="registerForm" class="animate-item">
+            <div class="form-group">
+                <label for="email" data-en="Email" data-sk="Email">Email</label>
+                <input type="email" id="email" name="email" required 
+                       data-en-placeholder="name@example.com" 
+                       data-sk-placeholder="meno@priklad.sk">
+            </div>
+            
+            <div class="form-group">
+                <label for="password" data-en="Password" data-sk="Heslo">Password</label>
+                <input type="password" id="password" name="password" required 
+                       data-en-placeholder="Create a strong password" 
+                       data-sk-placeholder="Vytvorte silné heslo">
+                
+                <div class="password-requirements" id="passwordRequirements">
+                    <div class="requirement unmet" id="reqLength" data-en="At least 8 characters" data-sk="Aspoň 8 znakov">At least 8 characters</div>
+                    <div class="requirement unmet" id="reqUpper" data-en="One uppercase letter" data-sk="Jedno veľké písmeno">One uppercase letter</div>
+                    <div class="requirement unmet" id="reqLower" data-en="One lowercase letter" data-sk="Jedno malé písmeno">One lowercase letter</div>
+                    <div class="requirement unmet" id="reqNumber" data-en="One number" data-sk="Jedno číslo">One number</div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="confirmPassword" data-en="Confirm Password" data-sk="Potvrdiť heslo">Confirm Password</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" required 
+                       data-en-placeholder="Retype password" 
+                       data-sk-placeholder="Zopakujte heslo">
+            </div>
+            
+            <button type="submit" data-en="Create Account" data-sk="Vytvoriť účet">Create Account</button>
+        </form>
+
+        <div id="message"></div>
+        
+        <div class="login-link animate-item">
+            <span data-en="Already have an account?" data-sk="Už máte účet?">Already have an account?</span> 
+            <a href="/login" data-en="Login here" data-sk="Prihlásiť sa">Login here</a>
+        </div>
+        
+        <div class="home-button animate-item">
+            <a href="/" data-en="← Back to Homepage" data-sk="← Späť na domovskú stránku">← Back to Homepage</a>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- 1. Vizuálne Efekty (Animácie, Pozadie, Tilt) ---
+            
+            // Kaskádové načítanie
+            const animatedItems = document.querySelectorAll('.animate-item');
+            animatedItems.forEach((item, index) => {
+                setTimeout(() => {
+                    item.classList.add('visible');
+                }, 200 + (index * 100));
+            });
+
+            // Tilt efekt
+            const card = document.getElementById('card');
+            const container = document.body;
+
+            if (window.matchMedia("(hover: hover)").matches) {
+                container.addEventListener('mousemove', (e) => {
+                    const xAxis = (window.innerWidth / 2 - e.pageX) / 30; // Menej citlivé pre väčšiu kartu
+                    const yAxis = (window.innerHeight / 2 - e.pageY) / 30;
+                    card.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+                });
+
+                container.addEventListener('mouseleave', () => {
+                    card.style.transform = `rotateY(0deg) rotateX(0deg)`;
+                    card.style.transition = "transform 0.5s ease";
+                });
+                
+                container.addEventListener('mouseenter', () => {
+                    card.style.transition = "none";
+                });
+            }
+
+            // Pozadie s písmenkami
+            const bgContainer = document.getElementById('bgShapes');
+            const characters = ['A', 'B', 'C', '?', '!', 'X', 'Y', 'Z', '@', '#'];
+            
+            function createShape() {
+                const shape = document.createElement('div');
+                shape.classList.add('shape');
+                shape.innerText = characters[Math.floor(Math.random() * characters.length)];
+                const size = Math.random() * 30 + 10;
+                shape.style.fontSize = `${size}px`;
+                shape.style.left = `${Math.random() * 100}vw`;
+                const duration = Math.random() * 10 + 10;
+                shape.style.animationDuration = `${duration}s`;
+                bgContainer.appendChild(shape);
+                setTimeout(() => shape.remove(), duration * 1000);
+            }
+
+            for(let i=0; i<15; i++) setTimeout(createShape, i * 500);
+            setInterval(createShape, 1000);
+
+            // --- 2. Logika aplikácie (Jazyk, Validácia, API) ---
+
+            const langButtons = document.querySelectorAll('.lang-btn');
+            const currentLang = localStorage.getItem('preferredLang') || 'en';
+            setActiveLanguage(currentLang);
+            
+            langButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const lang = this.getAttribute('data-lang');
+                    setActiveLanguage(lang);
+                    localStorage.setItem('preferredLang', lang);
+                });
+            });
+            
+            function setActiveLanguage(lang) {
+                langButtons.forEach(btn => {
+                    btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+                });
+                
+                document.querySelectorAll('[data-en], [data-sk]').forEach(element => {
+                    if (element.hasAttribute(`data-${lang}`)) {
+                        const text = element.getAttribute(`data-${lang}`);
+                        if (element.tagName === 'TITLE') document.title = text;
+                        else element.textContent = text;
+                    }
+                });
+
+                document.querySelectorAll('[data-en-placeholder], [data-sk-placeholder]').forEach(element => {
+                    if (element.hasAttribute(`data-${lang}-placeholder`)) {
+                        element.placeholder = element.getAttribute(`data-${lang}-placeholder`);
+                    }
+                });
+            }
+
+            setupPasswordValidation();
+
+            const form = document.getElementById('registerForm');
+            
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const email = form.email.value;
+                const password = form.password.value;
+                const confirmPassword = form.confirmPassword.value;
+                const currentLang = localStorage.getItem('preferredLang') || 'en';
+
+                const submitButton = form.querySelector('button[type="submit"]');
+                const originalText = submitButton.textContent;
+                submitButton.disabled = true;
+                submitButton.textContent = currentLang === 'sk' ? 'Registrujem...' : 'Registering...';
+
+                // Validácie
+                const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailPattern.test(email)) {
+                    showMessage(currentLang === 'sk' ? 'Neplatný email.' : 'Invalid email address.', 'error');
+                    resetBtn(); return;
+                }
+
+                if (!validatePassword(password)) {
+                    showMessage(currentLang === 'sk' ? 'Heslo nespĺňa požiadavky.' : 'Password requirements not met.', 'error');
+                    resetBtn(); return;
+                }
+
+                if (password !== confirmPassword) {
+                    showMessage(currentLang === 'sk' ? 'Heslá sa nezhodujú.' : 'Passwords do not match.', 'error');
+                    resetBtn(); return;
+                }
+
+                try {
+                    const response = await fetch(`/api/v1/register?lang=${currentLang}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        showMessage(
+                            currentLang === 'sk' ? 'Registrácia úspešná! Presmerujem...' : 'Registration successful! Redirecting...', 
+                            'success'
+                        );
+                        form.reset();
+                        setTimeout(() => { window.location.href = '/login'; }, 3000);
+                    } else {
+                        showMessage(data.detail || 'Registration failed', 'error');
+                        resetBtn();
+                    }
+                } catch (error) {
+                    showMessage(currentLang === 'sk' ? 'Chyba spojenia.' : 'Connection error.', 'error');
+                    resetBtn();
+                }
+
+                function resetBtn() {
+                    submitButton.disabled = false;
+                    submitButton.textContent = originalText;
+                }
+            });
+        });
+
+        function setupPasswordValidation() {
+            const passwordInput = document.getElementById('password');
+            const confirmInput = document.getElementById('confirmPassword');
+
+            passwordInput.addEventListener('input', function() {
+                validatePassword(this.value);
+                validatePasswordConfirmation();
+            });
+
+            confirmInput.addEventListener('input', function() {
+                validatePasswordConfirmation();
+            });
+        }
+
+        function validatePassword(password) {
+            const requirements = {
+                length: password.length >= 8,
+                upper: /[A-Z]/.test(password),
+                lower: /[a-z]/.test(password),
+                number: /[0-9]/.test(password)
+            };
+
+            const setClass = (id, met) => {
+                document.getElementById(id).className = met ? 'requirement met' : 'requirement unmet';
+            };
+
+            setClass('reqLength', requirements.length);
+            setClass('reqUpper', requirements.upper);
+            setClass('reqLower', requirements.lower);
+            setClass('reqNumber', requirements.number);
+
+            return Object.values(requirements).every(req => req);
+        }
+
+        function validatePasswordConfirmation() {
+            const password = document.getElementById('password').value;
+            const confirm = document.getElementById('confirmPassword').value;
+            const confirmInput = document.getElementById('confirmPassword');
+            
+            if (confirm.length > 0) {
+                if (password === confirm) {
+                    confirmInput.style.borderColor = '#28a745'; // Zelená
+                    confirmInput.style.boxShadow = '0 0 0 4px rgba(40, 167, 69, 0.1)';
+                } else {
+                    confirmInput.style.borderColor = '#dc3545'; // Červená
+                    confirmInput.style.boxShadow = '0 0 0 4px rgba(220, 53, 69, 0.1)';
+                }
+            } else {
+                confirmInput.style.borderColor = 'transparent';
+                confirmInput.style.boxShadow = 'none';
+            }
+        }
+
+        function handleGoogleRegister() {
+            window.location.href = '/auth/google';
+        }
+
+        function checkOAuthCallback() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            const error = urlParams.get('error');
+            const newUser = urlParams.get('new_user');
+            const currentLang = localStorage.getItem('preferredLang') || 'en';
+
+            if (error) {
+                showMessage(error, 'error');
+                return;
+            }
+
+            if (token) {
+                localStorage.setItem('access_token', token);
+                if (newUser === '1') {
+                    showMessage(currentLang === 'sk' ? 'Registrácia cez Google úspešná!' : 'Google registration successful!', 'success');
+                    localStorage.setItem('show_welcome', 'true');
+                }
+                loadUserDataAndRedirect();
+            }
+        }
+
+        async function loadUserDataAndRedirect() {
+            try {
+                const token = localStorage.getItem('access_token');
+                const response = await fetch('/api/v1/users/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (response.ok) {
+                    const userData = await response.json();
+                    localStorage.setItem('user_email', userData.email);
+                    localStorage.setItem('user_name', userData.name || '');
+                    setTimeout(() => { window.location.href = '/dashboard'; }, 2000);
+                }
+            } catch (error) {
+                console.error('Error loading user data');
+            }
+        }
+
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = message;
+            messageDiv.className = type;
+            messageDiv.style.display = 'block';
+            setTimeout(() => { messageDiv.style.display = 'none'; }, 5000);
+        }
+
+        checkOAuthCallback();
+    </script>
+</body>
+</html>

@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-en="Flashcard Test" data-sk="Test kartičiek">Flashcard Test</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4079ff;
+            --primary-light: #40ffaa;
+            --primary-gradient: linear-gradient(135deg, #4079ff, #40ffaa);
+            --bg-color: #f4f7fe;
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --input-bg: #ffffff;
+            --danger: #ff5555;
+            --shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.95);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --input-bg: #1e293b;
+            --shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            perspective: 1000px;
+            overflow-x: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .background-shapes {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden;
+        }
+        .shape { position:absolute; color: var(--primary); opacity: 0.1; font-weight:bold; user-select:none; animation: floatUp linear infinite; }
+        @keyframes floatUp { 0%{transform:translateY(100vh) rotate(0deg); opacity:0} 10%{opacity:0.5} 90%{opacity:0.5} 100%{transform:translateY(-20vh) rotate(360deg); opacity:0} }
+
+
+        .test-card {
+            width: 100%;
+            max-width: 900px;
+            margin: 2rem;
+            padding: 2.2rem;
+            border-radius: 20px;
+            background: var(--card-bg);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(10px);
+            position: relative;
+            transform-style: preserve-3d;
+
+            opacity: 0;
+            transform: translateY(30px);
+            animation: cardPop 0.8s cubic-bezier(0.2,0.8,0.2,1) forwards;
+        }
+        @keyframes cardPop { to { opacity: 1; transform: translateY(0); } }
+
+        .header-controls {
+            position: absolute;
+            top: 1.2rem;
+            right: 1.2rem;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .small-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 12px;
+            background: var(--card-bg);
+            border: 1px solid var(--text-muted);
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.3s;
+            text-decoration: none;
+            color: var(--text-main);
+        }
+
+        .small-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .language-switcher {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .lang-btn {
+            padding: 8px 12px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--text-muted);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .lang-btn.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .user-info {
+            text-align: center;
+            padding: 15px;
+            background-color: transparent;
+            margin-bottom: 10px;
+            color: var(--text-muted);
+            font-size: 1.1em;
+        }
+        .user-info strong { color: var(--primary); }
+
+        h1 {
+            text-align: center;
+            font-size: 2rem;
+            margin: 0 0 1rem 0;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 4s ease infinite;
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .test-info {
+            border-left: 5px solid var(--primary);
+            padding: 1rem;
+            margin-bottom: 2rem;
+            background: rgba(64, 121, 255, 0.05);
+        }
+        .test-info h2 {
+            margin: 0 0 0.5rem 0;
+            color: var(--primary);
+        }
+
+        .test-info p {
+            margin: 0;
+            color: var(--text-muted);
+        }
+
+        .flashcard {
+            background: var(--input-bg);
+            border: 2px solid transparent;
+            border-radius: 20px;
+            padding: 3rem;
+            margin: 2rem 0;
+            text-align: center;
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+        }
+
+        .flashcard:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+        }
+
+        .flashcard.flipped {
+            background: var(--card-bg);
+            border-color: var(--primary);
+        }
+
+        .word-text {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .speaker-icon {
+            font-size: 2rem;
+            cursor: pointer;
+            color: var(--primary);
+            transition: color 0.3s ease;
+        }
+
+        .speaker-icon:hover {
+            transform: scale(1.1);
+        }
+
+        .translation-text {
+            font-size: 1.8rem;
+            color: var(--text-main);
+            margin-top: 1rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .flashcard.flipped .translation-text {
+            opacity: 1;
+        }
+
+        .click-hint {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+
+        .test-controls {
+            display: block;
+            margin-top: 2rem;
+            text-align: center;
+        }
+
+        .control-btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            min-width: 180px;
+            text-align: center;
+            margin: 5px;
+        }
+
+        .control-btn:disabled { background: var(--text-muted); opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .btn-change-level {
+            background-color: #2196F3;
+            color: white;
+        }
+
+        .btn-change-level:hover {
+            background-color: #1976D2;
+            transform: translateY(-2px);
+        }
+
+        .btn-previous {
+            background-color: #9C27B0;
+            color: white;
+        }
+
+        .btn-previous:hover {
+            background-color: #7B1FA2;
+            transform: translateY(-2px);
+        }
+
+        .btn-next {
+            background: var(--primary-gradient);
+            background-size: 200% auto;
+            color: white;
+        }
+
+        .btn-next:hover {
+            background-position: right center;
+            transform: translateY(-2px);
+        }
+
+        .btn-end-test {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .btn-end-test:hover {
+            background-color: #d32f2f;
+            transform: translateY(-2px);
+        }
+
+        .level-selector {
+            position: fixed;
+            top: 0;
+            left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .level-selector.show {
+            display: flex;
+        }
+
+        .level-selector-content {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .level-selector h3 {
+            margin-top: 0;
+            color: var(--primary);
+        }
+
+        .level-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .level-option {
+            padding: 1rem;
+            border: 2px solid var(--text-muted);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        .level-option:hover {
+            border-color: var(--primary);
+            background: rgba(64, 121, 255, 0.1);
+        }
+
+        .level-dont_know { border-color: #ffcdd2; background: #ffebee; color: #c62828; }
+        .level-learning { border-color: #fff59d; background: #fffde7; color: #ef6c00; }
+        .level-know { border-color: #c8e6c9; background: #f1f8e9; color: #2e7d32; }
+
+
+        .progress-info {
+            text-align: center;
+            margin: 1rem 0;
+            color: var(--text-muted);
+        }
+
+        .no-words {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .no-words a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .no-words a:hover {
+            text-decoration: underline;
+        }
+
+        #message {
+            display: none;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        #message.success {
+            background-color: #d4edda;
+            color: #155724; border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        #message.error {
+            background-color: #f8d7da;
+            color: #721c24; border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .header-controls {
+                position: static;
+                justify-content: center;
+                margin-bottom: 1.5rem;
+            }
+
+            main {
+                margin: 0 1rem;
+                padding: 1.5rem;
+            }
+
+            .flashcard {
+                padding: 2rem;
+                min-height: 250px;
+            }
+
+            .word-text {
+                font-size: 2rem;
+            }
+
+            .translation-text {
+                font-size: 1.5rem;
+            }
+
+            .test-controls {
+                flex-direction: column;
+                gap: 10px;
+                align-items: center;
+            }
+
+            .control-btn {
+                width: 100%;
+                max-width: 200px;
+            }
+
+            .level-options {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-shapes" id="bgShapes"></div>
+
+    <div class="test-card" id="card" >
+        <div class="header-controls">
+            <div class="language-switcher">
+                <button class="lang-btn active" data-lang="en">EN</button>
+                <button class="lang-btn" data-lang="sk">SK</button>
+            </div>
+            <button onclick="history.back()" class="small-btn" data-en="Back" data-sk="Späť">Back</button>
+            <button class="small-btn" onclick="logout()" data-en="Logout" data-sk="Odhlásiť sa">Logout</button>
+        </div>
+
+        <h1 data-en="Flashcard Test" data-sk="Test kartičiek" style="margin-top: 2rem;">Flashcard Test</h1>
+        <div class="user-info" style="text-align: center; margin-bottom: 1rem; ">
+            <span data-en="Logged in as:" data-sk="Prihlásený ako:">Logged in as:</span> <strong id="userEmail">{{ email }}</strong>
+        </div>
+
+        <div id="message"></div>
+
+        <div class="test-info">
+            <h2 id="testTitle">
+                {% if category %}
+                    {{ category.name }} - {{ level|title }} Level
+                {% else %}
+                    All Categories - {{ level|title }} Level
+                {% endif %}
+            </h2>
+            <p id="testDescription" data-en="Click on the word to reveal its translation, then choose your action." data-sk="Kliknite na slovíčko pre zobrazenie prekladu, potom vyberte svoju akciu.">Click on the word to reveal its translation, then choose your action.</p>
+        </div>
+
+        <div class="language-selector" style="margin-bottom: 1rem; text-align: center;">
+            <label for="speechLangSelect" style="font-size: 0.9rem; margin-right: 0.5rem;">Speech:</label>
+            <select id="speechLangSelect">
+                <option value="en-US">English</option>
+                <option value="sk-SK">Slovenčina</option>
+                <option value="de-DE">Deutsch</option>
+                <option value="fr-FR">Français</option>
+                <option value="es-ES">Español</option>
+            </select>
+        </div>
+
+        <div class="test-direction-selector" style="margin-bottom: 1rem; text-align: center;">
+            <label style="font-size: 0.9rem; margin-right: 0.5rem;">Test Direction:</label>
+            <div style="display: inline-flex; gap: 1rem;">
+                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
+                    <input type="radio" name="testDirection" value="original_to_translation" checked>
+                    Original → Translation
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
+                    <input type="radio" name="testDirection" value="translation_to_original">
+                    Translation → Original
+                </label>
+            </div>
+        </div>
+
+        <div id="testContent">
+            <!-- Test content will be loaded dynamically -->
+        </div>
+    </div>
+    <!-- Level Selector Modal -->
+    <div class="level-selector" id="levelSelector">
+        <div class="level-selector-content">
+            <h3 data-en="Change Word Level" data-sk="Zmeniť úroveň slovíčka">Change Word Level</h3>
+            <div class="level-options">
+                <div class="level-option level-dont_know" onclick="changeWordLevel('dont_know')" data-en="Don't Know" data-sk="Neviem">Don't Know</div>
+                <div class="level-option level-learning" onclick="changeWordLevel('learning')" data-en="Learning" data-sk="Učím sa">Learning</div>
+                <div class="level-option level-know" onclick="changeWordLevel('know')" data-en="Know" data-sk="Viem">Know</div>
+            </div>
+            <button class="control-btn btn-end-test" onclick="closeLevelSelector()" data-en="Cancel" data-sk="Zrušiť">Cancel</button>
+        </div>
+    </div>
+    <!-- End Test Confirmation Modal -->
+    <div class="level-selector" id="endTestModal">
+        <div class="level-selector-content">
+            <h3 data-en="End Test?" data-sk="Ukončiť test?">End Test?</h3>
+            <p data-en="Are you sure you want to end the test?" data-sk="Ste si istý, že chcete ukončiť test?" style="margin-bottom: 1.5rem; color: var(--text-main);">Are you sure you want to end the test?</p>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button class="control-btn" onclick="closeEndTestModal()" data-en="Cancel" data-sk="Zrušiť" style="min-width: auto; flex: 1; background-color: var(--text-muted); color: white;">Cancel</button>
+                <button class="control-btn btn-end-test" onclick="confirmEndTest()" data-en="End Test" data-sk="Ukončiť" style="min-width: auto; flex: 1;">End Test</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentWords = [];
+        let currentWordIndex = 0;
+        let currentCategoryId = {{ category.id if category else 'null' }};
+        let currentLevel = "{{ level }}";
+
+        // Animations
+        (function(){
+            const container = document.getElementById('bgShapes');
+            const chars = ['A','B','C','?','!','1','2','3','@','&'];
+            function make(){ const el=document.createElement('div'); el.className='shape'; el.textContent=chars[Math.floor(Math.random()*chars.length)]; el.style.left=Math.random()*100+'vw'; el.style.fontSize=(Math.random()*28+10)+'px'; el.style.animationDuration=(Math.random()*12+8)+'s'; container.appendChild(el); setTimeout(()=>el.remove(),20000); }
+            for(let i=0;i<14;i++) setTimeout(make,i*300); setInterval(make,1200);
+        })();
+
+        // Tilt effect
+        (function(){
+            const card=document.getElementById('card');
+            if(window.matchMedia('(hover: hover)').matches){ document.body.addEventListener('mousemove', e=>{ const x=(window.innerWidth/2 - e.pageX)/30; const y=(window.innerHeight/2 - e.pageY)/30; card.style.transform=`rotateY(${x}deg) rotateX(${y}deg)`; }); document.body.addEventListener('mouseleave', ()=>{ card.style.transform='rotateY(0) rotateX(0)'; card.style.transition='transform 0.5s ease'; }); document.body.addEventListener('mouseenter', ()=>{ card.style.transition='none'; }); }
+        })();
+
+
+        // Language management
+        document.addEventListener('DOMContentLoaded', function() {
+            const langButtons = document.querySelectorAll('.lang-btn');
+            const currentLang = localStorage.getItem('preferredLang') || 'en';
+
+            setActiveLanguage(currentLang);
+
+            langButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const lang = this.getAttribute('data-lang');
+                    setActiveLanguage(lang);
+                    localStorage.setItem('preferredLang', lang);
+                });
+            });
+
+            function setActiveLanguage(lang) {
+                langButtons.forEach(btn => {
+                    btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+                });
+
+                document.querySelectorAll('[data-en], [data-sk]').forEach(element => {
+                    if (element.hasAttribute(`data-${lang}`)) {
+                        const text = element.getAttribute(`data-${lang}`);
+                        if (element.tagName === 'TITLE') {
+                            document.title = text;
+                        } else {
+                            element.textContent = text;
+                        }
+                    }
+                });
+
+                // Update level selector options
+                updateLevelSelectorLanguage(lang);
+            }
+
+            function updateLevelSelectorLanguage(lang) {
+                const levelOptions = document.querySelectorAll('.level-option');
+                levelOptions.forEach(option => {
+                    if (option.hasAttribute(`data-${lang}`)) {
+                        option.textContent = option.getAttribute(`data-${lang}`);
+                    }
+                });
+            }
+
+        // Load user data and start test
+            loadUserData();
+            loadDarkModePreference();
+            startTest();
+
+            // Add event listeners to test direction radio buttons
+            document.querySelectorAll('input[name="testDirection"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    currentWordIndex = 0;
+                    startTest();
+                });
+            });
+
+            // Keyboard navigation
+            document.addEventListener('keydown', function(e) {
+                if (document.getElementById('levelSelector').classList.contains('show')) return;
+                if (document.getElementById('endTestModal').classList.contains('show')) return;
+                if (e.target.tagName === 'INPUT') return;
+
+                if (e.key === 'ArrowRight') {
+                    nextWord();
+                } else if (e.key === 'ArrowLeft') {
+                    previousWord();
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    const flashcard = document.querySelector('.flashcard');
+                    const hint = document.querySelector('.click-hint');
+                    if (flashcard && !flashcard.classList.contains('flipped')) {
+                        flashcard.classList.add('flipped');
+                        if (hint) hint.style.display = 'none';
+                    }
+                } else if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    const flashcard = document.querySelector('.flashcard');
+                    const hint = document.querySelector('.click-hint');
+                    if (flashcard && flashcard.classList.contains('flipped')) {
+                        flashcard.classList.remove('flipped');
+                        if (hint) hint.style.display = 'block';
+                    }
+                }
+            });
+        });
+
+        async function loadUserData() {
+            try {
+                const userEmail = localStorage.getItem('user_email');
+                const userName = localStorage.getItem('user_name');
+
+                if (!userEmail) {
+                    window.location.href = '/login';
+                    return;
+                }
+
+                // Display user email/name
+                const displayName = userName || userEmail;
+                document.getElementById('userEmail').textContent = displayName;
+
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                showMessage('Error loading data', 'error');
+            }
+        }
+
+        async function loadDarkModePreference() {
+            try {
+                const response = await fetch('/api/user');
+                if (response.ok) {
+                    const userData = await response.json();
+                    const isDarkMode = userData.dark_mode;
+                    const root = document.documentElement;
+
+                    if (isDarkMode) {
+                        root.setAttribute('data-theme', 'dark');
+                        localStorage.setItem('theme', 'dark');
+                    } else {
+                        root.setAttribute('data-theme', 'light');
+                        localStorage.setItem('theme', 'light');
+                    }
+                } else {
+                    console.error('Failed to load user data for dark mode');
+                    // Default to light mode
+                    document.documentElement.setAttribute('data-theme', 'light');
+                    localStorage.setItem('theme', 'light');
+                }
+            } catch (error) {
+                console.error('Error loading dark mode preference:', error);
+                // Default to light mode
+                document.documentElement.setAttribute('data-theme', 'light');
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        async function startTest() {
+            try {
+                console.log('Starting test for category:', currentCategoryId, 'level:', currentLevel);
+
+                const testDirection = document.querySelector('input[name="testDirection"]:checked').value;
+
+                const testConfig = {
+                    knowledge_levels: [currentLevel],
+                    limit: 1000,  // Default limit for flashcard test
+                    test_direction: testDirection
+                };
+
+                if (currentCategoryId) {
+                    testConfig.category_id = currentCategoryId;
+                }
+
+                const response = await fetch('/api/v1/words/test/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testConfig)
+                });
+
+                if (response.ok) {
+                    const words = await response.json();
+                    console.log('Words loaded for test:', words);
+
+                    if (words && words.length > 0) {
+                        currentWords = shuffleArray(words);
+                        currentWordIndex = 0;
+                        displayCurrentWord();
+                    } else {
+                        showNoWordsMessage();
+                    }
+                } else {
+                    console.error('Failed to load words, status:', response.status);
+                    showNoWordsMessage();
+                }
+            } catch (error) {
+                console.error('Error starting test:', error);
+                showNoWordsMessage();
+            }
+        }
+
+        function displayCurrentWord() {
+            if (currentWordIndex >= currentWords.length) {
+                showTestComplete();
+                return;
+            }
+
+            const word = currentWords[currentWordIndex];
+            const testDirection = document.querySelector('input[name="testDirection"]:checked').value;
+            const isReverse = testDirection === 'translation_to_original';
+
+            const questionWord = word.original_word;
+            const answerWord = word.translation;
+            const hintText = isReverse ? 'Click to reveal original word' : 'Click to reveal translation';
+
+            const testContent = document.getElementById('testContent');
+            testContent.innerHTML = `
+                <div class="progress-info">
+                    <span data-en="Word" data-sk="Slovíčko">Word</span> ${currentWordIndex + 1} / ${currentWords.length}
+                </div>
+                <div class="flashcard" onclick="flipCard()">
+                    <div class="word-text">
+                        <span>${questionWord}</span>
+                        <span class="speaker-icon" onclick="speakWord('${questionWord}'); event.stopPropagation();">🔊</span>
+                    </div>
+                    <div class="translation-text">${answerWord} <span class="speaker-icon" onclick="speakWord('${answerWord}'); event.stopPropagation();">🔊</span></div>
+                    <div class="click-hint" data-en="${hintText}" data-sk="${isReverse ? 'Kliknite pre zobrazenie pôvodného slova' : 'Kliknite pre zobrazenie prekladu'}">${hintText}</div>
+                </div>
+                <div class="test-controls">
+                    <button class="control-btn btn-next" onclick="nextWord()" data-en="Next Word" data-sk="Ďalšie slovíčko">Next Word</button>
+                </div>
+                <div class="test-controls">
+                    <button class="control-btn btn-previous" onclick="previousWord()" data-en="Previous Word" data-sk="Predchádzajúce slovíčko" ${currentWordIndex === 0 ? 'disabled' : ''}>Previous Word</button>
+                    <button class="control-btn btn-change-level" onclick="showLevelSelector()" data-en="Change Level" data-sk="Zmeniť úroveň">Change Level</button>
+                    <button class="control-btn btn-end-test" onclick="endTest()" data-en="End Test" data-sk="Ukončiť test">End Test</button>
+                </div>
+            `;
+
+            // Update language for new elements
+            const currentLang = localStorage.getItem('preferredLang') || 'en';
+            document.querySelectorAll('[data-en], [data-sk]').forEach(element => {
+                if (element.hasAttribute(`data-${currentLang}`)) {
+                    element.textContent = element.getAttribute(`data-${currentLang}`);
+                }
+            });
+        }
+
+        function flipCard() {
+            const flashcard = document.querySelector('.flashcard');
+            const hint = document.querySelector('.click-hint');
+
+            flashcard.classList.toggle('flipped');
+            hint.style.display = flashcard.classList.contains('flipped') ? 'none' : 'block';
+        }
+
+        function showLevelSelector() {
+            document.getElementById('levelSelector').classList.add('show');
+        }
+
+        function closeLevelSelector() {
+            document.getElementById('levelSelector').classList.remove('show');
+        }
+
+        async function changeWordLevel(newLevel) {
+            const word = currentWords[currentWordIndex];
+
+            try {
+                const response = await fetch(`/api/v1/words/${word.id}/knowledge-level`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        knowledge_level: newLevel
+                    })
+                });
+
+                if (response.ok) {
+                    showMessage('Word level updated successfully!', 'success');
+                    closeLevelSelector();
+                    nextWord();
+                } else {
+                    const errorData = await response.json();
+                    showMessage(errorData.detail || 'Failed to update word level', 'error');
+                }
+            } catch (error) {
+                console.error('Error updating word level:', error);
+                showMessage('Error updating word level', 'error');
+            }
+        }
+
+        function previousWord() {
+            if (currentWordIndex > 0) {
+                currentWordIndex--;
+                displayCurrentWord();
+            }
+        }
+
+        function nextWord() {
+            currentWordIndex++;
+            displayCurrentWord();
+        }
+
+        function endTest() {
+            document.getElementById('endTestModal').classList.add('show');
+        }
+
+        function closeEndTestModal() {
+            document.getElementById('endTestModal').classList.remove('show');
+        }
+
+        function confirmEndTest() {
+            window.location.href = '/dashboard';
+        }
+
+        function showNoWordsMessage() {
+            const testContent = document.getElementById('testContent');
+            testContent.innerHTML = `
+                <div class="no-words">
+                    <h3 data-en="No words found for this test" data-sk="Pre tento test sa nenašli žiadne slovíčka">No words found for this test</h3>
+                    <p data-en="Try adding some words to this category or selecting a different level." data-sk="Skúste pridať slovíčka do tejto kategórie alebo vybrať inú úroveň.">
+                        Try adding some words to this category or selecting a different level.
+                    </p>
+                    <a href="/dashboard" data-en="Back to Dashboard" data-sk="Späť na Dashboard">Back to Dashboard</a>
+                </div>
+            `;
+
+            // Update language
+            const currentLang = localStorage.getItem('preferredLang') || 'en';
+            document.querySelectorAll('[data-en], [data-sk]').forEach(element => {
+                if (element.hasAttribute(`data-${currentLang}`)) {
+                    element.textContent = element.getAttribute(`data-${currentLang}`);
+                }
+            });
+        }
+
+        function showTestComplete() {
+            const testContent = document.getElementById('testContent');
+            testContent.innerHTML = `
+                <div class="no-words">
+                    <h3 data-en="Test Complete!" data-sk="Test dokončený!">Test Complete!</h3>
+                    <p data-en="You have reviewed all words in this test." data-sk="Prešli ste všetky slovíčka v tomto teste.">
+                        You have reviewed all words in this test.
+                    </p>
+                    <a href="/dashboard" data-en="Back to Dashboard" data-sk="Späť na Dashboard">Back to Dashboard</a>
+                </div>
+            `;
+
+            // Update language
+            const currentLang = localStorage.getItem('preferredLang') || 'en';
+            document.querySelectorAll('[data-en], [data-sk]').forEach(element => {
+                if (element.hasAttribute(`data-${currentLang}`)) {
+                    element.textContent = element.getAttribute(`data-${currentLang}`);
+                }
+            });
+        }
+
+        async function logout() {
+            try {
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('user_email');
+                localStorage.removeItem('user_name');
+                localStorage.removeItem('user_id');
+                localStorage.removeItem('preferredLang');
+                window.location.href = '/';
+            } catch (error) {
+                console.error('Logout failed:', error);
+                window.location.href = '/';
+            }
+        }
+
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = message;
+            messageDiv.className = type;
+            messageDiv.style.display = 'block';
+
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        function speakWord(word, lang = null) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(word);
+
+                // Get selected language from dropdown or use default
+                const selectedLang = lang || document.getElementById('speechLangSelect').value;
+                utterance.lang = selectedLang;
+                utterance.rate = 0.8; // Slightly slower for clarity
+                utterance.pitch = 1;
+
+                // Cancel any ongoing speech
+                window.speechSynthesis.cancel();
+
+                // Speak the word
+                window.speechSynthesis.speak(utterance);
+            } else {
+                console.warn('Speech synthesis not supported in this browser');
+                showMessage('Speech synthesis not supported in this browser', 'error');
+            }
+        }
+
+        // Initialize theme on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        });
+    </script>
+</body>
+</html>
