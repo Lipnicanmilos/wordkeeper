@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request, Depends
+from fastapi import FastAPI, HTTPException, Request, Depends, BackgroundTasks
 from fastapi.responses import RedirectResponse, JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -9,6 +9,13 @@ from starlette.middleware.sessions import SessionMiddleware
 from pydantic import BaseModel
 from typing import Optional
 import os
+import logging
+import secrets
+import json
+from datetime import datetime, timedelta
+from fastapi.responses import StreamingResponse
+from passlib.hash import argon2
+from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 from dotenv import load_dotenv
 
 # Importy z vašich modulov
@@ -18,11 +25,20 @@ from app.models.category import Category
 from app.models.user import User
 from app.models.word import Word
 from app.routers import words  # Import words routeru
+from app.models.word import KnowledgeLevel
+from app.routers.localization import get_language
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from datetime import datetime
+
+# Auth a Email services
+from app.services.auth_service import hash_password, verify_password, create_access_token
+from app.services.email_service import send_welcome_email
 
 load_dotenv()
+
+# Konfigurácia logovania
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # NOVÉ - Cloud Run načíta secrets automaticky ako env variables
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -39,6 +55,11 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 @app.get('/favicon.ico', include_in_schema=False)
 async def favicon():
     return FileResponse("app/static/favicon.ico")
+
+# Endpoint pre Apple Touch Icon (PWA na iOS)
+@app.get('/apple-touch-icon.png', include_in_schema=False)
+async def apple_touch_icon():
+    return FileResponse("app/static/apple-touch-icon.png")
 
 # PWA endpoints
 @app.get('/manifest.json', include_in_schema=False)
@@ -63,10 +84,10 @@ app.include_router(words.router)
 # (Starlette spracováva middleware v opačnom poradí ako sú pridané)
 app.add_middleware(
     SessionMiddleware,
-    secret_key=os.getenv("SESSION_SECRET", "your-secret-key-12345"),
+    secret_key=SECRET_KEY or os.getenv("SESSION_SECRET", "dev-secret-123"),
     https_only=True,    # ✅ FIX 2: Potrebné pre Cloud Run (HTTPS)
     same_site="lax",    # ✅ FIX 3: Potrebné pre Google OAuth redirect
-    max_age=3600,       # ✅ FIX 4: Session vydrží 1 hodinu
+    max_age=2592000,    # ✅ PWA FIX: Session vydrží 30 dní (lepšie pre mobil)
 )
 
 # ✅ FIX 5: CORS middleware s produkčnou URL
@@ -105,15 +126,6 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
-# Auth service imports
-from app.services.auth_service import hash_password, verify_password, create_access_token
-from passlib.hash import argon2
-
-# Email imports
-from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
-from datetime import datetime, timedelta
-import secrets
-
 mail_config = ConnectionConfig(
     MAIL_USERNAME=os.getenv("MAIL_USERNAME"),
     MAIL_PASSWORD=os.getenv("MAIL_PASSWORD"),
@@ -131,7 +143,11 @@ mail_config = ConnectionConfig(
 
 @app.get("/")
 async def read_root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    lang = get_language(request)
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "lang": lang
+    })
 
 @app.get("/login")
 async def login_page(request: Request):
@@ -193,7 +209,6 @@ async def category_words_page(request: Request, category_id: int, db: Session = 
             return RedirectResponse(url='/dashboard', status_code=303)
 
     # Calculate level percentages for the category
-    from app.models.word import KnowledgeLevel
     total_words = db.query(func.count(Word.id)).filter(Word.category_id == category.id, Word.user_id == user_id).scalar() or 0
 
     level_counts = {}
@@ -303,15 +318,21 @@ async def repeat_page(request: Request, category: int = None, level: str = None,
 # AUTH API ENDPOINTS
 # ============================================================
 
-@app.post("/api/v1/register")
-async def register(request: Request, db: Session = Depends(get_db)):
-    try:
-        data = await request.json()
-        email = data.get('email')
-        password = data.get('password')
-        name = data.get('name', email.split('@')[0])
+class UserRegister(BaseModel):
+    email: str
+    password: str
+    name: Optional[str] = None
 
-        print(f"Register attempt: {email}")
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+@app.post("/api/v1/register")
+async def register(request: Request, user_data: UserRegister, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    try:
+        email = user_data.email
+        password = user_data.password
+        name = user_data.name or email.split('@')[0]
 
         if email and password:
             existing_user = db.query(User).filter(User.email == email).first()
@@ -331,11 +352,8 @@ async def register(request: Request, db: Session = Depends(get_db)):
             db.refresh(new_user)
 
             # Uvítací email
-            from app.services.email_service import send_welcome_email
-            try:
-                send_welcome_email(new_user.email, new_user.name)
-            except Exception as e:
-                print(f"Welcome email error: {e}")
+            # Použitie BackgroundTasks zrýchľuje odozvu pre mobilných používateľov
+            background_tasks.add_task(send_welcome_email, new_user.email, new_user.name)
 
             session_user = {
                 "id": new_user.id,
@@ -356,18 +374,15 @@ async def register(request: Request, db: Session = Depends(get_db)):
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Registration error: {e}")
+        logger.error(f"Registration error: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
 
 @app.post("/api/v1/login")
-async def login(request: Request, db: Session = Depends(get_db)):
+async def login(request: Request, user_data: UserLogin, db: Session = Depends(get_db)):
     try:
-        data = await request.json()
-        email = data.get('email')
-        password = data.get('password')
-
-        print(f"Login attempt: {email}")
+        email = user_data.email
+        password = user_data.password
 
         if email and password:
             user = db.query(User).filter(User.email == email).first()
@@ -411,7 +426,7 @@ async def login(request: Request, db: Session = Depends(get_db)):
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Login error: {e}")
+        logger.error(f"Login error: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -433,11 +448,11 @@ async def google_login(request: Request):
 
 @app.get('/auth/google/callback', name='google_callback')
 async def google_callback(request: Request, db: Session = Depends(get_db)):
-    print("Google callback started")
+    logger.info("Google callback started")
     try:
         token = await oauth.google.authorize_access_token(request)
         user_info = await oauth.google.userinfo(token=token)
-        print(f"User info: {user_info}")
+        logger.info(f"User info received for: {user_info.get('email')}")
 
         if not user_info or not user_info.get('email'):
             raise HTTPException(status_code=400, detail="Failed to get user info from Google")
@@ -461,7 +476,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
             db.commit()
             db.refresh(user)
             new_user = True
-            print(f"New user created: {user.email}")
+            logger.info(f"New user created: {user.email}")
 
             # Uvítací email pre nového Google užívateľa
             try:
@@ -483,13 +498,12 @@ Tím WordKeeper
                 fm = FastMail(mail_config)
                 await fm.send_message(message)
             except Exception as e:
-                print(f"Welcome email error: {e}")
+                logger.error(f"Welcome email error: {e}")
         else:
             if not user.name and name:
                 user.name = name
             user.last_login = datetime.utcnow()
             db.commit()
-            print(f"Existing user found: {user.email}")
 
         session_user = {
             "id": user.id,
@@ -500,15 +514,13 @@ Tím WordKeeper
             "dark_mode": user.dark_mode
         }
         request.session['user'] = session_user
-        print(f"Session set for user: {user.email}")
 
         jwt_token = create_access_token(data={"sub": user.email})
         callback_url = f"{request.base_url}auth/callback?token={jwt_token}&new_user={'1' if new_user else '0'}&email={email}&name={name}"
-        print(f"Redirecting to callback: {callback_url}")
         return RedirectResponse(url=callback_url)
 
     except Exception as e:
-        print(f"Google auth error: {e}")
+        logger.error(f"Google auth error: {e}")
         return RedirectResponse(url='/login?error=google_auth_failed')
 
 
@@ -626,7 +638,6 @@ async def get_user_stats(request: Request, db: Session = Depends(get_db)):
     if tests_taken > 0:
         success_rate = round((times_correct / tests_taken) * 100, 2)
 
-    from app.schemas.word import KnowledgeLevel
     level_counts = {}
     for level in KnowledgeLevel:
         count = db.query(func.count(Word.id)).filter(
@@ -643,9 +654,6 @@ async def get_user_stats(request: Request, db: Session = Depends(get_db)):
         "words_by_level": level_counts
     })
 
-
-from fastapi.responses import StreamingResponse
-import json
 
 @app.get("/api/user/export")
 async def export_user_data(request: Request, db: Session = Depends(get_db)):
@@ -720,8 +728,6 @@ async def get_categories(request: Request, db: Session = Depends(get_db)):
     user_id = user_session['id']
     categories = db.query(Category).filter(Category.user_id == user_id).all()
 
-    from app.models.word import KnowledgeLevel
-
     result = []
     for category in categories:
         total_words = db.query(func.count(Word.id)).filter(Word.category_id == category.id, Word.user_id == user_id).scalar() or 0
@@ -784,7 +790,7 @@ async def create_category(category_data: CategoryCreate, db: Session = Depends(g
     db.commit()
     db.refresh(new_category)
 
-    print(f"Category saved to database with ID: {new_category.id}")
+    logger.info(f"Category saved to database with ID: {new_category.id}")
     return new_category
 
 
@@ -804,8 +810,6 @@ async def update_category(category_id: int, category_update: CategoryUpdate, req
 
     db.commit()
     db.refresh(category)
-
-    from app.models.word import KnowledgeLevel
 
     total_words = db.query(func.count(Word.id)).filter(Word.category_id == category.id, Word.user_id == user_id).scalar() or 0
 
@@ -861,8 +865,6 @@ async def get_category_detail(category_id: int, request: Request, db: Session = 
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
 
-    from app.models.word import KnowledgeLevel
-
     total_words = db.query(func.count(Word.id)).filter(Word.category_id == category.id, Word.user_id == user_id).scalar() or 0
 
     level_counts = {}
@@ -906,7 +908,6 @@ async def get_category_stats(category_id: int, request: Request, db: Session = D
 
     total_words = db.query(func.count(Word.id)).filter(Word.category_id == category_id, Word.user_id == user_session['id']).scalar() or 0
 
-    from app.models.word import KnowledgeLevel
     level_counts = {}
     for level in KnowledgeLevel:
         count = db.query(func.count(Word.id)).filter(
@@ -969,7 +970,7 @@ async def debug_users(db: Session = Depends(get_db)):
 
 @app.on_event("startup")
 async def startup_event():
-    print("Database tables created")
+    logger.info("Application starting up...")
     db = SessionLocal()
     try:
         test_user = db.query(User).filter(User.email == "test@example.com").first()
@@ -977,24 +978,25 @@ async def startup_event():
         if not test_user:
             test_user = User(email="test@example.com", name="Test User", is_plus=False, password=hashed_password)
             db.add(test_user)
-            print("Test user created with password 'test123'")
+            logger.info("Test user created with password 'test123'")
         else:
             if not verify_password("test123", test_user.password):
                 test_user.password = hashed_password
                 db.commit()
-                print("Test user password updated to bcrypt hash")
+                logger.info("Test user password updated to bcrypt hash")
             else:
-                print("Test user already exists with correct password")
+                logger.info("Test user already exists with correct password")
         db.commit()
     except Exception as e:
-        print(f"Error creating/updating test user: {e}")
+        logger.error(f"Error creating/updating test user: {e}")
     finally:
         db.close()
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
 
 
 # ============================================================

@@ -145,6 +145,11 @@ button:hover {
   background: #45a049;
 }
 
+#installBtn {
+  background: var(--primary-green);
+  margin-right: 1rem;
+}
+
 .test-card {
   background: var(--card-bg);
   padding: 2rem;
@@ -237,6 +242,7 @@ button:hover {
     </div>
     <!-- ✅ OPRAVA 2: themeToggle teraz ukladá do localStorage -->
     <button id="themeToggle" onclick="toggleTheme()" style="background: none; border: none; color: var(--text-color); cursor: pointer; font-size: 1.2rem; margin-right: 1rem;">🌙 Dark Mode</button>
+    <button id="installBtn" style="display: none; padding: 0.5rem 1rem; font-size: 0.9rem;">📲 Inštalovať</button>
     <a href="/dashboard">Dashboard</a>
     <a href="/profile">Profile</a>
   </div>
@@ -313,6 +319,7 @@ let currentTest = null;
 let currentWordIndex = 0;
 let testResults = [];
 let categories = [];
+let deferredPrompt;
 
 // ✅ OPRAVA 3: Inicializácia stavu tlačidla podľa localStorage
 document.addEventListener('DOMContentLoaded', async function() {
@@ -320,6 +327,39 @@ document.addEventListener('DOMContentLoaded', async function() {
   // Nastav správny text tlačidla podľa aktuálneho stavu
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   document.getElementById('themeToggle').textContent = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
+
+  // PWA Inštalačná logika
+  const installBtn = document.getElementById('installBtn');
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    // Zabránime automatickému zobrazeniu predvoleného promptu
+    e.preventDefault();
+    // Uložíme udalosť na neskoršie použitie
+    deferredPrompt = e;
+    // Zobrazíme naše tlačidlo
+    installBtn.style.display = 'inline-block';
+  });
+
+  installBtn.addEventListener('click', async () => {
+    if (deferredPrompt) {
+      // Vyvoláme inštalačný prompt
+      deferredPrompt.prompt();
+      // Počkáme na rozhodnutie používateľa
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log(`User response to the install prompt: ${outcome}`);
+      // Vynulujeme prompt, aby sa nedal použiť znova
+      deferredPrompt = null;
+      // Skryjeme tlačidlo
+      installBtn.style.display = 'none';
+    }
+  });
+
+  window.addEventListener('appinstalled', () => {
+    // Skryjeme tlačidlo po úspešnej inštalácii
+    installBtn.style.display = 'none';
+    deferredPrompt = null;
+    console.log('PWA was installed');
+  });
 });
 
 async function loadCategories() {

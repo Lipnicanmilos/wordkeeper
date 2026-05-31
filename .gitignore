@@ -14,10 +14,11 @@ __pycache__/
 .idea/
 
 # Google Cloud
-*.json
-service_account*.json
+#*.json
+#service_account*.json
 
 # Logs
 *.log
 
 procedure.txt
+todo.md
