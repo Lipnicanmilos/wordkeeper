@@ -65,7 +65,8 @@ async def apple_touch_icon():
 @app.get('/manifest.json', include_in_schema=False)
 async def get_manifest():
     return FileResponse(
-        "app/static/manifest.json", 
+        "app/static/manifest.json",
+        media_type="application/manifest+json",
         headers={"Cache-Control": "no-cache, no-store, must-revalidate"}
     )
 
