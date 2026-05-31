@@ -18,12 +18,8 @@
 
 <!-- ✅ OPRAVA 1: Dark mode sa aplikuje OKAMŽITE z localStorage, pred akýmkoľvek renderingom -->
 <script>
-  try {
-    if (localStorage.getItem('darkMode') === 'true') {
-      document.documentElement.setAttribute('data-theme', 'dark');
-    }
-  } catch (e) {
-    console.warn("Storage access denied in incognito mode");
+  if (localStorage.getItem('darkMode') === 'true') {
+    document.documentElement.setAttribute('data-theme', 'dark');
   }
 </script>
 
@@ -352,6 +348,31 @@ const langButtons = document.querySelectorAll('.lang-btn');
 const currentLang = localStorage.getItem('preferredLang') || 'en';
 setActiveLanguage(currentLang);
 langButtons.forEach(b=>b.addEventListener('click', ()=>{ const l=b.dataset.lang; setActiveLanguage(l); localStorage.setItem('preferredLang', l); }));
+
+function setActiveLanguage(lang){
+  langButtons.forEach(b=>b.classList.toggle('active', b.dataset.lang===lang));
+  document.querySelectorAll('[data-en], [data-sk]').forEach(el=>{
+    if (el.hasAttribute(`data-${lang}`)){
+      if (el.tagName==='TITLE') document.title = el.getAttribute(`data-${lang}`);
+      else el.textContent = el.getAttribute(`data-${lang}`);
+    }
+  });
+  document.querySelectorAll('[data-en-placeholder], [data-sk-placeholder]').forEach(el=>{
+    if (el.hasAttribute(`data-${lang}-placeholder`)) el.placeholder = el.getAttribute(`data-${lang}-placeholder`);
+  });
+}
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .catch(err => console.error('SW error:', err));
+  });
+}
+
+async function loadUserData(){
+  const email = localStorage.getItem('user_email') || currentUserEmail || '—';
+  document.getElementById('userEmail').textContent = email;
+}
 
 async function loadCategories(){
   try {

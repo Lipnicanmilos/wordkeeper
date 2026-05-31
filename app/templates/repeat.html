@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-en="Repeat Vocabulary" data-sk="Opakovanie slovíčok">Repeat Vocabulary - WordKeeper</title>
+
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#4079ff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="WordKeeper">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -410,6 +419,7 @@
                 <button class="lang-btn active" data-lang="en">EN</button>
                 <button class="lang-btn" data-lang="sk">SK</button>
             </div>
+            <button id="installBtn" class="small-btn" style="display:none; color: var(--primary);">📲 <span data-en="Install" data-sk="Inštalovať">Install</span></button>
             <button onclick="history.back()" class="small-btn" data-en="Back" data-sk="Späť">Back</button>
             <button class="small-btn" onclick="logout()" data-en="Logout" data-sk="Odhlásiť sa">Logout</button>
         </div>
@@ -931,6 +941,28 @@
                 window.location.href = '/';
             }
         }
+
+        // PWA Registrácia a Inštalačná logika
+        let deferredPrompt;
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .catch(err => console.error('SW error:', err));
+        }
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const btn = document.getElementById('installBtn');
+            if (btn) btn.style.display = 'inline-block';
+        });
+
+        document.getElementById('installBtn')?.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            await deferredPrompt.userChoice;
+            deferredPrompt = null;
+            document.getElementById('installBtn').style.display = 'none';
+        });
     </script>
 </body>
 </html>

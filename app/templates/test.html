@@ -368,28 +368,13 @@ document.addEventListener('DOMContentLoaded', async function() {
     });
   }
 
-  // PWA Inštalačná logika
-  const installBtn = document.getElementById('installBtn');
-
-  installBtn.addEventListener('click', async () => {
-    if (deferredPrompt) {
-      // Vyvoláme inštalačný prompt
-      deferredPrompt.prompt();
-      // Počkáme na rozhodnutie používateľa
-      const { outcome } = await deferredPrompt.userChoice;
-      console.log(`User response to the install prompt: ${outcome}`);
-      // Vynulujeme prompt, aby sa nedal použiť znova
-      deferredPrompt = null;
-      // Skryjeme tlačidlo
-      installBtn.style.display = 'none';
-    }
-  });
-
-  window.addEventListener('appinstalled', () => {
-    // Skryjeme tlačidlo po úspešnej inštalácii
-    installBtn.style.display = 'none';
+  // ✅ Vyčistený click handler pre inštaláciu
+  document.getElementById('installBtn').addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
     deferredPrompt = null;
-    console.log('PWA was installed');
+    document.getElementById('installBtn').style.display = 'none';
   });
 });
 

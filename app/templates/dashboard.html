@@ -217,6 +217,8 @@
                 <button class="lang-btn" data-lang="en">EN</button>
                 <button class="lang-btn" data-lang="sk">SK</button>
                 
+                <button id="installBtn" class="icon-btn" style="display:none; color: var(--primary);">📲 <span data-en="Install" data-sk="Inštalovať">Inštalovať</span></button>
+                
                 <a href="/profile" class="icon-btn">
                     <i class="fa-solid fa-user-gear"></i>
                     <span data-en="Profile" data-sk="Profil">Profil</span>
@@ -582,10 +584,25 @@
         function logout() { fetch('/api/v1/logout', { method: 'GET' }).then(() => window.location.href = '/login'); }
     </script>
     <script>
+      let deferredPrompt;
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js')
           .catch(err => console.error('SW error:', err));
       }
+
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        document.getElementById('installBtn').style.display = 'inline-flex';
+      });
+
+      document.getElementById('installBtn').addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        document.getElementById('installBtn').style.display = 'none';
+      });
     </script>
 </body>
 </html>
