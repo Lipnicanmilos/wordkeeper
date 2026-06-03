@@ -53,10 +53,19 @@ self.addEventListener('activate', (event) => {
 
 // ✅ NOVÉ: Offline fallback dáta pre API
 const OFFLINE_FALLBACK_DATA = {
-  categories: { categories: [] },
+  // /api/v1/categories vracia priamo pole kategórií, nie objekt
+  categories: [],
   user: { error: 'offline', offline: true },
-  stats: { total_words: 0, total_categories: 0, tests_taken: 0, success_rate: 0, words_by_level: {} }
+  // /api/user/stats očakáva words_by_level.{dont_know, learning, know}
+  stats: {
+    total_words: 0,
+    total_categories: 0,
+    tests_taken: 0,
+    success_rate: 0,
+    words_by_level: { dont_know: 0, learning: 0, know: 0 }
+  }
 };
+
 
 // Fetch stratégia - s vylepšeným offline handlingom
 self.addEventListener('fetch', (event) => {
@@ -153,6 +162,7 @@ self.addEventListener('fetch', (event) => {
                   headers: { 'Content-Type': 'application/json', 'X-Offline': 'true' }
                 });
               }
+
               if (pathname.includes('/api/user/stats')) {
                 return new Response(JSON.stringify(OFFLINE_FALLBACK_DATA.stats), {
                   status: 200,

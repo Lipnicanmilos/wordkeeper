@@ -425,10 +425,13 @@
         async function loadCategories() {
             try {
                 const res = await fetch('/api/v1/categories');
-                allCategories = res.ok ? await res.json() : [];
+                const data = await res.json();
+                // /api/v1/categories očakáva pole; SW fallback môže byť konzistentný, ale pre istotu ošetríme
+                allCategories = Array.isArray(data) ? data : (data.categories || []);
                 displayCategories(allCategories);
             } catch (err) { displayCategories([]); }
         }
+
 
         function displayCategories(categories) {
             const list = document.getElementById('categoriesList');
