@@ -609,15 +609,25 @@
                 const response = await fetch('/api/user', {
                     credentials: 'same-origin'
                 });
-                if (!response.ok) {
-                    window.location.href = '/login';
+
+                // In offline SW režime server často vráti status 200, ale payload má { error: 'offline' }
+                const user = await response.json().catch(() => null);
+
+                const offline = !navigator.onLine || (user && (user.error === 'offline' || user.offline === true));
+
+                if (!response.ok || !user || offline) {
+                    // Offline: nepodliehaj redirectu na /login, pokračuj s cache datami
+                    const cachedId = localStorage.getItem('wk_user_id');
+                    currentUserId = cachedId ? parseInt(cachedId, 10) : null;
+
+                    // Load words z localStorage cache (loadWords má vlastný fallback)
+                    await loadWords();
                     return;
                 }
 
-                const user = await response.json();
                 currentUserId = user.id;
 
-                // Load category info
+                // Load category info (iba ak online)
                 await loadCategoryInfo();
 
                 // Load words
@@ -625,7 +635,15 @@
 
             } catch (err) {
                 console.error('User load failed:', err);
-                window.location.href = '/login';
+                // Offline: nepresmeruj, sprav fallback cez loadWords
+                try {
+                    const cachedId = localStorage.getItem('wk_user_id');
+                    currentUserId = cachedId ? parseInt(cachedId, 10) : null;
+                    await loadWords();
+                } catch (e) {
+                    // ak ani cache nie je, nech sa zobrazí pôvodná chybová správa z loadWords
+                    console.error('Offline words fallback failed:', e);
+                }
             }
         }
 
