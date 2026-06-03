@@ -217,4 +217,28 @@ self.addEventListener('message', (event) => {
   }
 });
 
+// --- Offline notifications (local) ---
+// Používame jednoduchý mechanizmus: keď stránka pošle message typu
+// { type: 'SHOW_NOTIFICATION', title, body } tak SW zobrazí notifikáciu.
+self.addEventListener('message', (event) => {
+  try {
+    const data = event.data;
+    if (!data || data.type !== 'SHOW_NOTIFICATION') return;
+
+    const title = data.title || 'WordKeeper';
+    const options = {
+      body: data.body || '',
+      icon: '/static/icons/icon-192x192.png',
+      badge: '/static/icons/icon-192x192.png',
+      tag: data.tag || 'wordkeeper-offline',
+      renotify: true
+    };
+
+    event.waitUntil(self.registration.showNotification(title, options));
+  } catch (e) {
+    // ignoruj
+  }
+});
+
 console.log('[SW] Service Worker loaded successfully!');
+

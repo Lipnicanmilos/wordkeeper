@@ -218,8 +218,14 @@
                 <button class="lang-btn" data-lang="sk">SK</button>
                 
                 <button id="installBtn" class="icon-btn" style="display:none; color: var(--primary);">📲 <span data-en="Install" data-sk="Inštalovať">Inštalovať</span></button>
+
+                <button class="icon-btn" onclick="requestNotificationPermission()" title="Notifications" style="color: var(--primary);">
+                    <i class="fa-solid fa-bell"></i>
+                    <span data-en="Notifications" data-sk="Notifikácie">Notifikácie</span>
+                </button>
                 
                 <a href="/profile" class="icon-btn">
+
                     <i class="fa-solid fa-user-gear"></i>
                     <span data-en="Profile" data-sk="Profil">Profil</span>
                 </a>
@@ -581,8 +587,37 @@
             }
         }
 
+        async function requestNotificationPermission() {
+            try {
+                if (!('Notification' in window)) {
+                    showMessage('Notifikácie nie sú podporované v tomto prehliadači.', 'error');
+                    return;
+                }
+                const permission = await Notification.requestPermission();
+                if (permission !== 'granted') {
+                    showMessage('Notifikácie neboli povolené.', 'error');
+                    return;
+                }
+
+                showMessage('Notifikácie povolené!', 'success');
+
+                // Skúsime poslať krátku ukážku notifikácie cez SW
+                if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                    navigator.serviceWorker.controller.postMessage({
+                        type: 'SHOW_NOTIFICATION',
+                        title: 'WordKeeper',
+                        body: currentLang === 'sk' ? 'Offline tréning je pripravený.' : 'Offline training is ready.' ,
+                        tag: 'wordkeeper-demo'
+                    });
+                }
+            } catch (e) {
+                showMessage('Chyba pri povolení notifikácií.', 'error');
+            }
+        }
+
         function logout() { fetch('/api/v1/logout', { method: 'GET' }).then(() => window.location.href = '/login'); }
     </script>
+
     <script>
       let deferredPrompt;
       if ('serviceWorker' in navigator) {

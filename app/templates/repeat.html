@@ -506,7 +506,10 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
+            initOfflineUI();
+
             // Create floating shapes
+
             const bg = document.getElementById('bgShapes');
             const chars = ['A', 'B', 'C', '1', '?', '!', '@', '#'];
 
@@ -647,7 +650,41 @@
             }
         }
 
+        const OFFLINE_WORDS_KEY_PREFIX = 'offline_words_v1:';
+
+        function offlineWordsCacheKey({ categoryId, level, testDirection }) {
+            return `${OFFLINE_WORDS_KEY_PREFIX}cat=${categoryId}&level=${level}&dir=${testDirection}`;
+        }
+
+        function loadOfflineWordsFromCache(cacheKey) {
+            try {
+                const raw = localStorage.getItem(cacheKey);
+                if (!raw) return null;
+                const parsed = JSON.parse(raw);
+                if (!parsed || !Array.isArray(parsed.words)) return null;
+                if (typeof parsed.updated_at !== 'string') return null;
+                return parsed.words;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function saveOfflineWordsToCache(cacheKey, wordsToSave) {
+            try {
+                localStorage.setItem(cacheKey, JSON.stringify({
+                    updated_at: new Date().toISOString(),
+                    words: wordsToSave
+                }));
+            } catch (e) {
+                // localStorage može byť plný / zakázaný
+                console.warn('Offline cache save failed:', e);
+            }
+        }
+
         async function loadWords() {
+            const testDirection = "original_to_translation";
+            const cacheKey = offlineWordsCacheKey({ categoryId, level, testDirection });
+
             try {
                 const response = await fetch('/api/v1/words/test/start', {
                     method: 'POST',
@@ -659,32 +696,45 @@
                         category_id: parseInt(categoryId),
                         knowledge_levels: [level],
                         limit: 1000,
-                        test_direction: "original_to_translation"
+                        test_direction: testDirection
                     })
                 });
 
-                if (!response.ok) {
-                    throw new Error('Failed to load words');
-                }
+                if (!response.ok) throw new Error('Failed to load words');
 
-                words = await response.json();
+                const freshWords = await response.json();
 
-                if (words.length === 0) {
+                if (freshWords.length === 0) {
                     showMessage('No words found for this level', 'error');
                     return;
                 }
 
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('content').style.display = 'block';
+                // uložiť offline cache
+                saveOfflineWordsToCache(cacheKey, freshWords);
 
-                updateProgress();
-                showCurrentWord();
+                words = freshWords;
 
             } catch (err) {
-                console.error('Words load failed:', err);
-                showMessage('Failed to load words', 'error');
+                // Offline fallback z cache
+                console.warn('Words load failed (offline fallback will be attempted):', err);
+                const cachedWords = loadOfflineWordsFromCache(cacheKey);
+                if (cachedWords && cachedWords.length > 0) {
+                    words = cachedWords;
+                    showMessage('Si offline: načítané slovíčka z poslednej cache.', 'success');
+                } else {
+                    showMessage('Failed to load words (offline nemáš uložené dáta pre tento režim).', 'error');
+                    console.error('No offline cached words for key:', cacheKey);
+                    return;
+                }
             }
+
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('content').style.display = 'block';
+
+            updateProgress();
+            showCurrentWord();
         }
+
 
         function showCurrentWord() {
             if (words.length === 0 || currentIndex >= words.length) return;
@@ -770,6 +820,26 @@
             messageEl.style.display = 'block';
             setTimeout(() => messageEl.style.display = 'none', 5000);
         }
+
+        function initOfflineUI() {
+            const show = () => {
+                if (!navigator.onLine) {
+                    showMessage('Offline režim: zobrazenie môže byť len z cache.', 'error');
+                }
+            };
+
+            // initial
+            show();
+
+            window.addEventListener('online', () => {
+                showMessage('Online režim: dáta sa budú aktualizovať.', 'success');
+            });
+
+            window.addEventListener('offline', () => {
+                show();
+            });
+        }
+
 
         async function loadDarkModePreference() {
             try {
