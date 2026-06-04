@@ -359,6 +359,15 @@ document.addEventListener('DOMContentLoaded', async function() {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   document.getElementById('themeToggle').textContent = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
 
+  // Flush queued submits on page load (if online)
+  try {
+    if (navigator.onLine) {
+      flushQueuedSubmits().catch(() => {});
+    }
+  } catch (e) {
+    // ignore
+  }
+
   // ✅ Registrácia Service Workera (Dôležité pre PWA inštaláciu)
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -377,6 +386,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     document.getElementById('installBtn').style.display = 'none';
   });
 });
+
 
 async function loadCategories() {
   const token = localStorage.getItem('access_token');
@@ -400,6 +410,117 @@ async function loadCategories() {
   }
 }
 
+const WK_TEST_CACHE_PREFIX = 'wk_test_words_cache_v1:';
+const WK_TEST_SUBMIT_QUEUE_PREFIX = 'wk_test_submit_queue_v1:';
+
+function getUserIdSafe() {
+  const cachedUserId = localStorage.getItem('wk_user_id') || localStorage.getItem('user_id');
+  const n = cachedUserId ? parseInt(cachedUserId, 10) : null;
+  return Number.isFinite(n) ? n : null;
+}
+
+function normalizeLevels(levels) {
+  return (Array.isArray(levels) ? levels : []).map(String).sort().join(',');
+}
+
+function testWordsCacheKey({ userId, categoryId, levelsCsv, dir, limit }) {
+  return `${WK_TEST_CACHE_PREFIX}u=${userId ?? 'anon'}&cat=${categoryId ?? 'all'}&levels=${levelsCsv}&dir=${dir}&limit=${limit}`;
+}
+
+function loadTestWordsCache(cacheKey) {
+  try {
+    const raw = localStorage.getItem(cacheKey);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || !Array.isArray(parsed.words)) return null;
+    return parsed.words;
+  } catch (e) {
+    return null;
+  }
+}
+
+function saveTestWordsCache(cacheKey, wordsToSave) {
+  try {
+    localStorage.setItem(cacheKey, JSON.stringify({
+      updated_at: new Date().toISOString(),
+      words: wordsToSave
+    }));
+  } catch (e) {
+    console.warn('Test words cache save failed:', e);
+  }
+}
+
+function getSubmitQueueKey(userId) {
+  return `${WK_TEST_SUBMIT_QUEUE_PREFIX}${userId ?? 'anon'}`;
+}
+
+function loadSubmitQueue(userId) {
+  const key = getSubmitQueueKey(userId);
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed;
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveSubmitQueue(userId, queue) {
+  const key = getSubmitQueueKey(userId);
+  try {
+    localStorage.setItem(key, JSON.stringify(queue));
+  } catch (e) {
+    console.warn('Submit queue save failed:', e);
+  }
+}
+
+async function flushQueuedSubmits() {
+  const userId = getUserIdSafe();
+  const token = localStorage.getItem('access_token');
+  if (userId === null) return;
+  const queue = loadSubmitQueue(userId);
+  if (!queue.length) return;
+
+  if (!navigator.onLine) return;
+
+  const remaining = [];
+  for (const item of queue) {
+    try {
+      const response = await fetch('/api/v1/words/test/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(item.results)
+      });
+
+      if (response.ok) {
+        console.log('[Test PWA] Queued submit flushed:', item.id);
+      } else {
+        remaining.push(item);
+      }
+    } catch (e) {
+      remaining.push(item);
+    }
+  }
+
+  saveSubmitQueue(userId, remaining);
+
+  const resultsStats = document.getElementById('resultsStats');
+  if (remaining.length !== queue.length && resultsStats) {
+    resultsStats.insertAdjacentHTML('beforeend', `<p style="margin-top: 1rem; color: #2e7d32; font-weight: 600;">Odoslané offline výsledky: ${queue.length - remaining.length}</p>`);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  window.addEventListener('online', () => {
+    flushQueuedSubmits().catch(() => {});
+  });
+});
+
 async function startTest() {
   const categoryId = document.getElementById('categorySelect').value;
   const limit = document.getElementById('testLimit').value;
@@ -419,6 +540,16 @@ async function startTest() {
     test_direction: testDirection
   };
 
+  const userId = getUserIdSafe();
+  const levelsCsv = normalizeLevels(selectedLevels);
+  const cacheKey = testWordsCacheKey({
+    userId,
+    categoryId: categoryId ? parseInt(categoryId) : null,
+    levelsCsv,
+    dir: testDirection,
+    limit: parseInt(limit)
+  });
+
   const token = localStorage.getItem('access_token');
   try {
     const response = await fetch('/api/v1/words/test/start', {
@@ -430,24 +561,45 @@ async function startTest() {
       body: JSON.stringify(testConfig)
     });
 
-    if (response.ok) {
-      currentTest = await response.json();
-      if (currentTest.length === 0) {
-        alert('No words found for the selected criteria');
-        return;
-      }
+    if (!response.ok) throw new Error('Error starting test');
+
+    currentTest = await response.json();
+    if (currentTest.length === 0) {
+      alert('No words found for the selected criteria');
+      return;
+    }
+
+    // Cache for offline usage
+    saveTestWordsCache(cacheKey, currentTest);
+
+    currentWordIndex = 0;
+    testResults = [];
+    document.getElementById('testConfig').style.display = 'none';
+    document.getElementById('testInterface').style.display = 'block';
+    showNextWord();
+  } catch (error) {
+    console.warn('Error starting test (trying offline cache):', error);
+
+    const cachedWords = loadTestWordsCache(cacheKey);
+    if (cachedWords && cachedWords.length > 0) {
+      currentTest = cachedWords;
       currentWordIndex = 0;
       testResults = [];
       document.getElementById('testConfig').style.display = 'none';
       document.getElementById('testInterface').style.display = 'block';
       showNextWord();
+      const resultsStats = document.getElementById('resultsStats');
+      showResults = null;
+      if (resultsStats) {
+        resultsStats.innerHTML = '';
+      }
+      alert('Si offline: načítané slovíčka z poslednej cache pre tento test.');
     } else {
-      alert('Error starting test');
+      alert('Si offline a nemáš uložené dáta pre tento test (spusti ho aspoň raz online).');
     }
-  } catch (error) {
-    console.error('Error starting test:', error);
   }
 }
+
 
 function showNextWord() {
   if (currentWordIndex >= currentTest.length) {
@@ -487,6 +639,8 @@ function skipWord() {
 
 async function finishTest() {
   const token = localStorage.getItem('access_token');
+  const userId = getUserIdSafe();
+
   try {
     const response = await fetch('/api/v1/words/test/submit', {
       method: 'POST',
@@ -496,26 +650,75 @@ async function finishTest() {
       },
       body: JSON.stringify(testResults)
     });
+
     if (response.ok) {
       const results = await response.json();
       showResults(results);
+      return;
     }
+
+    throw new Error('submit failed');
   } catch (error) {
-    console.error('Error submitting test results:', error);
+    console.warn('Error submitting test results (queuing offline):', error);
+
+    if (userId === null) {
+      alert('Si offline, ale nemám user_id v cache. Prihlás sa znova a skúšaj.' );
+      showResults({
+        message: 'offline queued failed',
+        updated_words: []
+      });
+      return;
+    }
+
+    const queueItem = {
+      id: `${Date.now()}_${Math.random().toString(16).slice(2)}`,
+      created_at: new Date().toISOString(),
+      results: testResults
+    };
+
+    const queue = loadSubmitQueue(userId);
+    queue.push(queueItem);
+    saveSubmitQueue(userId, queue);
+
+    // UI: zobraz výsledok lokálne, ale oznám že sa odošle po online
+    showResults({
+      message: 'offline queued',
+      updated_words: []
+    });
+
+    const resultsStats = document.getElementById('resultsStats');
+    if (resultsStats) {
+      resultsStats.insertAdjacentHTML(
+        'beforeend',
+        `<p style="margin-top: 1rem; color: #ff9800; font-weight: 700;">Výsledky sa odošlú po pripojení.</p>`
+      );
+    }
   }
 }
+
 
 function showResults(results) {
   document.getElementById('testInterface').style.display = 'none';
   document.getElementById('testResults').style.display = 'block';
+
   const correctAnswers = testResults.filter(r => r.is_correct).length;
   const totalAnswers = testResults.length;
-  const percentage = Math.round((correctAnswers / totalAnswers) * 100);
+  const percentage = totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) : 0;
+
+  let message = 'Your vocabulary knowledge has been updated!';
+  if (results && results.message === 'offline queued') {
+    message = 'Offline: výsledky sa uložili a odošlú sa po pripojení.';
+  }
+  if (results && results.message === 'offline queued failed') {
+    message = 'Offline: uloženie fronty sa nepodarilo. Skús znova po pripojení.';
+  }
+
   document.getElementById('resultsStats').innerHTML = `
     <h2>${correctAnswers} / ${totalAnswers} Correct (${percentage}%)</h2>
-    <p>Your vocabulary knowledge has been updated!</p>
+    <p>${message}</p>
   `;
 }
+
 
 function restartTest() {
   document.getElementById('testResults').style.display = 'none';
