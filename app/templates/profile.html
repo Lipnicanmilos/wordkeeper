@@ -418,14 +418,29 @@ async function loadUserProfile() {
 }
 
 async function loadUserStats(isPlus) {
+  const limit = isPlus ? '∞' : '5';
   try {
     const res = await fetch('/api/user/stats');
     const stats = await res.json();
     if (stats && !stats.offline && stats.error !== 'offline') {
-      const limit = 5;
-      document.getElementById('categoriesUsage').textContent = `${stats.total_categories} / ${limit}`;
+      // ✅ Online — uložiť do localStorage pre offline použitie
+      localStorage.setItem('wk_cached_stats', JSON.stringify(stats));
+      renderProfileStats(stats, limit);
+    } else {
+      // SW vrátil offline fallback — načítať z localStorage
+      const cached = localStorage.getItem('wk_cached_stats');
+      if (cached) renderProfileStats(JSON.parse(cached), limit);
     }
-  } catch(e) { console.error(e); }
+  } catch(e) {
+    // Sieť nedostupná — načítať z localStorage
+    const cached = localStorage.getItem('wk_cached_stats');
+    if (cached) renderProfileStats(JSON.parse(cached), limit);
+  }
+}
+
+function renderProfileStats(stats, limit) {
+  document.getElementById('categoriesUsage').textContent =
+    `${stats.total_categories ?? '-'} / ${limit}`;
 }
 
 function updatePlusBadge(isPlus) {
@@ -486,11 +501,21 @@ function setupLanguages() {
 
 // ✅ Registrácia Service Workera pre PWA inštaláciu
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(reg => console.log('Service Worker registered.'))
-      .catch(err => console.log('Service Worker registration failed: ', err));
-  });
+  navigator.serviceWorker.register('/sw.js')
+    .then(reg => {
+      if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+      reg.addEventListener('updatefound', () => {
+        const newSW = reg.installing;
+        if (newSW) {
+          newSW.addEventListener('statechange', () => {
+            if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+              newSW.postMessage({ type: 'SKIP_WAITING' });
+            }
+          });
+        }
+      });
+    })
+    .catch(err => console.error('SW error:', err));
 }
 
 function setLang(lang) {
