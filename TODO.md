@@ -22,6 +22,14 @@ Pri prvom načítaní stránky (hneď po inštalácii SW) je controller ešte nu
 ⬜ 4) repeat.html offline cache rozšíriť pre nové kombinácie bez predchádzajúcej návštevy
 ⬜ 5) profile.html — ukladať /api/user/stats do localStorage online, čítať offline
 
+🔝 Navrhovaná priorita (poradie prác)
+⬜ A) SECRET_KEY hard-fail v produkcii (rýchle + bezpečnostné)
+⬜ B) sw.js / prefetchAllWords race (controller null) (základ pre spoľahlivý prefetch po inštalácii)
+⬜ C) repeat.html — offline cache rozšíriť aj pre nové kombinácie (aby offline fungovalo “naozaj všetko”)
+⬜ D) profile.html — stats do localStorage online + čítanie offline (UX)
+⬜ E) Refaktor main.py (údržba, väčšia práca)
+⬜ F) Freemium/monetizácia (produktová vec, keď je offline-first stabilné)
+
 
 
 1. 💳 Platená vs. bezplatná vrstva (Freemium)

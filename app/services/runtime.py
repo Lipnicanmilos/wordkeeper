@@ -58,6 +58,9 @@ def is_debug_mode() -> bool:
 def get_secret_key() -> str:
     key = os.getenv("SECRET_KEY") or os.getenv("SESSION_SECRET")
     if key:
+        # Produkcia: vynúť minimálnu silu kľúča (session + JWT)
+        if not is_debug_mode() and len(key) < 32:
+            raise RuntimeError("SECRET_KEY must be at least 32 characters when DEBUG=false")
         return key
     if is_debug_mode():
         logger.warning("SECRET_KEY not set — using dev fallback (DEBUG mode only)")

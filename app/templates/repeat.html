@@ -1030,7 +1030,8 @@
                         const newSW = reg.installing;
                         if (newSW) {
                             newSW.addEventListener('statechange', () => {
-                                if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+                                // Pri prvej inštalácii je controller často null až do refreshu – SKIP_WAITING pošli aj tak.
+                                if (newSW.state === 'installed') {
                                     newSW.postMessage({ type: 'SKIP_WAITING' });
                                 }
                             });
