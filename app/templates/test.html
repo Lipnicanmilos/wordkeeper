@@ -551,6 +551,8 @@ async function startTest() {
   });
 
   const token = localStorage.getItem('access_token');
+  console.log('[Test page] startTest cacheKey=', cacheKey, 'nav.onLine=', navigator.onLine);
+
   try {
     const response = await fetch('/api/v1/words/test/start', {
       method: 'POST',
@@ -581,6 +583,7 @@ async function startTest() {
     console.warn('Error starting test (trying offline cache):', error);
 
     const cachedWords = loadTestWordsCache(cacheKey);
+    console.log('[Test page] offline cachedWords=', cachedWords ? cachedWords.length : 0);
     if (cachedWords && cachedWords.length > 0) {
       currentTest = cachedWords;
       currentWordIndex = 0;

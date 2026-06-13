@@ -154,6 +154,28 @@ self.addEventListener('fetch', (event) => {
                 });
               }
 
+              // Words list + test endpoints (PWA offline)
+              if (pathname.includes('/api/v1/words/test/start')) {
+                // Frontend má vlastnú offline cache (localStorage),
+                // takže SW len neblokuje request a vráti 200 s prázdnym zoznamom.
+                return new Response(JSON.stringify({}), {
+                  status: 200,
+                  headers: { 'Content-Type': 'application/json', 'X-Offline': 'true' }
+                });
+              }
+
+              if (pathname.includes('/api/v1/words/test/submit')) {
+                // Frontend ukladá offline submit queue sám.
+                // SW vráti 200 aby request nezlyhal.
+                return new Response(JSON.stringify({
+                  message: 'offline',
+                  updated_words: []
+                }), {
+                  status: 200,
+                  headers: { 'Content-Type': 'application/json', 'X-Offline': 'true' }
+                });
+              }
+
               if (pathname.includes('/api/v1/words')) {
                 return new Response(JSON.stringify(OFFLINE_FALLBACK_DATA.words), {
                   status: 200,
