@@ -156,13 +156,14 @@ self.addEventListener('fetch', (event) => {
 
               // Words list + test endpoints (PWA offline)
               if (pathname.includes('/api/v1/words/test/start')) {
-                // Frontend má vlastnú offline cache (localStorage),
-                // takže SW len neblokuje request a vráti 200 s prázdnym zoznamom.
-                return new Response(JSON.stringify({}), {
-                  status: 200,
+                // Frontend používa vlastnú offline cache (localStorage) a prepne sa do catch,
+                // iba ak request zlyhá (response.ok musí byť false).
+                return new Response(JSON.stringify({ error: 'offline' }), {
+                  status: 503,
                   headers: { 'Content-Type': 'application/json', 'X-Offline': 'true' }
                 });
               }
+
 
               if (pathname.includes('/api/v1/words/test/submit')) {
                 // Frontend ukladá offline submit queue sám.
