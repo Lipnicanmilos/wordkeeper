@@ -49,6 +49,9 @@ app.include_router(users_router)
 app.include_router(categories_router)
 app.include_router(words.router)
 
+from app.routers.admin import router as admin_router
+app.include_router(admin_router)
+
 
 @app.on_event("startup")
 async def startup_event():

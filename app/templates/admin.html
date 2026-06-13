@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Admin - WordKeeper</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#4079ff">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    body{font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;margin:0;background:#f4f7fe;color:#2d3748;}
+    [data-theme="dark"] body{background:#0f172a;color:#f1f5f9;}
+    .wrap{max-width:1200px;margin:0 auto;padding:2rem;}
+    .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;gap:1rem;flex-wrap:wrap;}
+    .title{font-size:1.3rem;font-weight:900;display:flex;align-items:center;gap:.75rem;}
+    .btn{border:none;border-radius:12px;padding:.65rem 1rem;font-weight:800;cursor:pointer;background:#4079ff;color:#fff;}
+    .btn.secondary{background:#718096;}
+    table{width:100%;border-collapse:collapse;background:rgba(255,255,255,.9);border-radius:16px;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.05);}
+    [data-theme="dark"] table{background:rgba(30,41,59,.95);}
+    th,td{padding:.9rem 1rem;border-bottom:1px solid rgba(0,0,0,.06);text-align:left;}
+    th{font-size:.85rem;letter-spacing:.02em;text-transform:uppercase;color:#718096;}
+    [data-theme="dark"] th{color:#94a3b8;}
+    tr:hover td{background:rgba(64,121,255,.05);}
+    .pill{display:inline-flex;align-items:center;gap:.45rem;padding:.25rem .6rem;border-radius:999px;font-weight:900;font-size:.8rem;}
+    .pill.plus{background:#FFD700;color:#000;}
+    .pill.std{background:#e2e8f0;color:#111827;}
+    [data-theme="dark"] .pill.std{background:#334155;color:#e2e8f0;}
+    .muted{color:#718096;font-weight:700;}
+    [data-theme="dark"] .muted{color:#94a3b8;}
+    .error{background:#ffeaec;color:#b00020;border:1px solid rgba(255,0,60,.2);padding:1rem;border-radius:14px;display:none;margin-bottom:1rem;}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;}
+    .card{background:rgba(255,255,255,.9);border-radius:16px;padding:1rem;box-shadow:0 8px 30px rgba(0,0,0,.05);}
+    [data-theme="dark"] .card{background:rgba(30,41,59,.95);}
+    .k{font-size:.8rem;text-transform:uppercase;letter-spacing:.02em;color:#718096;font-weight:900;}
+    [data-theme="dark"] .k{color:#94a3b8;}
+    .v{font-size:1.4rem;font-weight:1000;margin-top:.35rem;}
+  </style>
+
+  <script>
+    try{ if(localStorage.getItem('darkMode')==='true'){ document.documentElement.setAttribute('data-theme','dark'); } }catch(e){}
+  </script>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="title"><i class="fa-solid fa-user-shield"></i> Admin</div>
+      <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;">
+        <button class="btn secondary" onclick="location.href='/dashboard'"><i class="fa-solid fa-house"></i>&nbsp;Dashboard</button>
+        <button class="btn" onclick="refreshData()"><i class="fa-solid fa-rotate"></i>&nbsp;Refresh</button>
+      </div>
+    </div>
+
+    <div id="errorBox" class="error"></div>
+
+    <div class="grid2">
+      <div class="card"><div class="k">Users</div><div class="v" id="statUsers">-</div></div>
+      <div class="card"><div class="k">Total Words</div><div class="v" id="statWords">-</div></div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Plus</th>
+          <th>Last Login</th>
+          <th>Categories</th>
+          <th>Words</th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        <tr><td colspan="5" class="muted">Načítavam...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    async function refreshData(){
+      const errBox = document.getElementById('errorBox');
+      errBox.style.display = 'none';
+
+      try{
+        const res = await fetch('/api/admin/users');
+        const data = await res.json();
+        if(!res.ok){
+          errBox.textContent = data.detail || 'Admin request failed';
+          errBox.style.display='block';
+          return;
+        }
+
+        document.getElementById('statUsers').textContent = data.total_users ?? 0;
+        document.getElementById('statWords').textContent = data.total_words_all_users ?? 0;
+
+        const tbody = document.getElementById('tbody');
+        tbody.innerHTML = '';
+
+        const users = Array.isArray(data.users) ? data.users : [];
+        if(users.length===0){
+          tbody.innerHTML = `<tr><td colspan="5" class="muted">Žiadni používateľia.</td></tr>`;
+          return;
+        }
+
+        for(const u of users){
+          const plusPill = u.is_plus ? `<span class="pill plus"><i class="fa-solid fa-crown"></i> PLUS</span>` : `<span class="pill std">Standard</span>`;
+          const lastLogin = u.last_login ? new Date(u.last_login).toLocaleString() : '-';
+          tbody.insertAdjacentHTML('beforeend', `
+            <tr>
+              <td style="font-weight:800">${u.email ?? ''}</td>
+              <td>${plusPill}</td>
+              <td>${lastLogin}</td>
+              <td style="font-weight:900">${u.categories_count ?? 0}</td>
+              <td style="font-weight:900">${u.words_count ?? 0}</td>
+            </tr>
+          `);
+        }
+      }catch(e){
+        errBox.textContent = 'Network error: ' + (e?.message || e);
+        errBox.style.display='block';
+      }
+    }
+
+    refreshData();
+  </script>
+</body>
+</html>
+
