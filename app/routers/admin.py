@@ -7,10 +7,12 @@ from app.database.connection import get_db
 from app.models.user import User
 from app.models.word import Word
 from app.models.category import Category
+from app.schemas.user import UserUpdate
 from app.services.session_auth import get_authenticated_user
 from app.services.runtime import ADMIN_EMAILS
 
 router = APIRouter(tags=["admin"])
+
 
 
 def _require_admin(current_user: User):
@@ -49,22 +51,43 @@ async def admin_users(
 ):
     _require_admin(current_user)
 
-    # words_count + categories_count + last_login
-    users = db.query(
-        User.id,
-        User.email,
-        User.is_plus,
-        User.last_login,
-        func.count(Category.id).label("categories_count"),
-        func.count(Word.id).label("words_count"),
-    ).outerjoin(Category, Category.user_id == User.id) \
-     .outerjoin(Word, Word.user_id == User.id) \
-     .group_by(User.id, User.email, User.is_plus, User.last_login) \
-     .all()
 
-    total_words_all_users = (
-        db.query(func.coalesce(func.sum(Word.id), 0)).scalar() or 0
+    # words_count + categories_count + last_login
+    # Použi poddotazy aby sa neprepočítavali counts kvôli násobeniu joinov
+    categories_subq = (
+        db.query(
+            Category.user_id.label("user_id"),
+            func.count(Category.id).label("categories_count"),
+        )
+        .group_by(Category.user_id)
+        .subquery()
     )
+
+    words_subq = (
+        db.query(
+            Word.user_id.label("user_id"),
+            func.count(Word.id).label("words_count"),
+        )
+        .group_by(Word.user_id)
+        .subquery()
+    )
+
+    users = (
+        db.query(
+            User.id,
+            User.email,
+            User.is_plus,
+            User.last_login,
+            func.coalesce(categories_subq.c.categories_count, 0).label("categories_count"),
+            func.coalesce(words_subq.c.words_count, 0).label("words_count"),
+        )
+        .outerjoin(categories_subq, categories_subq.c.user_id == User.id)
+        .outerjoin(words_subq, words_subq.c.user_id == User.id)
+        .order_by(User.id)
+        .all()
+    )
+
+    total_words_all_users = db.query(func.coalesce(func.sum(Word.id), 0)).scalar() or 0
 
     return JSONResponse(
         {
@@ -83,4 +106,40 @@ async def admin_users(
             ],
         }
     )
+
+
+@router.patch("/api/admin/users/{user_id}")
+async def admin_update_user(
+    user_id: int,
+    payload: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_authenticated_user),
+):
+    _require_admin(current_user)
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if payload.email is not None:
+        # Overiť unikátnosť emailu
+        existing = db.query(User).filter(User.email == payload.email, User.id != user_id).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already in use")
+        user.email = payload.email
+
+    if payload.is_plus is not None:
+        user.is_plus = bool(payload.is_plus)
+
+    db.commit()
+    db.refresh(user)
+
+    return JSONResponse(
+        {
+            "id": user.id,
+            "email": user.email,
+            "is_plus": bool(user.is_plus),
+        }
+    )
+
 

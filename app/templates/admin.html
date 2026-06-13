@@ -107,7 +107,14 @@
           tbody.insertAdjacentHTML('beforeend', `
             <tr>
               <td style="font-weight:800">${u.email ?? ''}</td>
-              <td>${plusPill}</td>
+              <td>
+                ${plusPill}
+                <div style="margin-top:.5rem; display:flex; gap:.5rem; align-items:center; flex-wrap:wrap;">
+                  <button class="btn secondary" style="padding:.35rem .6rem;" onclick="editPlus(${u.id})" title="Toggle plus">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                  </button>
+                </div>
+              </td>
               <td>${lastLogin}</td>
               <td style="font-weight:900">${u.categories_count ?? 0}</td>
               <td style="font-weight:900">${u.words_count ?? 0}</td>
@@ -121,7 +128,41 @@
     }
 
     refreshData();
-  </script>
+  }
+
+  async function editPlus(userId){
+
+
+    const errBox = document.getElementById('errorBox');
+    errBox.style.display='none';
+
+    try{
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ is_plus: true })
+      });
+
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok){
+        errBox.textContent = data.detail || 'Admin update failed';
+        errBox.style.display='block';
+        return;
+      }
+      await refreshData();
+    }catch(e){
+      errBox.textContent='Network error: '+(e?.message||e);
+      errBox.style.display='block';
+    }
+  }
+
+  // (planned) email/plus editing UI can be expanded later.
+</script>
 </body>
 </html>
+
 
