@@ -97,7 +97,7 @@
 
         const users = Array.isArray(data.users) ? data.users : [];
         if(users.length===0){
-          tbody.innerHTML = `<tr><td colspan="5" class="muted">Žiadni používateľia.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="5" class="muted">Žiadni používatelia.</td></tr>`;
           return;
         }
 
@@ -110,7 +110,7 @@
               <td>
                 ${plusPill}
                 <div style="margin-top:.5rem; display:flex; gap:.5rem; align-items:center; flex-wrap:wrap;">
-                  <button class="btn secondary" style="padding:.35rem .6rem;" onclick="editPlus(${u.id})" title="Toggle plus">
+                  <button class="btn secondary" style="padding:.35rem .6rem;" onclick="editPlus(${u.id}, ${u.is_plus ? 'true' : 'false'})" title="Toggle plus">
                     <i class="fa-solid fa-wand-magic-sparkles"></i>
                   </button>
                 </div>
@@ -127,42 +127,33 @@
       }
     }
 
-    refreshData();
-  }
+    async function editPlus(userId, currentIsPlus){
+      const errBox = document.getElementById('errorBox');
+      errBox.style.display='none';
 
-  async function editPlus(userId){
+      try{
+        const res = await fetch(`/api/admin/users/${userId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ is_plus: !currentIsPlus })
+        });
 
-
-    const errBox = document.getElementById('errorBox');
-    errBox.style.display='none';
-
-    try{
-      const token = localStorage.getItem('access_token');
-      const res = await fetch(`/api/admin/users/${userId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ is_plus: true })
-      });
-
-      const data = await res.json().catch(()=>({}));
-      if(!res.ok){
-        errBox.textContent = data.detail || 'Admin update failed';
+        const data = await res.json().catch(()=>({}));
+        if(!res.ok){
+          errBox.textContent = data.detail || 'Admin update failed';
+          errBox.style.display='block';
+          return;
+        }
+        await refreshData();
+      }catch(e){
+        errBox.textContent='Network error: '+(e?.message||e);
         errBox.style.display='block';
-        return;
       }
-      await refreshData();
-    }catch(e){
-      errBox.textContent='Network error: '+(e?.message||e);
-      errBox.style.display='block';
     }
-  }
 
-  // (planned) email/plus editing UI can be expanded later.
-</script>
+    refreshData();
+  </script>
 </body>
 </html>
-
-
