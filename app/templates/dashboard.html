@@ -255,21 +255,53 @@
             <div id="statsWordsByLevel" class="stat-card" style="justify-content: space-around;"></div>
         </div>
 
-        <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+        <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
             <h2 data-en="Your Categories" data-sk="Tvoje kategórie">Tvoje kategórie</h2>
-            <button onclick="openCreateModal()" class="btn-primary" style="width: auto;">
-                <i class="fa-solid fa-plus"></i> <span data-en="New Category" data-sk="Nová kategória">Nová kategória</span>
-            </button>
+            <div style="display:flex; gap:12px; align-items:center;">
+                <button type="button" onclick="openAICreateModal()" class="icon-btn" style="color: var(--primary); border: 1px solid rgba(64,121,255,0.35);">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span data-en="AI Create" data-sk="AI vytvoriť">AI vytvoriť</span>
+                </button>
+                <button onclick="openCreateModal()" class="btn-primary" style="width: auto;">
+                    <i class="fa-solid fa-plus"></i> <span data-en="New Category" data-sk="Nová kategória">Nová kategória</span>
+                </button>
+            </div>
         </div>
 
         <ul id="categoriesList" class="category-grid"></ul>
     </div>
 
     <!-- Modaly ... (zostávajú nezmenené) ... -->
+
+    <div id="aiCreateModal" class="modal">
+        <div class="modal-content">
+            <h3 data-en="AI Create Category" data-sk="AI vytvoriť kategóriu">AI vytvoriť kategóriu</h3>
+            <form id="aiCreateCategoryForm" onsubmit="event.preventDefault(); aiCreateCategoryFromDashboard();">
+                <label data-en="Prompt" data-sk="Prompt">Prompt</label>
+                <textarea id="aiCategoryPrompt" rows="4" placeholder="chcem kategoriu: kde budu zakladne slovicka v anglictine potrebne pri cestovani" required></textarea>
+
+                <label data-en="From language" data-sk="Z jazyka">From language</label>
+                <input id="aiLanguageFrom" type="text" value="en" />
+
+                <label data-en="To language" data-sk="Do jazyka">To language</label>
+                <input id="aiLanguageTo" type="text" value="sk" />
+
+                <label data-en="Word count" data-sk="Počet slov">Word count</label>
+                <input id="aiWordCount" type="number" min="5" max="200" value="25" />
+
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" onclick="closeAICreateModal()" class="lang-btn" style="flex: 1;" data-en="Cancel" data-sk="Zrušiť">Zrušiť</button>
+                    <button type="button" onclick="aiCreateCategoryFromDashboard()" class="btn-primary" style="flex: 2;" data-en="Generate" data-sk="Vygenerovať">Vygenerovať</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div id="createModal" class="modal">
         <div class="modal-content">
             <h3 data-en="Create New Category" data-sk="Vytvoriť kategóriu">Vytvoriť kategóriu</h3>
             <form id="createCategoryForm">
+
                 <label data-en="Name" data-sk="Názov">Názov</label>
                 <input type="text" id="createName" name="name" required>
                 <label data-en="Description" data-sk="Popis">Popis</label>
@@ -281,6 +313,7 @@
             </form>
         </div>
     </div>
+
 
     <div id="editModal" class="modal">
         <div class="modal-content">
@@ -314,7 +347,11 @@
     <div id="message"><i id="messageIcon" class="fa-solid"></i><span id="messageText"></span></div>
 
     <script>
+        // AI helper (dashboard) - loaded inline to avoid relying on bundlers
+        // calls backend POST /api/v1/categories/ai-create
+        async function aiCreateCategoryFromDashboard() { return; }
         let currentUserId = null;
+
         let currentUserIsPlus = false;
         let categoryToDelete = null;
         let allCategories = [];
@@ -420,6 +457,7 @@
         async function loadUserStats() {
             try {
                 const res = await fetch('/api/user/stats');
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const stats = await res.json();
                 if (stats.offline || stats.error === 'offline') {
                     const cached = localStorage.getItem('wk_cached_stats');
@@ -437,6 +475,7 @@
         async function loadCategories() {
             try {
                 const res = await fetch('/api/v1/categories');
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json();
                 allCategories = Array.isArray(data) ? data : (data.categories || []);
 
@@ -446,7 +485,6 @@
                     if (cached) allCategories = JSON.parse(cached);
                 } else {
                     localStorage.setItem('wk_cached_categories', JSON.stringify(allCategories));
-                    // ✅ Spusti background prefetch slovíčok všetkých kategórií
                     prefetchAllWords(allCategories);
                 }
 
@@ -613,7 +651,45 @@
             setLang(currentLang);
         }
 
+        function openAICreateModal() { document.getElementById('aiCreateModal').style.display = 'flex'; setLang(currentLang); }
+        function closeAICreateModal() { document.getElementById('aiCreateModal').style.display = 'none'; }
+
+        function aiCreateCategoryFromDashboard() {
+            if (typeof window.aiCreateCategory === 'function') {
+                // not used
+            }
+            // use our static js helper
+            if (typeof window.aiCreateCategory === 'function') {
+                window.aiCreateCategory();
+                return;
+            }
+            // fallback: call directly if helper is global
+            if (typeof aiCreateCategory === 'function') {
+                aiCreateCategory();
+                return;
+            }
+            // If helper not loaded, do fetch from inline
+            const prompt = document.getElementById('aiCategoryPrompt').value.trim();
+            const languageFrom = document.getElementById('aiLanguageFrom').value || 'en';
+            const languageTo = document.getElementById('aiLanguageTo').value || 'sk';
+            const count = parseInt(document.getElementById('aiWordCount').value || '25', 10);
+            if (!prompt) { alert('Prompt is required'); return; }
+            fetch('/api/v1/categories/ai-create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt, language_from: languageFrom, language_to: languageTo, count })
+            }).then(async res => {
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.detail || 'AI request failed');
+                closeAICreateModal();
+                await loadCategories();
+                await loadUserStats();
+                showMessage(`Vytvorené: ${data.category_name}`, 'success');
+            }).catch(err => showMessage(err.message || 'AI request failed', 'error'));
+        }
+
         function openCreateModal() {
+
             const limit = 5;
             if (allCategories.length >= limit) {
                 const msg = currentLang === 'sk'

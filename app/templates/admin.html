@@ -83,6 +83,7 @@
       try{
         const res = await fetch('/api/admin/users');
         const data = await res.json();
+
         if(!res.ok){
           errBox.textContent = data.detail || 'Admin request failed';
           errBox.style.display='block';

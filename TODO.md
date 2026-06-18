@@ -1,13 +1,16 @@
-# TODO
+# TODO - WordKeeper: AI generovanie kategórií a slovíčok
 
-## Offline testovanie
-- [x] Upraviť `app/static/sw.js`, aby offline nezabíjal `POST /api/v1/words/test/start` a `POST /api/v1/words/test/submit`.
-- [x] Doplnit debug logy do `app/templates/test.html` pre cacheKey a množstvo slov v offline cache.
-
-## Admin prístup
-- [x] Pridať `ADMIN_EMAILS` do `app/services/runtime.py` (ENV zoznam admin emailov).
-- [x] Upraviť `app/routers/admin.py`, aby guard používal `ADMIN_EMAILS` namiesto `is_plus`.
-- [x] Upraviť `GET /admin` aby renderovalo `app/templates/admin.html`.
-- [ ] Dopísať admin “možnosti meniť nastavenia” (edit používateľov/kategórií/plus) – aktuálne je implementovaný len zoznam používateľov (`/api/admin/users`).
-
+## Plán (navrhnutý)
+1. Preskúmať existujúce modely/schema pre Category a Word.
+2. Pridať `app/services/ai_category_service.py` (volanie AI a validácia JSON).
+3. Pridať request/response schema pre endpoint `ai-create`.
+4. Pridať endpoint do `app/routers/categories.py` (alebo nový router):
+   - `POST /api/v1/categories/ai-create`
+   - vytvorí kategóriu ak neexistuje
+   - vloží slová do DB (skip/update pri duplicitách)
+5. Pridať konfiguráciu pre AI provider (env vars).
+6. Urobiť quick test:
+   - zavolať endpoint z curl/JS
+   - skontrolovať DB: kategória + vložené wordy
+7. Voliteľne: cache podľa (user_id + prompt_hash) kvôli nižším nákladom.
 

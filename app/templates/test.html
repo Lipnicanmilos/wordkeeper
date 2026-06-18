@@ -584,7 +584,6 @@ async function startTest() {
 
     const cachedWords = loadTestWordsCache(cacheKey);
     console.log('[Test page] offline cachedWords=', cachedWords ? cachedWords.length : 0);
-    if (cachedWords && cachedWords.length > 0) {
       currentTest = cachedWords;
       currentWordIndex = 0;
       testResults = [];
