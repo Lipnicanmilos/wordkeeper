@@ -3,7 +3,10 @@
     const ALL_LEVELS = ['dont_know', 'learning', 'know'];
     const DEFAULT_TEST_DIRECTION = 'original_to_translation';
     const CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
-    const REQUEST_DELAY_MS = 300;
+
+    // Max suvbeznych requestov, aby sme nezahltili mobilnu siet/DB,
+    // ale ani neblokovali na desiatky sekund ako predtym (sekvencne + 300ms pauzy).
+    const MAX_CONCURRENCY = 3;
 
     function offlineWordsCacheKey({ categoryId, level, testDirection }) {
         return `${OFFLINE_WORDS_KEY_PREFIX}cat=${categoryId}&level=${level}&dir=${testDirection}`;
@@ -49,7 +52,6 @@
     async function prefetchCategoryLevel(categoryId, level, testDirection = DEFAULT_TEST_DIRECTION) {
         const cacheKey = offlineWordsCacheKey({ categoryId, level, testDirection });
         if (isCacheFresh(cacheKey)) {
-            console.log(`[WK] Prefetch skip (fresh cache): cat=${categoryId} level=${level}`);
             return;
         }
 
@@ -71,30 +73,50 @@
             const words = await res.json();
             if (words.length > 0) {
                 saveOfflineWordsToCache(cacheKey, words);
-                console.log(`[WK] Prefetch uložený: cat=${categoryId} level=${level}, ${words.length} slov`);
             }
         } catch (e) {
             console.warn(`[WK] Prefetch failed cat=${categoryId} level=${level}:`, e);
         }
     }
 
-    async function prefetchCategoryAllLevels(categoryId, testDirection = DEFAULT_TEST_DIRECTION) {
-        for (const level of ALL_LEVELS) {
-            await prefetchCategoryLevel(categoryId, level, testDirection);
-            await new Promise(r => setTimeout(r, REQUEST_DELAY_MS));
+    // Spusti ulohy paralelne, ale max MAX_CONCURRENCY naraz (worker pool).
+    async function runWithConcurrency(tasks, concurrency) {
+        let index = 0;
+        async function worker() {
+            while (index < tasks.length) {
+                const current = index++;
+                await tasks[current]();
+            }
         }
+        const workers = [];
+        for (let i = 0; i < Math.min(concurrency, tasks.length); i++) {
+            workers.push(worker());
+        }
+        await Promise.all(workers);
+    }
+
+    async function prefetchCategoryAllLevels(categoryId, testDirection = DEFAULT_TEST_DIRECTION) {
+        const tasks = ALL_LEVELS.map(level =>
+            () => prefetchCategoryLevel(categoryId, level, testDirection)
+        );
+        await runWithConcurrency(tasks, MAX_CONCURRENCY);
     }
 
     async function prefetchAllCategories(categories, testDirection = DEFAULT_TEST_DIRECTION) {
         if (!navigator.onLine || !categories || categories.length === 0) return;
 
+        // Vsetky kombinacie kategoria x uroven do jedneho poolu -
+        // namiesto sekvencneho radenia s umelymi pauzami.
+        const tasks = [];
         for (const cat of categories) {
             if (!cat || !cat.id) continue;
-            await prefetchCategoryAllLevels(cat.id, testDirection);
-            await new Promise(r => setTimeout(r, REQUEST_DELAY_MS));
+            for (const level of ALL_LEVELS) {
+                tasks.push(() => prefetchCategoryLevel(cat.id, level, testDirection));
+            }
         }
 
-        console.log('[WK] Offline prefetch všetkých kategórií dokončený');
+        await runWithConcurrency(tasks, MAX_CONCURRENCY);
+        console.log('[WK] Offline prefetch vsetkych kategorii dokonceny');
     }
 
     global.WKOfflineCache = {
