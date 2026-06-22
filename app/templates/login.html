@@ -3,580 +3,426 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title data-en="Login" data-sk="Prihlásenie">Login</title>
-
-    <!-- PWA Meta Tags -->
+    <title data-en="Log in – LexiNova" data-sk="Prihlásenie – LexiNova">Log in – LexiNova</title>
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#4079ff">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="LexiNova">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
         :root {
-            --primary-gradient: linear-gradient(45deg, #40ffaa, #4079ff, #40ffaa, #4079ff);
-            --input-bg: #f8f9fa;
-            --text-color: #333;
+            --primary: #4079ff;
+            --accent:  #40ffaa;
+            --grad:    linear-gradient(135deg, #4079ff, #40ffaa);
+            --bg:      #f4f7fe;
+            --surface: #ffffff;
+            --text:    #1a202c;
+            --muted:   #718096;
+            --border:  #e2e8f0;
+            --shadow:  0 8px 32px rgba(64,121,255,.09);
+            --r:       16px;
         }
-        
+
+        html { scroll-behavior: smooth; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f2f5;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
             min-height: 100vh;
-            perspective: 1000px; /* Pre 3D efekt */
             overflow-x: hidden;
         }
 
-        /* Pozadie s plávajúcimi prvkami */
-        .background-shapes {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            overflow: hidden;
-        }
-
+        /* ─── BACKGROUND ─── */
+        .bg-shapes { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
         .shape {
-            position: absolute;
-            color: rgba(64, 121, 255, 0.1);
-            font-weight: bold;
-            user-select: none;
+            position: absolute; color: var(--primary); opacity: .06;
+            font-weight: 700; user-select: none;
             animation: floatUp linear infinite;
         }
-
         @keyframes floatUp {
-            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
-            10% { opacity: 0.5; }
-            90% { opacity: 0.5; }
+            0%   { transform: translateY(110vh) rotate(0deg);   opacity: 0; }
+            10%  { opacity: .35; }
+            90%  { opacity: .35; }
             100% { transform: translateY(-20vh) rotate(360deg); opacity: 0; }
         }
-        
-        .login-container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 2.5rem;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 450px;
-            margin: 1rem;
-            position: relative;
-            transform-style: preserve-3d;
-            transition: transform 0.1s ease-out;
-            
-            /* Vstupná animácia */
-            opacity: 0;
-            transform: translateY(30px);
-            animation: containerPop 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-        }
 
-        @keyframes containerPop {
-            to { opacity: 1; transform: translateY(0) rotateX(0) rotateY(0); }
+        /* ─── HEADER ─── */
+        .header {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(244,247,254,.92);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--border);
         }
-
-        /* Staggered animácia pre vnútro */
-        .animate-item {
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.6s ease;
+        .header-inner {
+            max-width: 1100px; margin: 0 auto;
+            padding: 0 1.5rem; height: 64px;
+            display: flex; align-items: center; justify-content: space-between;
         }
-
-        .animate-item.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        
-        .language-switcher {
-            position: absolute;
-            top: 1.5rem;
-            right: 1.5rem;
-            z-index: 10;
-        }
-        
-        .lang-btn {
-            padding: 0.4rem 0.8rem;
-            background-color: transparent;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 0.85rem;
-            font-weight: bold;
-            color: #888;
-        }
-        
-        .lang-btn.active {
-            background-color: #4079ff;
-            color: white;
-            border-color: #4079ff;
-            box-shadow: 0 4px 10px rgba(64, 121, 255, 0.3);
-        }
-        
-        h1 {
-            background: var(--primary-gradient);
-            background-size: 300% 300%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: gradientShift 4s ease infinite;
-            text-align: center;
-            margin-bottom: 2rem;
-            margin-top: 1rem;
-            font-size: 2rem;
-        }
-
-        @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        
-        .form-group {
-            margin-bottom: 1.5rem;
-            text-align: left;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: #555;
-            font-weight: 600;
-            font-size: 0.9rem;
-            margin-left: 4px;
-        }
-        
-        input[type="email"],
-        input[type="password"] {
-            width: 100%;
-            padding: 0.9rem 1rem;
-            border: 2px solid transparent;
-            background-color: var(--input-bg);
-            border-radius: 12px;
-            font-size: 1rem;
-            transition: all 0.3s;
-            box-sizing: border-box;
-        }
-        
-        input[type="email"]:focus,
-        input[type="password"]:focus {
-            background-color: white;
-            border-color: #4079ff;
-            outline: none;
-            box-shadow: 0 0 0 4px rgba(64, 121, 255, 0.1);
-        }
-        
-        /* Hlavné tlačidlo Login */
-        button[type="submit"] {
-            width: 100%;
-            padding: 1rem;
-            background: var(--primary-gradient);
-            background-size: 200% auto;
-            color: white;
-            border: none;
-            border-radius: 50px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 4px 15px rgba(64, 121, 255, 0.3);
-        }
-        
-        button[type="submit"]:hover {
-            background-position: right center;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(64, 121, 255, 0.4);
-        }
-
-        button[type="submit"]:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-        
-        /* Google Button - Moderný vzhľad */
-        .social-login {
-            margin: 0 0 1.5rem 0;
-        }
-
-        .google-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            width: 100%;
-            padding: 0.8rem;
-            background: white;
-            border: 2px solid #f0f0f0;
-            border-radius: 50px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 600;
-            color: #444;
-            transition: all 0.3s ease;
-        }
-        
-        .google-btn:hover {
-            border-color: #4079ff;
-            background: #fff;
-            color: #4079ff;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-        }
-        
-        .google-btn img {
-            width: 22px;
-            height: 22px;
-        }
-
-        .divider {
-            text-align: center;
-            margin: 1.5rem 0;
-            position: relative;
-            color: #888;
-            font-size: 0.9rem;
-        }
-
-        .divider:before {
-            content: "";
-            position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: #eee;
-            z-index: 1;
-        }
-
-        .divider span {
-            background: rgba(255,255,255,0.9); /* Musí ladiť s pozadím karty */
-            padding: 0 1rem;
-            position: relative;
-            z-index: 2;
-        }
-
-        #message {
-            margin-top: 1.5rem;
-            padding: 1rem;
-            border-radius: 12px;
-            display: none;
-            font-weight: 500;
-            animation: slideDown 0.3s ease;
-        }
-
-        @keyframes slideDown {
-            from { transform: translateY(-10px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        
-        .success {
-            color: #155724;
-            background-color: #d4edda;
-            border: 1px solid #c3e6cb;
-        }
-        
-        .error {
-            color: #721c24;
-            background-color: #f8d7da;
-            border: 1px solid #f5c6cb;
-        }
-        
-        .register-link {
-            text-align: center;
-            margin-top: 2rem;
-            color: #666;
-            font-size: 0.95rem;
-        }
-        
-        .register-link a, .home-button a {
-            color: #4079ff;
+        .logo {
+            font-size: 1.25rem; font-weight: 800; letter-spacing: -.03em;
+            background: var(--grad); -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent; background-clip: text;
             text-decoration: none;
-            font-weight: 600;
-            transition: color 0.2s;
         }
-        
-        .register-link a:hover, .home-button a:hover {
-            color: #2e5bbf;
-            text-decoration: underline;
+        .header-nav { display: flex; align-items: center; gap: .4rem; }
+        .lang-switch { display: flex; gap: 3px; margin-right: .4rem; }
+        .lang-btn {
+            padding: .28rem .65rem; border: 1px solid var(--border);
+            background: var(--surface); border-radius: 7px; font-size: .78rem;
+            font-weight: 700; cursor: pointer; color: var(--muted); transition: all .2s;
+        }
+        .lang-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .nav-link {
+            padding: .45rem .8rem; color: var(--muted); text-decoration: none;
+            font-weight: 500; font-size: .88rem; border-radius: 9px; transition: color .2s;
+        }
+        .nav-link:hover { color: var(--text); }
+        .btn-nav {
+            padding: .48rem 1.1rem; background: var(--primary); color: #fff;
+            border-radius: 10px; font-weight: 700; font-size: .88rem;
+            text-decoration: none; transition: all .2s;
+        }
+        .btn-nav:hover { background: #2563eb; transform: translateY(-1px); }
+
+        /* Mobile hamburger */
+        .menu-toggle {
+            display: none; border: none; background: none;
+            font-size: 1.5rem; cursor: pointer; padding: .3rem; color: var(--text);
+        }
+        .mobile-nav {
+            display: none; flex-direction: column;
+            padding: .75rem 1.5rem 1rem; gap: 0;
+            border-top: 1px solid var(--border);
+            background: rgba(244,247,254,.97);
+        }
+        .mobile-nav.open { display: flex; }
+        .mobile-nav a {
+            padding: .75rem 0; color: var(--text); text-decoration: none;
+            font-weight: 500; border-bottom: 1px solid var(--border); font-size: .95rem;
+        }
+        .mobile-nav a:last-child { border-bottom: none; color: var(--primary); font-weight: 700; }
+        .mobile-lang { display: flex; gap: .5rem; padding: .75rem 0; border-bottom: 1px solid var(--border); }
+
+        /* ─── MAIN ─── */
+        .auth-main {
+            min-height: calc(100vh - 64px);
+            display: flex; align-items: center; justify-content: center;
+            padding: 2.5rem 1.25rem;
         }
 
-        .home-button {
-            margin-top: 1rem;
-            text-align: center;
-            font-size: 0.9rem;
+        /* ─── CARD ─── */
+        .auth-card {
+            width: 100%; max-width: 440px;
+            background: var(--surface);
+            border-radius: 20px;
+            padding: 2.5rem 2.25rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            animation: cardPop .7s cubic-bezier(.2,.8,.2,1) both;
         }
-        
-        @media (max-width: 480px) {
-            .login-container {
-                padding: 2rem 1.5rem;
-                width: 95%;
-                transform: none !important; /* Vypnúť tilt na mobile */
-            }
-            h1 { font-size: 1.8rem; }
-            .language-switcher {
-                position: static;
-                margin-bottom: 1.5rem;
-                display: flex;
-                justify-content: center;
-                gap: 0.5rem;
-            }
+        @keyframes cardPop {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .auth-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: linear-gradient(135deg,#eef2ff,#f0fff8);
+            border: 1px solid #c7d8ff; border-radius: 50px;
+            padding: .3rem .9rem; font-size: .78rem; font-weight: 700;
+            color: var(--primary); margin-bottom: 1.25rem;
+        }
+        .auth-card h1 {
+            font-size: 1.75rem; font-weight: 800; letter-spacing: -.03em;
+            margin-bottom: .35rem;
+        }
+        .auth-subtitle { color: var(--muted); font-size: .9rem; margin-bottom: 1.75rem; }
+
+        /* Google button */
+        .google-btn {
+            display: flex; align-items: center; justify-content: center; gap: 11px;
+            width: 100%; padding: .85rem;
+            background: var(--surface); border: 1.5px solid var(--border);
+            border-radius: 50px; font-size: .95rem; font-weight: 600; color: var(--text);
+            cursor: pointer; transition: all .25s; margin-bottom: 1.5rem;
+        }
+        .google-btn:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(64,121,255,.12); }
+        .google-btn img { width: 20px; height: 20px; }
+
+        /* Divider */
+        .divider {
+            position: relative; text-align: center;
+            color: var(--muted); font-size: .82rem; margin-bottom: 1.5rem;
+        }
+        .divider::before {
+            content: ''; position: absolute; top: 50%; left: 0; right: 0;
+            height: 1px; background: var(--border); z-index: 0;
+        }
+        .divider span {
+            background: var(--surface); padding: 0 .85rem;
+            position: relative; z-index: 1;
+        }
+
+        /* Form */
+        .form-group { margin-bottom: 1.25rem; }
+        .form-label {
+            display: block; font-size: .83rem; font-weight: 600;
+            color: var(--text); margin-bottom: .4rem;
+        }
+        .form-input {
+            width: 100%; padding: .85rem 1rem;
+            border: 1.5px solid var(--border); background: var(--bg);
+            border-radius: 12px; font-size: 1rem; font-family: inherit;
+            color: var(--text); transition: all .25s;
+        }
+        .form-input:focus {
+            outline: none; border-color: var(--primary);
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(64,121,255,.1);
+        }
+        .form-input::placeholder { color: #b0bec5; }
+
+        /* Submit */
+        .btn-submit {
+            width: 100%; padding: .92rem;
+            background: var(--grad); color: #fff;
+            border: none; border-radius: 50px;
+            font-size: 1rem; font-weight: 700; font-family: inherit;
+            cursor: pointer; transition: all .25s; margin-top: .25rem;
+            box-shadow: 0 4px 14px rgba(64,121,255,.35);
+        }
+        .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 7px 22px rgba(64,121,255,.45); }
+        .btn-submit:disabled { background: #ccc; box-shadow: none; cursor: not-allowed; transform: none; }
+
+        /* Message */
+        #message {
+            display: none; padding: .85rem 1rem; border-radius: 12px;
+            font-weight: 500; font-size: .88rem; margin-top: 1rem;
+            animation: slideDown .3s ease;
+        }
+        @keyframes slideDown { from { transform: translateY(-8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .success { color: #155724; background: #d4edda; border: 1px solid #c3e6cb; display: block !important; }
+        .error   { color: #721c24; background: #f8d7da; border: 1px solid #f5c6cb; display: block !important; }
+
+        /* Footer links inside card */
+        .auth-links { text-align: center; margin-top: 1.5rem; font-size: .88rem; color: var(--muted); }
+        .auth-links a { color: var(--primary); font-weight: 600; text-decoration: none; transition: color .2s; }
+        .auth-links a:hover { text-decoration: underline; }
+        .auth-links + .auth-links { margin-top: .6rem; }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .header-nav { display: none; }
+            .menu-toggle { display: block; }
+            .auth-card { padding: 2rem 1.5rem; }
+            .auth-main { padding: 1.5rem 1rem; align-items: flex-start; padding-top: 2rem; }
         }
     </style>
 </head>
 <body>
 
-    <div class="background-shapes" id="bgShapes"></div>
+<div class="bg-shapes" id="bgShapes"></div>
 
-    <div class="login-container" id="card">
-        <div class="language-switcher animate-item">
-            <button class="lang-btn active" data-lang="en">EN</button>
+<!-- ── HEADER ── -->
+<header class="header">
+    <div class="header-inner">
+        <a href="/" class="logo">⚡ LexiNova</a>
+        <nav class="header-nav">
+            <div class="lang-switch">
+                <button class="lang-btn" data-lang="en">EN</button>
+                <button class="lang-btn" data-lang="sk">SK</button>
+            </div>
+            <a href="/" class="nav-link" data-en="← Home" data-sk="← Domov">← Home</a>
+            <a href="/register" class="btn-nav" data-en="Sign up free" data-sk="Registrácia">Sign up free</a>
+        </nav>
+        <button class="menu-toggle" id="menuToggle" aria-label="Menu">☰</button>
+    </div>
+    <nav class="mobile-nav" id="mobileNav">
+        <div class="mobile-lang">
+            <button class="lang-btn" data-lang="en">EN</button>
             <button class="lang-btn" data-lang="sk">SK</button>
         </div>
-        
-        <h1 class="animate-item" data-en="Login" data-sk="Prihlásenie">Login</h1>
-        
-        <div class="social-login animate-item">
-            <button class="google-btn" onclick="handleGoogleLogin()">
-                <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google">
-                <span data-en="Continue with Google" data-sk="Pokračovať s Google">Continue with Google</span>
-            </button>
+        <a href="/"         data-en="← Home"        data-sk="← Domov">← Home</a>
+        <a href="/register" data-en="Sign up free"   data-sk="Registrácia zadarmo">Sign up free</a>
+    </nav>
+</header>
+
+<!-- ── MAIN ── -->
+<main class="auth-main">
+    <div class="auth-card">
+
+        <div class="auth-badge">🔐 <span data-en="Secure login" data-sk="Bezpečné prihlásenie">Secure login</span></div>
+
+        <h1 data-en="Welcome back" data-sk="Vitaj späť">Welcome back</h1>
+        <p class="auth-subtitle"
+           data-en="Log in to continue learning with LexiNova."
+           data-sk="Prihláste sa a pokračujte v učení s LexiNova.">
+            Log in to continue learning with LexiNova.
+        </p>
+
+        <!-- Google -->
+        <button class="google-btn" onclick="handleGoogleLogin()">
+            <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google">
+            <span data-en="Continue with Google" data-sk="Pokračovať s Google">Continue with Google</span>
+        </button>
+
+        <div class="divider">
+            <span data-en="or sign in with email" data-sk="alebo emailom">or sign in with email</span>
         </div>
 
-        <div class="divider animate-item">
-            <span data-en="Or sign in with email" data-sk="Alebo sa prihláste emailom">Or sign in with email</span>
-        </div>
-        
-        <form id="loginForm" class="animate-item">
+        <!-- Form -->
+        <form id="loginForm">
             <div class="form-group">
-                <label for="email" data-en="Email" data-sk="Email">Email</label>
-                <input type="email" id="email" name="email" required 
-                       data-en-placeholder="name@example.com" 
-                       data-sk-placeholder="meno@priklad.sk">
+                <label class="form-label" for="email" data-en="Email" data-sk="Email">Email</label>
+                <input class="form-input" type="email" id="email" name="email" required
+                       data-en-placeholder="name@example.com"
+                       data-sk-placeholder="meno@priklad.sk"
+                       placeholder="name@example.com">
             </div>
             <div class="form-group">
-                <label for="password" data-en="Password" data-sk="Heslo">Password</label>
-                <input type="password" id="password" name="password" required 
-                       data-en-placeholder="••••••••" 
-                       data-sk-placeholder="••••••••">
+                <label class="form-label" for="password" data-en="Password" data-sk="Heslo">Password</label>
+                <input class="form-input" type="password" id="password" name="password" required
+                       data-en-placeholder="••••••••"
+                       data-sk-placeholder="••••••••"
+                       placeholder="••••••••">
             </div>
-            <button type="submit" data-en="Login" data-sk="Prihlásiť sa">Login</button>
+            <button class="btn-submit" type="submit" data-en="Log in" data-sk="Prihlásiť sa">Log in</button>
         </form>
 
         <div id="message"></div>
-        
-        <div class="register-link animate-item">
-            <span data-en="Don't have an account?" data-sk="Nemáte účet?">Don't have an account?</span> 
-            <a href="/register" data-en="Register now" data-sk="Zaregistrujte sa">Register now</a>
+
+        <div class="auth-links">
+            <a href="/forgot-password" data-en="Forgot your password?" data-sk="Zabudli ste heslo?">Forgot your password?</a>
         </div>
-        
-                <div class="register-link animate-item">
-            <!-- <span data-en="Don't have an account?" data-sk="Nemáte účet?">Don't have an account?</span>  -->
-            <a href="/forgot-password" data-en="Forgot password" data-sk="Zabudli ste heslo?">Forgot password</a>
+        <div class="auth-links">
+            <span data-en="Don't have an account?" data-sk="Nemáte účet?">Don't have an account?</span>
+            <a href="/register" data-en=" Sign up" data-sk=" Zaregistrovať sa"> Sign up</a>
         </div>
 
-
-        <div class="home-button animate-item">
-            <a href="/" data-en="← Back to Homepage" data-sk="← Späť na domovskú stránku">← Back to Homepage</a>
-        </div>
     </div>
+</main>
 
-    <script>
-        // 1. Common Animations & Background (Shared logic)
-        document.addEventListener('DOMContentLoaded', function() {
-            // --- Kaskádový efekt (Staggered animation) ---
-            const animatedItems = document.querySelectorAll('.animate-item');
-            animatedItems.forEach((item, index) => {
-                setTimeout(() => {
-                    item.classList.add('visible');
-                }, 200 + (index * 100));
-            });
+<script>
+    /* ── LANG ── */
+    let currentLang = localStorage.getItem('preferredLang') || 'en';
 
-            // --- 3D Tilt Efekt ---
-            const card = document.getElementById('card');
-            const container = document.body;
-
-            if (window.matchMedia("(hover: hover)").matches) {
-                container.addEventListener('mousemove', (e) => {
-                    const xAxis = (window.innerWidth / 2 - e.pageX) / 25;
-                    const yAxis = (window.innerHeight / 2 - e.pageY) / 25;
-                    card.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
-                });
-
-                container.addEventListener('mouseleave', () => {
-                    card.style.transform = `rotateY(0deg) rotateX(0deg)`;
-                    card.style.transition = "transform 0.5s ease";
-                });
-                
-                container.addEventListener('mouseenter', () => {
-                    card.style.transition = "none";
-                });
-            }
-
-            // --- Dynamické pozadie (Písmenká) ---
-            const bgContainer = document.getElementById('bgShapes');
-            const characters = ['A', 'B', 'C', '?', '!', '1', '2', '3', '@', '&'];
-            
-            function createShape() {
-                const shape = document.createElement('div');
-                shape.classList.add('shape');
-                shape.innerText = characters[Math.floor(Math.random() * characters.length)];
-                const size = Math.random() * 30 + 10;
-                shape.style.fontSize = `${size}px`;
-                shape.style.left = `${Math.random() * 100}vw`;
-                const duration = Math.random() * 10 + 10;
-                shape.style.animationDuration = `${duration}s`;
-                bgContainer.appendChild(shape);
-                setTimeout(() => shape.remove(), duration * 1000);
-            }
-
-            for(let i=0; i<15; i++) setTimeout(createShape, i * 500);
-            setInterval(createShape, 1000);
-
-            // 2. Existing Logic (Language & Login)
-            
-            const langButtons = document.querySelectorAll('.lang-btn');
-            const currentLang = localStorage.getItem('preferredLang') || 'en';
-            setActiveLanguage(currentLang);
-            
-            langButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const lang = this.getAttribute('data-lang');
-                    setActiveLanguage(lang);
-                    localStorage.setItem('preferredLang', lang);
-                });
-            });
-            
-            function setActiveLanguage(lang) {
-                langButtons.forEach(btn => {
-                    btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
-                });
-                
-                document.querySelectorAll('[data-en], [data-sk]').forEach(element => {
-                    if (element.hasAttribute(`data-${lang}`)) {
-                        const text = element.getAttribute(`data-${lang}`);
-                        if (element.tagName === 'TITLE') document.title = text;
-                        else element.textContent = text;
-                    }
-                });
-
-                document.querySelectorAll('[data-en-placeholder], [data-sk-placeholder]').forEach(element => {
-                    if (element.hasAttribute(`data-${lang}-placeholder`)) {
-                        element.placeholder = element.getAttribute(`data-${lang}-placeholder`);
-                    }
-                });
-            }
-
-            // Login Handler
-            const form = document.getElementById('loginForm');
-            
-            form.addEventListener('submit', async (event) => {
-                event.preventDefault();
-                const email = form.email.value;
-                const password = form.password.value;
-                const currentLang = localStorage.getItem('preferredLang') || 'en';
-
-                const submitButton = form.querySelector('button[type="submit"]');
-                const originalBtnText = submitButton.textContent;
-                submitButton.disabled = true;
-                submitButton.textContent = currentLang === 'sk' ? 'Spracovávam...' : 'Processing...';
-
-                // Validation
-                const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailPattern.test(email)) {
-                    showMessage(currentLang === 'sk' ? 'Neplatný email.' : 'Invalid email.', 'error');
-                    submitButton.disabled = false;
-                    submitButton.textContent = originalBtnText;
-                    return;
-                }
-
-                try {
-                    // API call
-                    const response = await fetch(`/api/v1/login?lang=${currentLang}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email, password })
-                    });
-
-                    const data = await response.json();
-
-                    if (response.ok) {
-                        showMessage(currentLang === 'sk' ? 'Prihlásenie úspešné!' : 'Login successful!', 'success');
-                        
-                        // --- KĽÚČOVÁ OPRAVA: ULOŽENIE TOKENU ---
-                        if (data.access_token) {
-                            localStorage.setItem('access_token', data.access_token);
-                        }
-                        // ----------------------------------------
-
-                        if (data.user) {
-                            localStorage.setItem('user_email', data.user.email);
-                            localStorage.setItem('user_name', data.user.name || '');
-                            localStorage.setItem('user_id', data.user.id);
-                        }
-
-                        // Presmerovanie po krátkej pauze
-                        setTimeout(() => {
-                            window.location.href = '/dashboard';
-                        }, 1000);
-                        
-                    } else {
-                        throw new Error(data.detail || 'Login failed');
-                    }
-                } catch (error) {
-                    console.error(error);
-                    showMessage(
-                        currentLang === 'sk' ? 'Chyba prihlásenia' : 'Login failed', 
-                        'error'
-                    );
-                    form.password.value = '';
-                    submitButton.disabled = false;
-                    submitButton.textContent = originalBtnText;
-                }
-            });
+    function setLang(lang) {
+        currentLang = lang;
+        localStorage.setItem('preferredLang', lang);
+        document.querySelectorAll('[data-en],[data-sk]').forEach(el => {
+            const text = el.getAttribute('data-' + lang);
+            if (!text) return;
+            if (el.tagName === 'TITLE') document.title = text;
+            else el.textContent = text;
         });
+        document.querySelectorAll('[data-en-placeholder]').forEach(el => {
+            el.placeholder = el.getAttribute('data-' + lang + '-placeholder') || '';
+        });
+        document.querySelectorAll('.lang-btn').forEach(b =>
+            b.classList.toggle('active', b.getAttribute('data-lang') === lang));
+    }
 
-        function handleGoogleLogin() {
-            window.location.href = '/auth/google';
+    document.querySelectorAll('.lang-btn').forEach(b =>
+        b.addEventListener('click', () => setLang(b.getAttribute('data-lang'))));
+
+    /* ── MOBILE MENU ── */
+    const menuToggle = document.getElementById('menuToggle');
+    const mobileNav  = document.getElementById('mobileNav');
+    menuToggle.addEventListener('click', () => {
+        mobileNav.classList.toggle('open');
+        menuToggle.textContent = mobileNav.classList.contains('open') ? '✕' : '☰';
+    });
+    mobileNav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+        mobileNav.classList.remove('open'); menuToggle.textContent = '☰';
+    }));
+
+    /* ── FORM ── */
+    document.getElementById('loginForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        const email    = e.target.email.value;
+        const password = e.target.password.value;
+        const btn      = e.target.querySelector('button[type="submit"]');
+        const origText = btn.textContent;
+
+        btn.disabled = true;
+        btn.textContent = currentLang === 'sk' ? 'Prihlasujem…' : 'Logging in…';
+
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            showMsg(currentLang === 'sk' ? 'Neplatný email.' : 'Invalid email.', 'error');
+            resetBtn(); return;
         }
 
-        function checkOAuthCallback() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const token = urlParams.get('token');
-            const error = urlParams.get('error');
-            const currentLang = localStorage.getItem('preferredLang') || 'en';
+        try {
+            const res  = await fetch('/api/v1/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await res.json();
 
-            if (error) {
-                showMessage(error, 'error');
-            } else if (token) {
-                localStorage.setItem('access_token', token);
-                showMessage(currentLang === 'sk' ? 'Google prihlásenie úspešné' : 'Google login successful', 'success');
-                setTimeout(() => window.location.href = '/dashboard', 1000);
+            if (res.ok) {
+                showMsg(currentLang === 'sk' ? 'Prihlásenie úspešné!' : 'Login successful!', 'success');
+                if (data.user) {
+                    localStorage.setItem('user_email', data.user.email);
+                    localStorage.setItem('user_name',  data.user.name || '');
+                    localStorage.setItem('user_id',    data.user.id);
+                }
+                setTimeout(() => { window.location.href = '/dashboard'; }, 900);
+            } else {
+                showMsg(data.detail || (currentLang === 'sk' ? 'Chyba prihlásenia.' : 'Login failed.'), 'error');
+                e.target.password.value = '';
+                resetBtn();
             }
+        } catch {
+            showMsg(currentLang === 'sk' ? 'Chyba spojenia.' : 'Connection error.', 'error');
+            resetBtn();
         }
 
-        function showMessage(message, type) {
-            const messageDiv = document.getElementById('message');
-            messageDiv.textContent = message;
-            messageDiv.className = type;
-            messageDiv.style.display = 'block';
-            setTimeout(() => { messageDiv.style.display = 'none'; }, 5000);
-        }
+        function resetBtn() { btn.disabled = false; btn.textContent = origText; }
+    });
 
-        checkOAuthCallback();
-    </script>
-    <script>
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js')
-          .catch(err => console.error('SW error:', err));
-      }
-    </script>
+    /* ── GOOGLE ── */
+    function handleGoogleLogin() { window.location.href = '/auth/google'; }
+
+    /* ── OAUTH ERROR ── */
+    const urlErr = new URLSearchParams(window.location.search).get('error');
+    if (urlErr) showMsg(urlErr, 'error');
+
+    /* ── MESSAGE ── */
+    function showMsg(msg, type) {
+        const el = document.getElementById('message');
+        el.textContent = msg;
+        el.className = type;
+        setTimeout(() => { el.style.display = 'none'; el.className = ''; }, 5000);
+    }
+
+    /* ── BACKGROUND ── */
+    (function() {
+        const bg = document.getElementById('bgShapes');
+        const chars = ['A','B','C','?','!','Ω','文','①','λ'];
+        function make() {
+            const el = document.createElement('div');
+            el.className = 'shape';
+            el.textContent = chars[Math.floor(Math.random() * chars.length)];
+            el.style.left = Math.random() * 100 + 'vw';
+            el.style.fontSize = (Math.random() * 22 + 10) + 'px';
+            el.style.animationDuration = (Math.random() * 10 + 10) + 's';
+            bg.appendChild(el);
+            setTimeout(() => el.remove(), 20000);
+        }
+        for (let i = 0; i < 12; i++) setTimeout(make, i * 500);
+        setInterval(make, 2000);
+    })();
+
+    /* ── INIT ── */
+    setLang(currentLang);
+</script>
+<script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+</script>
 </body>
 </html>
