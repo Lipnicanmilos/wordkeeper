@@ -8,642 +8,504 @@
     <style>
         :root {
             --primary: #4079ff;
-            --primary-light: #40ffaa;
-            --primary-gradient: linear-gradient(135deg, #4079ff, #40ffaa);
-            --bg-color: #f4f7fe;
-            --card-bg: rgba(255, 255, 255, 0.97);
-            --text-main: #2d3748;
-            --text-muted: #718096;
-            --shadow: 0 10px 25px rgba(0,0,0,0.08);
+            --accent: #40ffaa;
+            --grad: linear-gradient(135deg, #4079ff, #40ffaa);
+            --bg: #f4f7fe;
+            --card: rgba(255,255,255,0.97);
+            --text: #2d3748;
+            --muted: #718096;
+            --border: #e2e8f0;
+            --shadow: 0 10px 30px rgba(0,0,0,.09);
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
+            background: var(--bg);
+            color: var(--text);
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
             padding: 1.5rem;
             overflow-x: hidden;
         }
 
-        .background-shapes {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            z-index: -1; overflow: hidden;
-        }
+        /* Background */
+        .bg-shapes { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
         .shape {
-            position: absolute; color: var(--primary); opacity: 0.07;
+            position: absolute; color: var(--primary); opacity: .07;
             font-weight: bold; user-select: none;
             animation: floatUp linear infinite;
         }
         @keyframes floatUp {
-            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
-            10% { opacity: 0.4; }
-            90% { opacity: 0.4; }
+            0%   { transform: translateY(110vh) rotate(0deg);   opacity: 0; }
+            10%  { opacity: .4; }
+            90%  { opacity: .4; }
             100% { transform: translateY(-20vh) rotate(360deg); opacity: 0; }
         }
 
+        /* Card */
         .demo-card {
-            width: 100%;
-            max-width: 560px;
-            background: var(--card-bg);
+            width: 100%; max-width: 560px;
+            background: var(--card);
             border-radius: 24px;
             box-shadow: var(--shadow);
             padding: 2rem;
-            animation: cardPop 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            animation: cardPop .7s cubic-bezier(.2,.8,.2,1) forwards;
             opacity: 0;
         }
         @keyframes cardPop { to { opacity: 1; transform: translateY(0); } }
 
-        /* Demo banner */
-        .demo-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: linear-gradient(135deg, #4079ff15, #40ffaa15);
-            border: 1px solid #4079ff30;
-            color: var(--primary);
-            font-size: 0.75rem;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            padding: 0.35rem 0.85rem;
-            border-radius: 50px;
-            margin-bottom: 1.25rem;
-        }
-
+        /* Header row */
         .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 1.5rem;
+            display: flex; justify-content: space-between;
+            align-items: flex-start; margin-bottom: 1.4rem;
         }
-
+        .demo-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: linear-gradient(135deg,#4079ff12,#40ffaa12);
+            border: 1px solid #4079ff28; color: var(--primary);
+            font-size: .72rem; font-weight: 700; letter-spacing: .08em;
+            text-transform: uppercase; padding: .32rem .85rem;
+            border-radius: 50px;
+        }
+        .header-right { display: flex; align-items: center; gap: .5rem; }
+        .lang-mini { display: flex; gap: 3px; }
+        .lang-mini button {
+            padding: .22rem .55rem; border: 1px solid var(--border);
+            background: #fff; border-radius: 6px; font-size: .72rem;
+            font-weight: 700; cursor: pointer; color: var(--muted); transition: all .2s;
+        }
+        .lang-mini button.active { background: var(--primary); color: #fff; border-color: var(--primary); }
         .back-link {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            transition: color 0.2s;
+            font-size: .83rem; color: var(--muted); text-decoration: none;
+            display: flex; align-items: center; gap: 4px; transition: color .2s;
         }
         .back-link:hover { color: var(--primary); }
 
         h1 {
-            text-align: center;
-            font-size: 1.5rem;
-            font-weight: 800;
-            background: var(--primary-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 0.4rem;
+            text-align: center; font-size: 1.45rem; font-weight: 800;
+            background: var(--grad); -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent; background-clip: text;
+            margin-bottom: .35rem;
         }
-
-        .subtitle {
-            text-align: center;
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            margin-bottom: 1.5rem;
-        }
+        .subtitle { text-align: center; color: var(--muted); font-size: .88rem; margin-bottom: 1.4rem; }
 
         /* Progress */
-        .progress-wrap {
-            margin-bottom: 1.5rem;
-        }
+        .progress-wrap { margin-bottom: 1.4rem; }
         .progress-label {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            margin-bottom: 0.4rem;
+            display: flex; justify-content: space-between;
+            font-size: .78rem; color: var(--muted); margin-bottom: .35rem;
         }
-        .progress-bar-bg {
-            height: 6px;
-            background: #e2e8f0;
-            border-radius: 50px;
-            overflow: hidden;
-        }
+        .progress-bar-bg { height: 6px; background: var(--border); border-radius: 50px; overflow: hidden; }
         .progress-bar-fill {
-            height: 100%;
-            background: var(--primary-gradient);
-            border-radius: 50px;
-            transition: width 0.4s ease;
-            width: 0%;
+            height: 100%; background: var(--grad);
+            border-radius: 50px; transition: width .4s ease; width: 0%;
         }
 
         /* Flashcard */
         .flashcard {
-            background: #f8faff;
-            border: 2px solid #e2e8f0;
-            border-radius: 20px;
-            padding: 2.5rem 2rem;
-            text-align: center;
-            min-height: 220px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-            user-select: none;
+            background: #f8faff; border: 2px solid var(--border);
+            border-radius: 20px; padding: 2.5rem 2rem;
+            text-align: center; min-height: 210px;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            cursor: pointer; transition: all .3s ease;
+            position: relative; user-select: none;
         }
         .flashcard:hover { border-color: var(--primary); transform: translateY(-2px); }
-        .flashcard.flipped {
-            border-color: var(--primary);
-            background: linear-gradient(135deg, #f0f4ff, #f0fff8);
-        }
+        .flashcard.flipped { border-color: var(--primary); background: linear-gradient(135deg,#f0f4ff,#f0fff8); }
 
-        .word-main {
-            font-size: 2.4rem;
-            font-weight: 800;
-            color: var(--primary);
-            line-height: 1.2;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-        .speak-btn {
-            font-size: 1.5rem;
-            cursor: pointer;
-            background: none;
-            border: none;
-            line-height: 1;
-            padding: 0;
-            transition: transform 0.2s;
-        }
+        .word-lang { font-size: .72rem; color: var(--muted); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; margin-bottom: .55rem; }
+        .word-main { font-size: 2.2rem; font-weight: 800; color: var(--primary); line-height: 1.2; display: flex; align-items: center; gap: .65rem; }
+        .speak-btn { font-size: 1.4rem; cursor: pointer; background: none; border: none; line-height: 1; padding: 0; transition: transform .2s; }
         .speak-btn:hover { transform: scale(1.15); }
 
-        .word-lang {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            font-weight: 600;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            margin-bottom: 0.6rem;
-        }
+        .translation-block { margin-top: 1.1rem; padding-top: 1.1rem; border-top: 1px solid var(--border); width: 100%; }
+        .translation-lang { font-size: .72rem; color: var(--muted); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; margin-bottom: .35rem; }
+        .word-translation { font-size: 1.8rem; font-weight: 700; color: var(--text); display: flex; align-items: center; justify-content: center; gap: .55rem; }
 
-        .translation-block {
-            margin-top: 1.2rem;
-            padding-top: 1.2rem;
-            border-top: 1px solid #e2e8f0;
-            width: 100%;
-        }
-        .translation-lang {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            font-weight: 600;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            margin-bottom: 0.4rem;
-        }
-        .word-translation {
-            font-size: 1.9rem;
-            font-weight: 700;
-            color: var(--text-main);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.6rem;
-        }
-
-        .flip-hint {
-            color: var(--text-muted);
-            font-size: 0.82rem;
-            margin-top: 1.2rem;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
+        .flip-hint { color: var(--muted); font-size: .8rem; margin-top: 1.1rem; display: flex; align-items: center; gap: 5px; }
 
         /* Action buttons */
-        .action-buttons {
-            display: flex;
-            gap: 0.75rem;
-            margin-top: 1.25rem;
-        }
+        .action-buttons { display: flex; gap: .7rem; margin-top: 1.1rem; }
         .action-btn {
-            flex: 1;
-            padding: 0.9rem;
-            border: none;
-            border-radius: 14px;
-            font-size: 1rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            opacity: 0;
-            transform: translateY(8px);
+            flex: 1; padding: .9rem; border: none; border-radius: 14px;
+            font-size: .95rem; font-weight: 700; cursor: pointer;
+            transition: all .2s ease; display: flex;
+            align-items: center; justify-content: center; gap: 6px;
+            opacity: 0; transform: translateY(8px);
         }
-        .action-btn.visible {
-            opacity: 1;
-            transform: translateY(0);
-            transition: opacity 0.3s, transform 0.3s, background 0.2s;
-        }
-        .btn-dont-know {
-            background: #fff1f0;
-            color: #c62828;
-            border: 2px solid #ffcdd2;
-        }
-        .btn-dont-know:hover { background: #ffebee; border-color: #ef9a9a; transform: translateY(-2px); }
-        .btn-know {
-            background: #f1f8e9;
-            color: #2e7d32;
-            border: 2px solid #c8e6c9;
-        }
+        .action-btn.visible { opacity: 1; transform: translateY(0); transition: opacity .3s, transform .3s, background .2s; }
+        .btn-dont { background: #fff1f0; color: #c62828; border: 2px solid #ffcdd2; }
+        .btn-dont:hover { background: #ffebee; border-color: #ef9a9a; transform: translateY(-2px); }
+        .btn-know { background: #f1f8e9; color: #2e7d32; border: 2px solid #c8e6c9; }
         .btn-know:hover { background: #e8f5e9; border-color: #a5d6a7; transform: translateY(-2px); }
 
-        /* Results screen */
-        .results-screen {
-            display: none;
-            text-align: center;
-            padding: 0.5rem 0;
-            animation: cardPop 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-        }
-
+        /* Results */
+        .results-screen { display: none; text-align: center; padding: .5rem 0; animation: cardPop .6s cubic-bezier(.2,.8,.2,1) forwards; }
         .score-circle {
-            width: 110px;
-            height: 110px;
-            border-radius: 50%;
-            background: var(--primary-gradient);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1.5rem;
-            box-shadow: 0 8px 20px rgba(64, 121, 255, 0.3);
+            width: 110px; height: 110px; border-radius: 50%;
+            background: var(--grad); display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            margin: 0 auto 1.4rem; box-shadow: 0 8px 20px rgba(64,121,255,.3);
         }
-        .score-pct {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: white;
-            line-height: 1;
-        }
-        .score-label {
-            font-size: 0.7rem;
-            color: rgba(255,255,255,0.85);
-            font-weight: 600;
-        }
-
-        .result-title {
-            font-size: 1.5rem;
-            font-weight: 800;
-            margin-bottom: 0.5rem;
-        }
-        .result-msg {
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            margin-bottom: 1.75rem;
-            line-height: 1.6;
-        }
-        .result-stats {
-            display: flex;
-            gap: 0.75rem;
-            justify-content: center;
-            margin-bottom: 1.75rem;
-        }
-        .stat-chip {
-            padding: 0.5rem 1rem;
-            border-radius: 50px;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
+        .score-pct { font-size: 1.8rem; font-weight: 800; color: #fff; line-height: 1; }
+        .score-lbl { font-size: .68rem; color: rgba(255,255,255,.85); font-weight: 700; }
+        .result-title { font-size: 1.45rem; font-weight: 800; margin-bottom: .45rem; }
+        .result-msg { color: var(--muted); font-size: .88rem; margin-bottom: 1.6rem; line-height: 1.6; }
+        .result-stats { display: flex; gap: .65rem; justify-content: center; margin-bottom: 1.6rem; }
+        .stat-chip { padding: .45rem .95rem; border-radius: 50px; font-size: .83rem; font-weight: 700; }
         .stat-know { background: #f1f8e9; color: #2e7d32; }
         .stat-dont { background: #fff1f0; color: #c62828; }
 
         .cta-primary {
-            display: block;
-            width: 100%;
-            padding: 1rem;
-            background: var(--primary-gradient);
-            color: white;
-            font-size: 1rem;
-            font-weight: 700;
-            border: none;
-            border-radius: 14px;
-            cursor: pointer;
-            text-decoration: none;
-            text-align: center;
-            transition: all 0.25s ease;
-            margin-bottom: 0.75rem;
-            box-shadow: 0 4px 15px rgba(64, 121, 255, 0.35);
+            display: block; width: 100%; padding: 1rem;
+            background: var(--grad); color: #fff;
+            font-size: .98rem; font-weight: 700; border: none;
+            border-radius: 14px; cursor: pointer; text-decoration: none;
+            text-align: center; transition: all .25s;
+            margin-bottom: .7rem; box-shadow: 0 4px 15px rgba(64,121,255,.35);
         }
-        .cta-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(64, 121, 255, 0.45); }
+        .cta-primary:hover { transform: translateY(-2px); box-shadow: 0 7px 22px rgba(64,121,255,.45); }
 
         .cta-secondary-row {
-            display: flex;
-            gap: 0.75rem;
-            justify-content: center;
-            align-items: center;
-            flex-wrap: wrap;
+            display: flex; gap: .65rem; justify-content: center;
+            align-items: center; flex-wrap: wrap;
         }
-        .cta-link {
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            text-decoration: none;
-            transition: color 0.2s;
-        }
+        .cta-link { color: var(--muted); font-size: .88rem; text-decoration: none; transition: color .2s; }
         .cta-link:hover { color: var(--primary); }
         .cta-retry {
-            background: none;
-            border: 2px solid #e2e8f0;
-            color: var(--text-muted);
-            padding: 0.5rem 1rem;
-            border-radius: 10px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
+            background: none; border: 2px solid var(--border); color: var(--muted);
+            padding: .45rem .95rem; border-radius: 10px;
+            font-size: .83rem; font-weight: 700; cursor: pointer; transition: all .2s;
         }
         .cta-retry:hover { border-color: var(--primary); color: var(--primary); }
 
-        /* AI teaser at bottom of results */
         .ai-teaser {
-            margin-top: 1.5rem;
-            padding: 1rem;
-            background: linear-gradient(135deg, #f0f4ff, #f0fff8);
-            border-radius: 12px;
-            border: 1px solid #c7d8ff;
-            font-size: 0.85rem;
-            color: var(--primary);
-            font-weight: 600;
-            text-align: left;
-            display: flex;
-            gap: 10px;
-            align-items: flex-start;
+            margin-top: 1.4rem; padding: .9rem 1rem;
+            background: linear-gradient(135deg,#f0f4ff,#f0fff8);
+            border-radius: 12px; border: 1px solid #c7d8ff;
+            font-size: .83rem; color: var(--primary); font-weight: 600;
+            text-align: left; display: flex; gap: 9px; align-items: flex-start;
         }
-        .ai-teaser .ai-icon { font-size: 1.3rem; flex-shrink: 0; }
+        .ai-icon { font-size: 1.25rem; flex-shrink: 0; }
 
         @media (max-width: 480px) {
-            .demo-card { padding: 1.5rem; }
-            .word-main { font-size: 1.9rem; }
+            body { padding: 1rem; }
+            .demo-card { padding: 1.4rem; border-radius: 20px; }
+            .word-main { font-size: 1.75rem; }
             .word-translation { font-size: 1.5rem; }
+            .flashcard { padding: 2rem 1.25rem; min-height: 185px; }
         }
     </style>
 </head>
 <body>
-    <div class="background-shapes" id="bgShapes"></div>
 
-    <div class="demo-card">
+<div class="bg-shapes" id="bgShapes"></div>
 
-        <!-- Test screen -->
-        <div id="testScreen">
-            <div class="card-header">
-                <div>
-                    <div class="demo-badge">🎮 Demo · bez registrácie</div>
+<div class="demo-card">
+
+    <!-- Test screen -->
+    <div id="testScreen">
+        <div class="card-header">
+            <div id="demoBadge" class="demo-badge"></div>
+            <div class="header-right">
+                <div class="lang-mini">
+                    <button data-lang="en">EN</button>
+                    <button data-lang="sk">SK</button>
                 </div>
-                <a href="/" class="back-link">← Späť</a>
-            </div>
-
-            <h1>Vyskúšaj LexiNova</h1>
-            <p class="subtitle">Anglické slovíčka · klikni na kartičku pre preklad</p>
-
-            <div class="progress-wrap">
-                <div class="progress-label">
-                    <span id="progressText">Slovíčko 1 / 12</span>
-                    <span id="scoreText">✅ 0 &nbsp; 😕 0</span>
-                </div>
-                <div class="progress-bar-bg">
-                    <div class="progress-bar-fill" id="progressFill"></div>
-                </div>
-            </div>
-
-            <div class="flashcard" id="flashcard" onclick="flipCard()">
-                <div class="word-lang">Angličtina</div>
-                <div class="word-main">
-                    <span id="wordText"></span>
-                    <button class="speak-btn" onclick="speakWord(event)">🔊</button>
-                </div>
-                <div id="translationBlock" class="translation-block" style="display:none;">
-                    <div class="translation-lang">Slovenčina</div>
-                    <div class="word-translation">
-                        <span id="translationText"></span>
-                        <button class="speak-btn" onclick="speakTranslation(event)">🔊</button>
-                    </div>
-                </div>
-                <div class="flip-hint" id="flipHint">👆 Klikni pre zobrazenie prekladu</div>
-            </div>
-
-            <div class="action-buttons">
-                <button class="action-btn btn-dont-know" id="btnDont" onclick="answer(false)">😕 Neviem</button>
-                <button class="action-btn btn-know" id="btnKnow" onclick="answer(true)">✅ Viem</button>
+                <a href="/" class="back-link" id="backLink">←</a>
             </div>
         </div>
 
-        <!-- Results screen -->
-        <div class="results-screen" id="resultsScreen">
-            <div class="score-circle">
-                <div class="score-pct" id="scorePct">--%</div>
-                <div class="score-label">úspešnosť</div>
+        <h1 id="demoTitle"></h1>
+        <p class="subtitle" id="demoSubtitle"></p>
+
+        <div class="progress-wrap">
+            <div class="progress-label">
+                <span id="progressText"></span>
+                <span id="scoreText"></span>
             </div>
-
-            <div class="result-title" id="resultTitle"></div>
-            <p class="result-msg" id="resultMsg"></p>
-
-            <div class="result-stats">
-                <div class="stat-chip stat-know" id="statKnow">✅ 0 viem</div>
-                <div class="stat-chip stat-dont" id="statDont">😕 0 neviem</div>
-            </div>
-
-            <a href="/register" class="cta-primary">🚀 Vytvoriť bezplatný účet</a>
-
-            <div class="cta-secondary-row">
-                <button class="cta-retry" onclick="restartDemo()">🔁 Skúsiť znova</button>
-                <a href="/login" class="cta-link">Mám účet → Prihlásiť sa</a>
-            </div>
-
-            <div class="ai-teaser">
-                <span class="ai-icon">🤖</span>
-                <span>S účtom si vygeneruješ vlastnú sadu slovíčok pomocou AI — napíš iba tému a jazyky, zvyšok spraví LexiNova za teba.</span>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="progressFill"></div>
             </div>
         </div>
 
+        <div class="flashcard" id="flashcard" onclick="flipCard()">
+            <div class="word-lang" id="wordLang"></div>
+            <div class="word-main">
+                <span id="wordText"></span>
+                <button class="speak-btn" onclick="speakWord(event)">🔊</button>
+            </div>
+            <div id="translationBlock" class="translation-block" style="display:none;">
+                <div class="translation-lang" id="transLang"></div>
+                <div class="word-translation">
+                    <span id="translationText"></span>
+                    <button class="speak-btn" onclick="speakTranslation(event)">🔊</button>
+                </div>
+            </div>
+            <div class="flip-hint" id="flipHint"></div>
+        </div>
+
+        <div class="action-buttons">
+            <button class="action-btn btn-dont" id="btnDont" onclick="answer(false)"></button>
+            <button class="action-btn btn-know" id="btnKnow" onclick="answer(true)"></button>
+        </div>
     </div>
 
-    <script>
-        const DEMO_WORDS = [
-            { original: "house",       translation: "dom" },
-            { original: "water",       translation: "voda" },
-            { original: "music",       translation: "hudba" },
-            { original: "friendship",  translation: "priateľstvo" },
-            { original: "knowledge",   translation: "vedomosti" },
-            { original: "travel",      translation: "cestovanie" },
-            { original: "dream",       translation: "sen" },
-            { original: "language",    translation: "jazyk" },
-            { original: "family",      translation: "rodina" },
-            { original: "smile",       translation: "úsmev" },
-            { original: "mountain",    translation: "hora" },
-            { original: "freedom",     translation: "sloboda" },
-        ];
+    <!-- Results screen -->
+    <div class="results-screen" id="resultsScreen">
+        <div class="score-circle">
+            <div class="score-pct" id="scorePct">--%</div>
+            <div class="score-lbl" id="scoreLbl"></div>
+        </div>
 
-        let words = [];
-        let currentIndex = 0;
-        let scoreKnow = 0;
-        let scoreDont = 0;
-        let isFlipped = false;
+        <div class="result-title" id="resultTitle"></div>
+        <p class="result-msg" id="resultMsg"></p>
 
-        function shuffle(arr) {
-            const a = [...arr];
-            for (let i = a.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [a[i], a[j]] = [a[j], a[i]];
-            }
-            return a;
-        }
+        <div class="result-stats">
+            <div class="stat-chip stat-know" id="statKnow"></div>
+            <div class="stat-chip stat-dont" id="statDont"></div>
+        </div>
 
-        function startDemo() {
-            words = shuffle(DEMO_WORDS);
-            currentIndex = 0;
-            scoreKnow = 0;
-            scoreDont = 0;
-            isFlipped = false;
-            document.getElementById('testScreen').style.display = 'block';
-            document.getElementById('resultsScreen').style.display = 'none';
-            document.getElementById('resultsScreen').className = 'results-screen';
-            showCard();
-        }
+        <a href="/register" class="cta-primary" id="ctaPrimary"></a>
 
-        function showCard() {
-            isFlipped = false;
-            const word = words[currentIndex];
-            document.getElementById('wordText').textContent = word.original;
-            document.getElementById('translationText').textContent = word.translation;
-            document.getElementById('translationBlock').style.display = 'none';
-            document.getElementById('flipHint').style.display = 'flex';
+        <div class="cta-secondary-row">
+            <button class="cta-retry" onclick="restartDemo()" id="ctaRetry"></button>
+            <a href="/login" class="cta-link" id="ctaLogin"></a>
+        </div>
 
-            const flashcard = document.getElementById('flashcard');
-            flashcard.classList.remove('flipped');
+        <div class="ai-teaser">
+            <span class="ai-icon">🤖</span>
+            <span id="aiTeaser"></span>
+        </div>
+    </div>
 
-            // Hide answer buttons
-            ['btnDont', 'btnKnow'].forEach(id => {
-                const btn = document.getElementById(id);
-                btn.classList.remove('visible');
-            });
+</div>
 
-            // Progress
-            const total = words.length;
-            const done = currentIndex;
-            document.getElementById('progressText').textContent = `Slovíčko ${done + 1} / ${total}`;
-            document.getElementById('scoreText').innerHTML = `✅ ${scoreKnow} &nbsp; 😕 ${scoreDont}`;
-            document.getElementById('progressFill').style.width = `${(done / total) * 100}%`;
-        }
+<script>
+/* ── LABELS ── */
+const LABELS = {
+    en: {
+        badge:      '🎮 Demo · no registration needed',
+        back:       '← Back',
+        title:      'Try LexiNova',
+        subtitle:   'English words · click the card to reveal the translation',
+        wordLang:   'English',
+        transLang:  'Slovak',
+        flipHint:   '👆 Click to reveal translation',
+        btnDont:    "😕 Don't know",
+        btnKnow:    '✅ I know',
+        scoreLbl:   'accuracy',
+        wordNum:    (i, t) => `Word ${i} / ${t}`,
+        scoreStr:   (k, d) => `✅ ${k}   😕 ${d}`,
+        statKnow:   (n) => `✅ ${n} know`,
+        statDont:   (n) => `😕 ${n} don't know`,
+        results: {
+            high:  { title: '🌟 Excellent!',        msg: 'Your English vocabulary is impressive. Register to generate custom sets on any topic.' },
+            mid:   { title: '💪 Good job!',          msg: 'Solid foundation! Register to unlock unlimited sets and smart repetition for tricky words.' },
+            low:   { title: '📚 Room to improve!',  msg: "No worries — that's exactly what LexiNova is for. Smart repetition brings tricky words back more often." },
+        },
+        ctaPrimary: '🚀 Create free account',
+        retry:      '🔁 Try again',
+        loginLink:  'I have an account → Log in',
+        aiTeaser:   'With an account you can generate your own word sets using AI — just type a topic and languages, and LexiNova does the rest.',
+    },
+    sk: {
+        badge:      '🎮 Demo · bez registrácie',
+        back:       '← Späť',
+        title:      'Vyskúšaj LexiNova',
+        subtitle:   'Anglické slovíčka · klikni na kartičku pre preklad',
+        wordLang:   'Angličtina',
+        transLang:  'Slovenčina',
+        flipHint:   '👆 Klikni pre zobrazenie prekladu',
+        btnDont:    '😕 Neviem',
+        btnKnow:    '✅ Viem',
+        scoreLbl:   'úspešnosť',
+        wordNum:    (i, t) => `Slovíčko ${i} / ${t}`,
+        scoreStr:   (k, d) => `✅ ${k}   😕 ${d}`,
+        statKnow:   (n) => `✅ ${n} viem`,
+        statDont:   (n) => `😕 ${n} neviem`,
+        results: {
+            high:  { title: '🌟 Výborné!',           msg: 'Zvládaš anglické slovíčka skvele. Vyskúšaj ďalšie témy s vlastnou sadou.' },
+            mid:   { title: '💪 Dobrý výsledok!',    msg: 'Máš dobrý základ. Registráciou získaš neobmedzené sady a inteligentné opakovanie slov, ktoré ti nejdú.' },
+            low:   { title: '📚 Je čo zlepšovať!',  msg: 'Nevadí — presne preto je tu LexiNova. Inteligentné opakovanie zaistí, že nezabudnuté slovíčka precvičíš viackrát.' },
+        },
+        ctaPrimary: '🚀 Vytvoriť bezplatný účet',
+        retry:      '🔁 Skúsiť znova',
+        loginLink:  'Mám účet → Prihlásiť sa',
+        aiTeaser:   'S účtom si vygeneruješ vlastnú sadu slovíčok pomocou AI — napíš iba tému a jazyky, zvyšok spraví LexiNova za teba.',
+    },
+};
 
-        function flipCard() {
-            if (isFlipped) return;
-            isFlipped = true;
+/* ── WORDS ── */
+const DEMO_WORDS = [
+    { original: 'house',       translation: 'dom' },
+    { original: 'water',       translation: 'voda' },
+    { original: 'music',       translation: 'hudba' },
+    { original: 'friendship',  translation: 'priateľstvo' },
+    { original: 'knowledge',   translation: 'vedomosti' },
+    { original: 'travel',      translation: 'cestovanie' },
+    { original: 'dream',       translation: 'sen' },
+    { original: 'language',    translation: 'jazyk' },
+    { original: 'family',      translation: 'rodina' },
+    { original: 'smile',       translation: 'úsmev' },
+    { original: 'mountain',    translation: 'hora' },
+    { original: 'freedom',     translation: 'sloboda' },
+];
 
-            const flashcard = document.getElementById('flashcard');
-            flashcard.classList.add('flipped');
-            document.getElementById('translationBlock').style.display = 'block';
-            document.getElementById('flipHint').style.display = 'none';
+/* ── STATE ── */
+let currentLang = localStorage.getItem('preferredLang') || 'en';
+let words = [];
+let currentIndex = 0;
+let scoreKnow = 0;
+let scoreDont = 0;
+let isFlipped = false;
 
-            // Show answer buttons with small delay for effect
-            setTimeout(() => {
-                ['btnDont', 'btnKnow'].forEach(id => {
-                    document.getElementById(id).classList.add('visible');
-                });
-            }, 150);
-        }
+/* ── LANG ── */
+function setLang(lang) {
+    currentLang = lang;
+    localStorage.setItem('preferredLang', lang);
 
-        function answer(know) {
-            if (!isFlipped) return;
-            if (know) scoreKnow++;
-            else scoreDont++;
+    document.querySelectorAll('.lang-mini button').forEach(b =>
+        b.classList.toggle('active', b.getAttribute('data-lang') === lang));
 
-            currentIndex++;
-            if (currentIndex >= words.length) {
-                showResults();
-            } else {
-                showCard();
-            }
-        }
+    const L = LABELS[lang];
+    document.getElementById('demoBadge').textContent   = L.badge;
+    document.getElementById('backLink').textContent    = L.back;
+    document.getElementById('demoTitle').textContent   = L.title;
+    document.getElementById('demoSubtitle').textContent = L.subtitle;
+    document.getElementById('wordLang').textContent    = L.wordLang;
+    document.getElementById('transLang').textContent   = L.transLang;
+    document.getElementById('flipHint').textContent    = L.flipHint;
+    document.getElementById('btnDont').textContent     = L.btnDont;
+    document.getElementById('btnKnow').textContent     = L.btnKnow;
+    document.getElementById('scoreLbl').textContent    = L.scoreLbl;
+    document.getElementById('ctaPrimary').textContent  = L.ctaPrimary;
+    document.getElementById('ctaRetry').textContent    = L.retry;
+    document.getElementById('ctaLogin').textContent    = L.loginLink;
+    document.getElementById('aiTeaser').textContent    = L.aiTeaser;
 
-        function showResults() {
-            document.getElementById('testScreen').style.display = 'none';
-            const resultsEl = document.getElementById('resultsScreen');
-            resultsEl.style.display = 'block';
+    // Update live progress text if game is running
+    if (words.length) updateProgressUI();
+}
 
-            const total = words.length;
-            const pct = Math.round((scoreKnow / total) * 100);
+/* ── HELPERS ── */
+function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
 
-            document.getElementById('scorePct').textContent = pct + '%';
-            document.getElementById('statKnow').textContent = `✅ ${scoreKnow} viem`;
-            document.getElementById('statDont').textContent = `😕 ${scoreDont} neviem`;
+function updateProgressUI() {
+    const L = LABELS[currentLang];
+    const total = words.length;
+    document.getElementById('progressText').textContent = L.wordNum(currentIndex + 1, total);
+    document.getElementById('scoreText').innerHTML = L.scoreStr(scoreKnow, scoreDont);
+    document.getElementById('progressFill').style.width = `${(currentIndex / total) * 100}%`;
+}
 
-            let title, msg;
-            if (pct >= 90) {
-                title = '🌟 Výborné!';
-                msg = 'Zvládaš anglické slovíčka skvele. Vyskúšaj ďalšie témy s vlastnou sadou.';
-            } else if (pct >= 60) {
-                title = '💪 Dobrý výsledok!';
-                msg = 'Máš dobrý základ. Registráciou získaš neobmedzené sady a inteligentné opakovanie slov, ktoré ti nejdú.';
-            } else {
-                title = '📚 Je čo zlepšovať!';
-                msg = 'Nevadí — presne preto je tu LexiNova. Inteligentné opakovanie zaistí, že nezabudnuté slovíčka precvičíš viackrát.';
-            }
-            document.getElementById('resultTitle').textContent = title;
-            document.getElementById('resultMsg').textContent = msg;
+/* ── DEMO FLOW ── */
+function startDemo() {
+    words = shuffle(DEMO_WORDS);
+    currentIndex = 0; scoreKnow = 0; scoreDont = 0; isFlipped = false;
+    document.getElementById('testScreen').style.display = 'block';
+    document.getElementById('resultsScreen').style.display = 'none';
+    document.getElementById('resultsScreen').className = 'results-screen';
+    showCard();
+}
 
-            // Animate in
-            setTimeout(() => resultsEl.classList.add('show'), 10);
-        }
+function showCard() {
+    isFlipped = false;
+    const word = words[currentIndex];
+    document.getElementById('wordText').textContent = word.original;
+    document.getElementById('translationText').textContent = word.translation;
+    document.getElementById('translationBlock').style.display = 'none';
+    document.getElementById('flipHint').style.display = 'flex';
+    document.getElementById('flashcard').classList.remove('flipped');
 
-        function restartDemo() {
-            startDemo();
-        }
+    ['btnDont', 'btnKnow'].forEach(id => document.getElementById(id).classList.remove('visible'));
+    updateProgressUI();
+}
 
-        function speakWord(e) {
-            e.stopPropagation();
-            const word = document.getElementById('wordText').textContent;
-            speak(word, 'en-US');
-        }
+function flipCard() {
+    if (isFlipped) return;
+    isFlipped = true;
+    document.getElementById('flashcard').classList.add('flipped');
+    document.getElementById('translationBlock').style.display = 'block';
+    document.getElementById('flipHint').style.display = 'none';
+    setTimeout(() => ['btnDont', 'btnKnow'].forEach(id =>
+        document.getElementById(id).classList.add('visible')), 150);
+}
 
-        function speakTranslation(e) {
-            e.stopPropagation();
-            const word = document.getElementById('translationText').textContent;
-            speak(word, 'sk-SK');
-        }
+function answer(know) {
+    if (!isFlipped) return;
+    if (know) scoreKnow++; else scoreDont++;
+    currentIndex++;
+    if (currentIndex >= words.length) showResults(); else showCard();
+}
 
-        function speak(text, lang) {
-            if (!('speechSynthesis' in window)) return;
-            window.speechSynthesis.cancel();
-            const u = new SpeechSynthesisUtterance(text);
-            u.lang = lang;
-            u.rate = 0.85;
-            window.speechSynthesis.speak(u);
-        }
+function showResults() {
+    document.getElementById('testScreen').style.display = 'none';
+    const el = document.getElementById('resultsScreen');
+    el.style.display = 'block';
 
-        // Floating background characters
-        (function() {
-            const bg = document.getElementById('bgShapes');
-            const chars = ['A','B','C','?','!','Ω','文','①'];
-            function make() {
-                const el = document.createElement('div');
-                el.className = 'shape';
-                el.textContent = chars[Math.floor(Math.random() * chars.length)];
-                el.style.left = Math.random() * 100 + 'vw';
-                el.style.fontSize = (Math.random() * 22 + 10) + 'px';
-                el.style.animationDuration = (Math.random() * 12 + 10) + 's';
-                bg.appendChild(el);
-                setTimeout(() => el.remove(), 22000);
-            }
-            for (let i = 0; i < 10; i++) setTimeout(make, i * 400);
-            setInterval(make, 1500);
-        })();
+    const total = words.length;
+    const pct = Math.round((scoreKnow / total) * 100);
+    const L = LABELS[currentLang];
+    const tier = pct >= 90 ? 'high' : pct >= 60 ? 'mid' : 'low';
 
-        // Start on load
-        startDemo();
-    </script>
+    document.getElementById('scorePct').textContent = pct + '%';
+    document.getElementById('statKnow').textContent = L.statKnow(scoreKnow);
+    document.getElementById('statDont').textContent = L.statDont(scoreDont);
+    document.getElementById('resultTitle').textContent = L.results[tier].title;
+    document.getElementById('resultMsg').textContent   = L.results[tier].msg;
+
+    setTimeout(() => el.classList.add('show'), 10);
+}
+
+function restartDemo() { startDemo(); }
+
+/* ── SPEECH ── */
+function speakWord(e) { e.stopPropagation(); speak(document.getElementById('wordText').textContent, 'en-US'); }
+function speakTranslation(e) { e.stopPropagation(); speak(document.getElementById('translationText').textContent, 'sk-SK'); }
+function speak(text, lang) {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = lang; u.rate = .85;
+    window.speechSynthesis.speak(u);
+}
+
+/* ── BACKGROUND ── */
+(function() {
+    const bg = document.getElementById('bgShapes');
+    const chars = ['A','B','C','?','!','Ω','文','①'];
+    function make() {
+        const el = document.createElement('div');
+        el.className = 'shape';
+        el.textContent = chars[Math.floor(Math.random() * chars.length)];
+        el.style.left = Math.random() * 100 + 'vw';
+        el.style.fontSize = (Math.random() * 22 + 10) + 'px';
+        el.style.animationDuration = (Math.random() * 12 + 10) + 's';
+        bg.appendChild(el);
+        setTimeout(() => el.remove(), 22000);
+    }
+    for (let i = 0; i < 10; i++) setTimeout(make, i * 400);
+    setInterval(make, 1500);
+})();
+
+/* ── INIT ── */
+document.querySelectorAll('.lang-mini button').forEach(b =>
+    b.addEventListener('click', () => setLang(b.getAttribute('data-lang'))));
+
+setLang(currentLang);
+startDemo();
+</script>
 </body>
 </html>

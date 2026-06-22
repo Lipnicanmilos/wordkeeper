@@ -3,366 +3,559 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title data-en="Welcome" data-sk="Vitajte">Welcome</title>
+    <title data-en="LexiNova – AI Vocabulary Trainer" data-sk="LexiNova – Tréner slovíčok s AI">LexiNova – AI Vocabulary Trainer</title>
 
-    <!-- PWA Meta Tags -->
+    <!-- PWA -->
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#4079ff">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="LexiNova">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <meta name="description" content="LexiNova – AI-powered vocabulary trainer. Generate word sets instantly, learn with smart flashcards, track your progress.">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
         :root {
-            --primary-gradient: linear-gradient(45deg, #40ffaa, #4079ff, #40ffaa, #4079ff);
+            --primary: #4079ff;
+            --accent:  #40ffaa;
+            --grad:    linear-gradient(135deg, #4079ff, #40ffaa);
+            --bg:      #f4f7fe;
+            --surface: #ffffff;
+            --text:    #1a202c;
+            --muted:   #718096;
+            --border:  #e2e8f0;
+            --shadow:  0 4px 20px rgba(64,121,255,.10);
+            --r:       16px;
         }
 
+        html { scroll-behavior: smooth; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f2f5;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            text-align: center;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
             overflow-x: hidden;
-            perspective: 1000px;
         }
 
-        /* Pozadie s plávajúcimi prvkami */
-        .background-shapes {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            z-index: -1;
-            overflow: hidden;
-        }
-
+        /* ─── BACKGROUND SHAPES ─── */
+        .bg-shapes { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
         .shape {
-            position: absolute;
-            color: rgba(64, 121, 255, 0.1);
-            font-weight: bold;
-            user-select: none;
+            position: absolute; color: var(--primary); opacity: .06;
+            font-weight: 700; user-select: none;
             animation: floatUp linear infinite;
         }
-
         @keyframes floatUp {
-            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
-            10% { opacity: 0.5; }
-            90% { opacity: 0.5; }
+            0%   { transform: translateY(110vh) rotate(0deg);   opacity: 0; }
+            10%  { opacity: .35; }
+            90%  { opacity: .35; }
             100% { transform: translateY(-20vh) rotate(360deg); opacity: 0; }
         }
 
-        .container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 2.5rem 2rem;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-            max-width: 600px;
-            width: 90%;
-            position: relative;
-            box-sizing: border-box;
-            transform-style: preserve-3d;
-            transition: transform 0.1s ease-out;
-            opacity: 0;
-            transform: translateY(30px);
-            animation: containerPop 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        /* ─── HEADER ─── */
+        .header {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(244,247,254,.92);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--border);
         }
-
-        /* Kontajner pre tvoj obrázok static/img/index.jpg */
-        .hero-container {
-            position: relative;
-            width: 100%;
-            margin-bottom: 1.5rem;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
-            background: #000; /* Pozadie pod obrázkom */
+        .header-inner {
+            max-width: 1100px; margin: 0 auto;
+            padding: 0 1.5rem; height: 64px;
+            display: flex; align-items: center; justify-content: space-between;
         }
-
-        .hero-container img {
-            width: 100%;
-            display: block;
-            opacity: 0.9; /* Jemné stmavenie pre lepšiu čitateľnosť textu */
-        }
-
-        /* Dynamický text priamo nad obrázkom */
-        .hero-overlay-text {
-            position: absolute;
-            top: 15%; /* Pozícia textu na obrázku */
-            left: 0;
-            width: 100%;
-            color: #40ffaa;
-            font-weight: 800;
-            font-size: 1.8rem;
-            text-transform: uppercase;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.8);
-            pointer-events: none;
-            transition: all 0.3s ease;
-            z-index: 2;
-        }
-
-        @keyframes containerPop {
-            to { opacity: 1; transform: translateY(0) rotateX(0) rotateY(0); }
-        }
-
-        .animate-item {
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.6s ease;
-        }
-
-        .animate-item.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .animated-gradient-text {
-            position: relative;
-            margin-bottom: 1.5rem;
-        }
-
-        .text-content {
-            background: var(--primary-gradient);
-            background-size: 300% 300%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: gradientShift 4s ease infinite;
-            font-size: 2.3rem;
-            font-weight: 800;
-            margin: 0;
-        }
-
-        @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        p {
-            color: #555;
-            line-height: 1.6;
-            margin-bottom: 1.5rem;
-        }
-
-        .auth-links {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .auth-link {
-            padding: 0.8rem 1.8rem;
-            background: #4079ff;
-            color: white;
+        .logo {
+            font-size: 1.25rem; font-weight: 800; letter-spacing: -.03em;
+            background: var(--grad); -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent; background-clip: text;
             text-decoration: none;
-            border-radius: 50px;
-            font-weight: 600;
-            transition: all 0.3s;
         }
-
-        .auth-link:nth-child(2) {
-            background: white;
-            color: #4079ff;
-            border: 2px solid #4079ff;
-        }
-
-        .auth-link:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 15px rgba(64, 121, 255, 0.3);
-        }
-
-        .language-switcher {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            z-index: 10;
-        }
-
+        .header-nav { display: flex; align-items: center; gap: .4rem; }
+        .lang-switch { display: flex; gap: 3px; margin-right: .4rem; }
         .lang-btn {
-            padding: 0.4rem 0.8rem;
-            background: rgba(255, 255, 255, 0.8);
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            color: #666;
-            transition: all 0.2s;
+            padding: .28rem .65rem; border: 1px solid var(--border);
+            background: var(--surface); border-radius: 7px; font-size: .78rem;
+            font-weight: 700; cursor: pointer; color: var(--muted); transition: all .2s;
+        }
+        .lang-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .nav-link {
+            padding: .45rem .8rem; color: var(--muted); text-decoration: none;
+            font-weight: 500; font-size: .88rem; border-radius: 9px; transition: color .2s;
+        }
+        .nav-link:hover { color: var(--text); }
+        .btn-nav {
+            padding: .48rem 1.1rem; background: var(--primary); color: #fff;
+            border-radius: 10px; font-weight: 700; font-size: .88rem;
+            text-decoration: none; transition: all .2s;
+        }
+        .btn-nav:hover { background: #2563eb; transform: translateY(-1px); }
+
+        /* Mobile hamburger */
+        .menu-toggle {
+            display: none; border: none; background: none;
+            font-size: 1.5rem; cursor: pointer; padding: .3rem; color: var(--text);
+        }
+        .mobile-nav {
+            display: none; flex-direction: column;
+            padding: .75rem 1.5rem 1rem; gap: 0;
+            border-top: 1px solid var(--border);
+            background: rgba(244,247,254,.97);
+        }
+        .mobile-nav.open { display: flex; }
+        .mobile-nav a {
+            padding: .75rem 0; color: var(--text); text-decoration: none;
+            font-weight: 500; border-bottom: 1px solid var(--border); font-size: .95rem;
+        }
+        .mobile-nav a:last-child { border-bottom: none; color: var(--primary); font-weight: 700; }
+        .mobile-lang { display: flex; gap: .5rem; padding: .75rem 0; border-bottom: 1px solid var(--border); }
+
+        /* ─── HERO ─── */
+        .hero { padding: 5rem 1.5rem 4rem; text-align: center; }
+        .hero-inner { max-width: 760px; margin: 0 auto; }
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 50px; padding: .32rem 1rem;
+            font-size: .8rem; font-weight: 700; color: var(--primary);
+            margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,.05);
+        }
+        .hero h1 {
+            font-size: clamp(2rem, 5.5vw, 3.4rem);
+            font-weight: 800; line-height: 1.18; letter-spacing: -.03em;
+            margin-bottom: 1.25rem;
+        }
+        .hero h1 span {
+            background: var(--grad);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero-sub {
+            font-size: clamp(.95rem, 2.2vw, 1.12rem); color: var(--muted);
+            max-width: 560px; margin: 0 auto 2rem; line-height: 1.7;
+        }
+        .hero-cta {
+            display: flex; gap: .75rem; justify-content: center;
+            flex-wrap: wrap; margin-bottom: .7rem;
+        }
+        .btn-primary {
+            padding: .85rem 2rem; background: var(--grad); color: #fff;
+            border-radius: 50px; font-weight: 700; font-size: 1rem;
+            text-decoration: none; transition: all .25s;
+            box-shadow: 0 4px 16px rgba(64,121,255,.35); white-space: nowrap;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 7px 24px rgba(64,121,255,.45); }
+        .btn-outline {
+            padding: .85rem 2rem; background: var(--surface); color: var(--primary);
+            border: 2px solid var(--primary); border-radius: 50px;
+            font-weight: 700; font-size: 1rem; text-decoration: none;
+            transition: all .25s; white-space: nowrap;
+        }
+        .btn-outline:hover { background: var(--primary); color: #fff; transform: translateY(-2px); }
+        .hero-note {
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            font-size: .78rem; color: var(--muted); margin-bottom: 2.5rem;
+        }
+        .hero-note-check { color: #22c55e; font-weight: 700; font-size: .9rem; }
+        .hero-login-link { font-size: .82rem; color: var(--muted); margin-bottom: 2rem; }
+        .hero-login-link a { color: var(--primary); font-weight: 600; text-decoration: none; margin-left: 3px; }
+        .hero-login-link a:hover { text-decoration: underline; }
+        .hero-img {
+            border-radius: 20px; overflow: hidden;
+            box-shadow: 0 20px 60px rgba(64,121,255,.15);
+            border: 1px solid var(--border);
+        }
+        .hero-img img { width: 100%; display: block; }
+        .install-wrap { margin-top: 1.25rem; }
+        #installBtn {
+            display: none; padding: .7rem 1.5rem; background: var(--surface);
+            border: 1.5px solid var(--border); border-radius: 50px;
+            font-size: .9rem; font-weight: 600; cursor: pointer; color: var(--text);
+            transition: all .2s;
+        }
+        #installBtn:hover { border-color: var(--primary); color: var(--primary); }
+
+        /* ─── HOW IT WORKS (3 steps) ─── */
+        .steps { padding: 4rem 1.5rem 2rem; }
+        .steps-inner { max-width: 900px; margin: 0 auto; }
+        .steps-grid {
+            display: grid; grid-template-columns: repeat(3,1fr); gap: 2rem;
+            margin-top: 2.5rem;
+        }
+        .step { text-align: center; }
+        .step-num {
+            width: 44px; height: 44px; border-radius: 50%;
+            background: var(--grad); color: #fff;
+            font-weight: 800; font-size: 1.1rem;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 1rem;
+        }
+        .step h3 { font-size: .95rem; font-weight: 700; margin-bottom: .4rem; }
+        .step p { font-size: .875rem; color: var(--muted); }
+
+        /* ─── FEATURES / SKILLS ─── */
+        .features { padding: 4rem 1.5rem; }
+        .features-inner { max-width: 1100px; margin: 0 auto; }
+        .section-label {
+            text-align: center; font-size: .78rem; font-weight: 700;
+            letter-spacing: .1em; text-transform: uppercase;
+            color: var(--primary); margin-bottom: .6rem;
+        }
+        .section-title {
+            text-align: center;
+            font-size: clamp(1.5rem, 3.5vw, 2.1rem);
+            font-weight: 800; letter-spacing: -.025em;
+            margin-bottom: 2.75rem;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.25rem;
+        }
+        .feature-card {
+            background: var(--surface); border-radius: var(--r);
+            padding: 1.6rem; border: 1px solid var(--border);
+            box-shadow: 0 2px 8px rgba(0,0,0,.04);
+            transition: transform .2s, box-shadow .2s;
+        }
+        .feature-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+        .feature-icon {
+            font-size: 1.6rem; width: 50px; height: 50px;
+            display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(135deg,#eef2ff,#f0fff8);
+            border-radius: 13px; margin-bottom: .9rem;
+        }
+        .feature-title { font-size: .95rem; font-weight: 700; margin-bottom: .4rem; }
+        .feature-desc { font-size: .85rem; color: var(--muted); line-height: 1.65; }
+
+        /* ─── CTA BANNER ─── */
+        .cta-section { padding: 4rem 1.5rem; }
+        .cta-inner {
+            max-width: 700px; margin: 0 auto;
+            background: var(--grad); border-radius: 24px;
+            padding: 3.5rem 2rem; text-align: center; color: #fff;
+            box-shadow: 0 16px 48px rgba(64,121,255,.25);
+        }
+        .cta-inner h2 {
+            font-size: clamp(1.5rem, 3.5vw, 2rem);
+            font-weight: 800; margin-bottom: .9rem; letter-spacing: -.02em;
+        }
+        .cta-inner p { opacity: .85; margin-bottom: 1.75rem; }
+        .btn-white {
+            display: inline-block; padding: .85rem 2.25rem;
+            background: #fff; color: var(--primary); border-radius: 50px;
+            font-weight: 700; font-size: 1rem; text-decoration: none;
+            box-shadow: 0 4px 14px rgba(0,0,0,.12); transition: all .25s;
+        }
+        .btn-white:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(0,0,0,.18); }
+
+        /* ─── FOOTER ─── */
+        .footer {
+            padding: 2rem 1.5rem;
+            border-top: 1px solid var(--border);
+            font-size: .82rem; color: var(--muted);
+        }
+        .footer-inner {
+            max-width: 1100px; margin: 0 auto;
+            display: flex; align-items: center; justify-content: space-between;
+            flex-wrap: wrap; gap: 1rem;
+        }
+        .footer-links { display: flex; gap: 1.25rem; flex-wrap: wrap; }
+        .footer-links a { color: var(--muted); text-decoration: none; transition: color .2s; }
+        .footer-links a:hover { color: var(--primary); }
+
+        /* ─── RESPONSIVE ─── */
+        @media (max-width: 900px) {
+            .features-grid { grid-template-columns: repeat(2,1fr); }
+            .steps-grid { grid-template-columns: repeat(2,1fr); }
+        }
+        @media (max-width: 640px) {
+            .header-nav { display: none; }
+            .menu-toggle { display: block; }
+            .hero { padding: 3rem 1.25rem 2.5rem; }
+            .features { padding: 3rem 1.25rem; }
+            .steps { padding: 3rem 1.25rem 1.5rem; }
+            .cta-section { padding: 2.5rem 1.25rem; }
+            .features-grid { grid-template-columns: 1fr; }
+            .steps-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+            .cta-inner { padding: 2.5rem 1.25rem; }
+            .footer-inner { flex-direction: column; text-align: center; }
+            .footer-links { justify-content: center; }
         }
 
-        .lang-btn.active {
-            background: #4079ff;
-            color: white;
-            border-color: #4079ff;
-            box-shadow: 0 2px 5px rgba(64, 121, 255, 0.3);
+        /* Entrance animations */
+        .fade-up {
+            opacity: 0; transform: translateY(24px);
+            transition: opacity .6s ease, transform .6s ease;
         }
-
-        .features-list {
-            list-style: none;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-top: 1.5rem;
-        }
-
-        .features-list div { width: 100%; max-width: 250px; }
-
-        .features-list li {
-            margin-bottom: 0.6rem;
-            display: flex;
-            align-items: center;
-            color: #444;
-            font-weight: 500;
-        }
-
-        .features-list i {
-            margin-right: 0.8rem;
-            color: #40ffaa;
-            font-size: 1.1rem;
-        }
-
-        @media (max-width: 480px) {
-            .hero-overlay-text { font-size: 1.2rem; top: 10%; }
-            .text-content { font-size: 1.8rem; }
-            .container { padding: 2rem 1.5rem; }
-        }
+        .fade-up.visible { opacity: 1; transform: translateY(0); }
     </style>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
 
-    <div class="background-shapes" id="bgShapes"></div>
+<div class="bg-shapes" id="bgShapes"></div>
 
-    <div class="container" id="card">
-        <div class="language-switcher">
+<!-- ── HEADER ── -->
+<header class="header">
+    <div class="header-inner">
+        <a href="/" class="logo">⚡ LexiNova</a>
+
+        <!-- Desktop nav -->
+        <nav class="header-nav">
+            <div class="lang-switch">
+                <button class="lang-btn" data-lang="en">EN</button>
+                <button class="lang-btn" data-lang="sk">SK</button>
+            </div>
+            <a href="/demo"     class="nav-link" data-en="Try demo"   data-sk="Demo">Try demo</a>
+            <a href="/login"    class="nav-link" data-en="Log in"     data-sk="Prihlásiť">Log in</a>
+            <a href="/register" class="btn-nav"  data-en="Sign up free" data-sk="Začni zadarmo">Sign up free</a>
+        </nav>
+
+        <!-- Mobile toggle -->
+        <button class="menu-toggle" id="menuToggle" aria-label="Menu">☰</button>
+    </div>
+
+    <!-- Mobile nav drawer -->
+    <nav class="mobile-nav" id="mobileNav">
+        <div class="mobile-lang">
             <button class="lang-btn" data-lang="en">EN</button>
             <button class="lang-btn" data-lang="sk">SK</button>
         </div>
+        <a href="/demo"     data-en="Try demo"      data-sk="Vyskúšať demo">Try demo</a>
+        <a href="/login"    data-en="Log in"         data-sk="Prihlásiť sa">Log in</a>
+        <a href="/register" data-en="Sign up free"   data-sk="Začni zadarmo">Sign up free</a>
+    </nav>
+</header>
 
-        <div class="animated-gradient-text animate-item">
-            <h1 class="text-content" data-en="Vocabulary sets generated by AI. Remembered forever." data-sk="Slovíčka vygenerované AI. Zapamätané navždy.">Vocabulary sets generated by AI. Remembered forever.</h1>
+<!-- ── HERO ── -->
+<section class="hero">
+    <div class="hero-inner">
+        <div class="hero-badge fade-up">
+            🤖 <span data-en="AI-powered vocabulary trainer" data-sk="Tréner slovíčok poháňaný AI">AI-powered vocabulary trainer</span>
         </div>
 
-        <p class="animate-item" data-en="Type a topic, pick your languages — LexiNova builds the whole set. Smart repetition makes sure you never forget." data-sk="Napíš tému, vyber jazyky — LexiNova pripraví celú sadu. Inteligentné opakovanie zaistí, že nezabudneš.">
-            Type a topic, pick your languages — LexiNova builds the whole set. Smart repetition makes sure you never forget.
+        <h1 class="fade-up">
+            <span data-en="Vocabulary sets generated by AI." data-sk="Slovíčka vygenerované AI.">Vocabulary sets generated by AI.</span><br>
+            <span data-en="Remembered forever." data-sk="Zapamätané navždy.">Remembered forever.</span>
+        </h1>
+
+        <p class="hero-sub fade-up"
+           data-en="Type a topic, pick your languages — LexiNova builds the full set. Smart repetition makes sure you never forget."
+           data-sk="Napíš tému, vyber jazyky — LexiNova pripraví celú sadu. Inteligentné opakovanie zaistí, že nezabudneš.">
+            Type a topic, pick your languages — LexiNova builds the full set. Smart repetition makes sure you never forget.
         </p>
 
-        <div class="auth-links animate-item">
-            <a href="/register" class="auth-link" data-en="Start for free" data-sk="Začni zadarmo">Start for free</a>
-            <a href="/demo" class="auth-link" style="background:white; color:#4079ff; border: 2px solid #4079ff;" data-en="Try demo →" data-sk="Vyskúšať demo →">Try demo →</a>
+        <div class="hero-cta fade-up">
+            <a href="/register" class="btn-primary" data-en="Start for free" data-sk="Začni zadarmo">Start for free</a>
+            <a href="/demo"     class="btn-outline" data-en="Try demo →"     data-sk="Vyskúšať demo →">Try demo →</a>
         </div>
 
-        <p style="font-size:0.78rem; color:#999; margin-top:-0.75rem; margin-bottom:0.5rem;" class="animate-item">
+        <div class="hero-note fade-up">
+            <span class="hero-note-check">✓</span>
             <span data-en="No credit card required" data-sk="Bez platobnej karty">No credit card required</span>
+        </div>
+
+        <p class="hero-login-link fade-up">
+            <span data-en="Already have an account?" data-sk="Už máš účet?">Already have an account?</span><a href="/login" data-en="Log in" data-sk="Prihlásiť sa">Log in</a>
         </p>
 
-        <div class="hero-container animate-item">
+        <div class="hero-img fade-up">
             <img src="/static/img/index.jpg" alt="LexiNova Dashboard">
         </div>
 
-        <button id="installBtn" class="auth-link" style="display:none; margin-top: 1rem; cursor: pointer; border: none; font-family: inherit;">📲 <span data-en="Install App" data-sk="Inštalovať aplikáciu">Install App</span></button>
-
-        <div class="features-list animate-item">
-            <div data-lang-container="en">
-                <li>🤖 AI generates vocabulary sets from a single prompt</li>
-                <li>📴 Works offline — install as an app (PWA)</li>
-                <li>🔁 Smart repetition based on your knowledge level</li>
-                <li>📊 Track your progress and success rate</li>
-                <li>🔄 Two-way testing — original ↔ translation</li>
-                <li>📥 Your data is yours — export anytime</li>
-            </div>
-            <div data-lang-container="sk" style="display: none;">
-                <li>🤖 AI vygeneruje sadu slovíčok z jednej vety</li>
-                <li>📴 Funguje offline — nainštaluj ako appku (PWA)</li>
-                <li>🔁 Inteligentné opakovanie podľa úrovne znalostí</li>
-                <li>📊 Sledovanie pokroku a úspešnosti</li>
-                <li>🔄 Obojsmerné testovanie — originál ↔ preklad</li>
-                <li>📥 Tvoje dáta sú tvoje — export kedykoľvek</li>
-            </div>
+        <div class="install-wrap">
+            <button id="installBtn">📲 <span data-en="Install App" data-sk="Inštalovať aplikáciu">Install App</span></button>
         </div>
-
-        <p style="font-size:0.8rem; color:#aaa; margin-top:1.25rem;" class="animate-item">
-            <a href="/login" style="color:#4079ff; text-decoration:none;" data-en="Already have an account? Log in" data-sk="Už máš účet? Prihlásiť sa">Already have an account? Log in</a>
-        </p>
     </div>
+</section>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const langButtons = document.querySelectorAll('.lang-btn');
-            const heroOverlay = document.getElementById('heroOverlay');
+<!-- ── HOW IT WORKS ── -->
+<section class="steps">
+    <div class="steps-inner">
+        <div class="section-label" data-en="How it works" data-sk="Ako to funguje">How it works</div>
+        <h2 class="section-title" data-en="From topic to test in 30 seconds" data-sk="Od témy k testu za 30 sekúnd">From topic to test in 30 seconds</h2>
+        <div class="steps-grid" id="stepsGrid"></div>
+    </div>
+</section>
 
-            function setActiveLanguage(lang) {
-                // 1. Zmena textu nad obrázkom
-                if (heroOverlay) {
-                    heroOverlay.textContent = heroOverlay.getAttribute(`data-${lang}`);
-                }
+<!-- ── FEATURES / SKILLS ── -->
+<section class="features">
+    <div class="features-inner">
+        <div class="section-label" data-en="Features" data-sk="Funkcie">Features</div>
+        <h2 class="section-title" data-en="Everything you need to master vocabulary" data-sk="Všetko čo potrebuješ na zvládnutie slovíčok">Everything you need to master vocabulary</h2>
+        <div class="features-grid" id="featuresGrid"></div>
+    </div>
+</section>
 
-                // 2. Preklad všetkých elementov s data-en/sk
-                document.querySelectorAll('[data-en], [data-sk]').forEach(el => {
-                    const text = el.getAttribute(`data-${lang}`);
-                    if (el.tagName === 'TITLE') document.title = text;
-                    else el.textContent = text;
-                });
+<!-- ── CTA BANNER ── -->
+<section class="cta-section">
+    <div class="cta-inner fade-up">
+        <h2 data-en="Ready to start learning smarter?" data-sk="Pripravený učiť sa múdrejšie?">Ready to start learning smarter?</h2>
+        <p data-en="Join LexiNova for free. No credit card, no limits on getting started." data-sk="Registruj sa zadarmo. Bez platobnej karty, bez obmedzení pre začiatok.">Join LexiNova for free. No credit card, no limits on getting started.</p>
+        <a href="/register" class="btn-white" data-en="Create free account" data-sk="Vytvoriť bezplatný účet">Create free account</a>
+    </div>
+</section>
 
-                // 3. Prepnutie zoznamu funkcií (features)
-                document.querySelectorAll('[data-lang-container]').forEach(c => {
-                    c.style.display = c.getAttribute('data-lang-container') === lang ? 'block' : 'none';
-                });
+<!-- ── FOOTER ── -->
+<footer class="footer">
+    <div class="footer-inner">
+        <span>© 2025 LexiNova</span>
+        <div class="footer-links">
+            <a href="/demo"     data-en="Demo"    data-sk="Demo">Demo</a>
+            <a href="/login"    data-en="Log in"  data-sk="Prihlásiť">Log in</a>
+            <a href="/register" data-en="Sign up" data-sk="Registrácia">Sign up</a>
+        </div>
+    </div>
+</footer>
 
-                // 4. Aktivácia správneho tlačidla
-                langButtons.forEach(b => b.classList.toggle('active', b.getAttribute('data-lang') === lang));
-            }
+<script>
+/* ── DATA ── */
+const STEPS = {
+    en: [
+        { num: "1", title: "Type a topic", desc: "Enter any topic and select source and target languages." },
+        { num: "2", title: "AI builds the set", desc: "LexiNova generates a full vocabulary list in seconds using AI." },
+        { num: "3", title: "Learn & track", desc: "Study with flashcards, track your progress, repeat what you struggle with." },
+    ],
+    sk: [
+        { num: "1", title: "Napíš tému", desc: "Zadaj ľubovoľnú tému a vyber zdrojový a cieľový jazyk." },
+        { num: "2", title: "AI vytvorí sadu", desc: "LexiNova vygeneruje celý zoznam slovíčok za sekundy pomocou AI." },
+        { num: "3", title: "Uč sa a sleduj", desc: "Uč sa s kartičkami, sleduj pokrok a opakuj to, čo ti nejde." },
+    ]
+};
 
-            langButtons.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const l = btn.getAttribute('data-lang');
-                    setActiveLanguage(l);
-                    localStorage.setItem('preferredLang', l);
-                });
-            });
+const FEATURES = {
+    en: [
+        { icon: "🤖", title: "AI vocabulary generation", desc: "Type a topic and pick languages — the full set is ready in seconds. No manual entry needed." },
+        { icon: "📴", title: "Works offline", desc: "Install as a mobile app (PWA) and keep learning even without internet." },
+        { icon: "🔁", title: "Smart repetition", desc: "Words repeat based on your knowledge level. Struggling words come up more often." },
+        { icon: "📊", title: "Progress tracking", desc: "See your success rate, track the hardest words and watch your knowledge grow." },
+        { icon: "🔄", title: "Two-way testing", desc: "Switch direction anytime — original → translation or translation → original." },
+        { icon: "📥", title: "Your data, always", desc: "Export all vocabulary at any time in JSON. Your data belongs to you." },
+    ],
+    sk: [
+        { icon: "🤖", title: "AI generovanie slovíčok", desc: "Napíš tému a jazyky — celá sada je hotová za sekundy. Žiadne manuálne zadávanie." },
+        { icon: "📴", title: "Funguje offline", desc: "Nainštaluj ako mobilnú appku (PWA) a uč sa aj bez internetu." },
+        { icon: "🔁", title: "Inteligentné opakovanie", desc: "Slovíčka sa opakujú podľa znalostí. To, čo ti nejde, príde znova skôr." },
+        { icon: "📊", title: "Sledovanie pokroku", desc: "Sleduj úspešnosť, najťažšie slovíčka a pozoruj, ako znalosti rastú." },
+        { icon: "🔄", title: "Obojsmerné testovanie", desc: "Prepínaj smer kedykoľvek — originál → preklad alebo preklad → originál." },
+        { icon: "📥", title: "Tvoje dáta, vždy", desc: "Exportuj všetky slovíčka kedykoľvek vo formáte JSON. Patria tebe." },
+    ]
+};
 
-            // Postupná animácia prvkov pri načítaní
-            const items = document.querySelectorAll('.animate-item');
-            items.forEach((item, i) => {
-                setTimeout(() => item.classList.add('visible'), 200 + (i * 150));
-            });
+/* ── RENDER ── */
+function renderSteps(lang) {
+    const grid = document.getElementById('stepsGrid');
+    grid.innerHTML = STEPS[lang].map(s => `
+        <div class="step fade-up">
+            <div class="step-num">${s.num}</div>
+            <h3>${s.title}</h3>
+            <p>${s.desc}</p>
+        </div>`).join('');
+    observeFadeUps();
+}
 
-            // Jemný Tilt efekt na kartu pri pohybe myšou
-            const card = document.getElementById('card');
-            document.body.addEventListener('mousemove', (e) => {
-                const x = (window.innerWidth / 2 - e.pageX) / 45;
-                const y = (window.innerHeight / 2 - e.pageY) / 45;
-                card.style.transform = `rotateY(${x}deg) rotateX(${y}deg)`;
-            });
+function renderFeatures(lang) {
+    const grid = document.getElementById('featuresGrid');
+    grid.innerHTML = FEATURES[lang].map(f => `
+        <div class="feature-card fade-up">
+            <div class="feature-icon">${f.icon}</div>
+            <div class="feature-title">${f.title}</div>
+            <div class="feature-desc">${f.desc}</div>
+        </div>`).join('');
+    observeFadeUps();
+}
 
-            // Inicializácia jazyka (podľa pamäte alebo predvolená EN)
-            setActiveLanguage(localStorage.getItem('preferredLang') || 'en');
-            
-            // Generovanie plávajúcich písmen na pozadí
-            const bg = document.getElementById('bgShapes');
-            const chars = ['A', 'B', 'C', '文', 'Ω', 'Σ'];
-            setInterval(() => {
-                const s = document.createElement('div');
-                s.className = 'shape';
-                s.innerText = chars[Math.floor(Math.random() * chars.length)];
-                s.style.left = Math.random() * 100 + 'vw';
-                s.style.fontSize = Math.random() * 25 + 15 + 'px';
-                s.style.animationDuration = Math.random() * 7 + 8 + 's';
-                bg.appendChild(s);
-                setTimeout(() => s.remove(), 15000);
-            }, 2500);
-        });
-    </script>
-    <script>
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js')
-          .catch(err => console.error('SW error:', err));
-      }
-    </script>
+/* ── LANGUAGE ── */
+let currentLang = localStorage.getItem('preferredLang') || 'en';
+
+function setLang(lang) {
+    currentLang = lang;
+    localStorage.setItem('preferredLang', lang);
+
+    document.querySelectorAll('[data-en],[data-sk]').forEach(el => {
+        const text = el.getAttribute('data-' + lang);
+        if (!text) return;
+        if (el.tagName === 'TITLE') document.title = text;
+        else el.textContent = text;
+    });
+
+    document.querySelectorAll('.lang-btn').forEach(b =>
+        b.classList.toggle('active', b.getAttribute('data-lang') === lang));
+
+    renderSteps(lang);
+    renderFeatures(lang);
+}
+
+/* ── MOBILE MENU ── */
+const menuToggle = document.getElementById('menuToggle');
+const mobileNav  = document.getElementById('mobileNav');
+menuToggle.addEventListener('click', () => {
+    mobileNav.classList.toggle('open');
+    menuToggle.textContent = mobileNav.classList.contains('open') ? '✕' : '☰';
+});
+
+// Close menu on link click
+mobileNav.querySelectorAll('a').forEach(a =>
+    a.addEventListener('click', () => {
+        mobileNav.classList.remove('open');
+        menuToggle.textContent = '☰';
+    }));
+
+/* ── LANG BUTTONS (all) ── */
+document.querySelectorAll('.lang-btn').forEach(btn =>
+    btn.addEventListener('click', () => setLang(btn.getAttribute('data-lang'))));
+
+/* ── SCROLL ANIMATIONS ── */
+function observeFadeUps() {
+    const io = new IntersectionObserver(entries => {
+        entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+    }, { threshold: .15 });
+    document.querySelectorAll('.fade-up:not(.visible)').forEach(el => io.observe(el));
+}
+
+/* ── BACKGROUND SHAPES ── */
+(function() {
+    const bg = document.getElementById('bgShapes');
+    const chars = ['A','B','C','?','!','Ω','文','①','λ'];
+    function make() {
+        const el = document.createElement('div');
+        el.className = 'shape';
+        el.textContent = chars[Math.floor(Math.random() * chars.length)];
+        el.style.left = Math.random() * 100 + 'vw';
+        el.style.fontSize = (Math.random() * 22 + 10) + 'px';
+        el.style.animationDuration = (Math.random() * 10 + 10) + 's';
+        bg.appendChild(el);
+        setTimeout(() => el.remove(), 20000);
+    }
+    for (let i = 0; i < 12; i++) setTimeout(make, i * 600);
+    setInterval(make, 2500);
+})();
+
+/* ── PWA INSTALL ── */
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault(); deferredPrompt = e;
+    document.getElementById('installBtn').style.display = 'inline-block';
+});
+document.getElementById('installBtn').addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') document.getElementById('installBtn').style.display = 'none';
+    deferredPrompt = null;
+});
+
+/* ── INIT ── */
+document.addEventListener('DOMContentLoaded', () => {
+    setLang(currentLang);
+    observeFadeUps();
+});
+</script>
+
+<script>
+    if ('serviceWorker' in navigator)
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+</script>
 </body>
 </html>
