@@ -633,18 +633,27 @@
 
         async function loadUserData() {
             try {
-                const userEmail = localStorage.getItem('user_email');
-                const userName = localStorage.getItem('user_name');
+                // Server už overil session a vykreslil stránku.
+                // Email berieme zo server-side Jinja kontextu, nie z localStorage,
+                // aby sme nepresmerovali prihláseného usera na /login.
+                const serverEmail = "{{ email }}".trim();
 
-                if (!userEmail) {
-                    window.location.href = '/login';
-                    return;
+                if (serverEmail) {
+                    document.getElementById('userEmail').textContent = serverEmail;
+                    // Synchronizuj localStorage pre ostatné časti appky
+                    localStorage.setItem('user_email', serverEmail);
+                } else {
+                    // Server email chýba -> over session cez API
+                    const response = await fetch('/api/user');
+                    if (!response.ok) {
+                        window.location.href = '/login';
+                        return;
+                    }
+                    const userData = await response.json();
+                    const displayName = userData.name || userData.email;
+                    document.getElementById('userEmail').textContent = displayName;
+                    if (userData.email) localStorage.setItem('user_email', userData.email);
                 }
-
-                // Display user email/name
-                const displayName = userName || userEmail;
-                document.getElementById('userEmail').textContent = displayName;
-
             } catch (error) {
                 console.error('Error loading user data:', error);
                 showMessage('Error loading data', 'error');
