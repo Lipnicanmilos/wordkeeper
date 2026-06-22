@@ -233,6 +233,11 @@ async def repeat_page(
     )
 
 
+@router.get("/demo")
+async def demo_page(request: Request):
+    return templates.TemplateResponse("demo.html", {"request": request})
+
+
 @router.get("/auth/callback")
 async def auth_callback(request: Request):
     return templates.TemplateResponse("auth-callback.html", {"request": request})

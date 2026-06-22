@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo – LexiNova</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4079ff;
+            --primary-light: #40ffaa;
+            --primary-gradient: linear-gradient(135deg, #4079ff, #40ffaa);
+            --bg-color: #f4f7fe;
+            --card-bg: rgba(255, 255, 255, 0.97);
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --shadow: 0 10px 25px rgba(0,0,0,0.08);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            overflow-x: hidden;
+        }
+
+        .background-shapes {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1; overflow: hidden;
+        }
+        .shape {
+            position: absolute; color: var(--primary); opacity: 0.07;
+            font-weight: bold; user-select: none;
+            animation: floatUp linear infinite;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.4; }
+            90% { opacity: 0.4; }
+            100% { transform: translateY(-20vh) rotate(360deg); opacity: 0; }
+        }
+
+        .demo-card {
+            width: 100%;
+            max-width: 560px;
+            background: var(--card-bg);
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            animation: cardPop 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            opacity: 0;
+        }
+        @keyframes cardPop { to { opacity: 1; transform: translateY(0); } }
+
+        /* Demo banner */
+        .demo-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, #4079ff15, #40ffaa15);
+            border: 1px solid #4079ff30;
+            color: var(--primary);
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 0.35rem 0.85rem;
+            border-radius: 50px;
+            margin-bottom: 1.25rem;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1.5rem;
+        }
+
+        .back-link {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: color 0.2s;
+        }
+        .back-link:hover { color: var(--primary); }
+
+        h1 {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.4rem;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Progress */
+        .progress-wrap {
+            margin-bottom: 1.5rem;
+        }
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 0.4rem;
+        }
+        .progress-bar-bg {
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 50px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--primary-gradient);
+            border-radius: 50px;
+            transition: width 0.4s ease;
+            width: 0%;
+        }
+
+        /* Flashcard */
+        .flashcard {
+            background: #f8faff;
+            border: 2px solid #e2e8f0;
+            border-radius: 20px;
+            padding: 2.5rem 2rem;
+            text-align: center;
+            min-height: 220px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            user-select: none;
+        }
+        .flashcard:hover { border-color: var(--primary); transform: translateY(-2px); }
+        .flashcard.flipped {
+            border-color: var(--primary);
+            background: linear-gradient(135deg, #f0f4ff, #f0fff8);
+        }
+
+        .word-main {
+            font-size: 2.4rem;
+            font-weight: 800;
+            color: var(--primary);
+            line-height: 1.2;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .speak-btn {
+            font-size: 1.5rem;
+            cursor: pointer;
+            background: none;
+            border: none;
+            line-height: 1;
+            padding: 0;
+            transition: transform 0.2s;
+        }
+        .speak-btn:hover { transform: scale(1.15); }
+
+        .word-lang {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            margin-bottom: 0.6rem;
+        }
+
+        .translation-block {
+            margin-top: 1.2rem;
+            padding-top: 1.2rem;
+            border-top: 1px solid #e2e8f0;
+            width: 100%;
+        }
+        .translation-lang {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            margin-bottom: 0.4rem;
+        }
+        .word-translation {
+            font-size: 1.9rem;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+        }
+
+        .flip-hint {
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            margin-top: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Action buttons */
+        .action-buttons {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.25rem;
+        }
+        .action-btn {
+            flex: 1;
+            padding: 0.9rem;
+            border: none;
+            border-radius: 14px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            opacity: 0;
+            transform: translateY(8px);
+        }
+        .action-btn.visible {
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.3s, transform 0.3s, background 0.2s;
+        }
+        .btn-dont-know {
+            background: #fff1f0;
+            color: #c62828;
+            border: 2px solid #ffcdd2;
+        }
+        .btn-dont-know:hover { background: #ffebee; border-color: #ef9a9a; transform: translateY(-2px); }
+        .btn-know {
+            background: #f1f8e9;
+            color: #2e7d32;
+            border: 2px solid #c8e6c9;
+        }
+        .btn-know:hover { background: #e8f5e9; border-color: #a5d6a7; transform: translateY(-2px); }
+
+        /* Results screen */
+        .results-screen {
+            display: none;
+            text-align: center;
+            padding: 0.5rem 0;
+            animation: cardPop 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+
+        .score-circle {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            background: var(--primary-gradient);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            box-shadow: 0 8px 20px rgba(64, 121, 255, 0.3);
+        }
+        .score-pct {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: white;
+            line-height: 1;
+        }
+        .score-label {
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.85);
+            font-weight: 600;
+        }
+
+        .result-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+        .result-msg {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 1.75rem;
+            line-height: 1.6;
+        }
+        .result-stats {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            margin-bottom: 1.75rem;
+        }
+        .stat-chip {
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .stat-know { background: #f1f8e9; color: #2e7d32; }
+        .stat-dont { background: #fff1f0; color: #c62828; }
+
+        .cta-primary {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            background: var(--primary-gradient);
+            color: white;
+            font-size: 1rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.25s ease;
+            margin-bottom: 0.75rem;
+            box-shadow: 0 4px 15px rgba(64, 121, 255, 0.35);
+        }
+        .cta-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(64, 121, 255, 0.45); }
+
+        .cta-secondary-row {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .cta-link {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .cta-link:hover { color: var(--primary); }
+        .cta-retry {
+            background: none;
+            border: 2px solid #e2e8f0;
+            color: var(--text-muted);
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .cta-retry:hover { border-color: var(--primary); color: var(--primary); }
+
+        /* AI teaser at bottom of results */
+        .ai-teaser {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: linear-gradient(135deg, #f0f4ff, #f0fff8);
+            border-radius: 12px;
+            border: 1px solid #c7d8ff;
+            font-size: 0.85rem;
+            color: var(--primary);
+            font-weight: 600;
+            text-align: left;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+        .ai-teaser .ai-icon { font-size: 1.3rem; flex-shrink: 0; }
+
+        @media (max-width: 480px) {
+            .demo-card { padding: 1.5rem; }
+            .word-main { font-size: 1.9rem; }
+            .word-translation { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-shapes" id="bgShapes"></div>
+
+    <div class="demo-card">
+
+        <!-- Test screen -->
+        <div id="testScreen">
+            <div class="card-header">
+                <div>
+                    <div class="demo-badge">🎮 Demo · bez registrácie</div>
+                </div>
+                <a href="/" class="back-link">← Späť</a>
+            </div>
+
+            <h1>Vyskúšaj LexiNova</h1>
+            <p class="subtitle">Anglické slovíčka · klikni na kartičku pre preklad</p>
+
+            <div class="progress-wrap">
+                <div class="progress-label">
+                    <span id="progressText">Slovíčko 1 / 12</span>
+                    <span id="scoreText">✅ 0 &nbsp; 😕 0</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" id="progressFill"></div>
+                </div>
+            </div>
+
+            <div class="flashcard" id="flashcard" onclick="flipCard()">
+                <div class="word-lang">Angličtina</div>
+                <div class="word-main">
+                    <span id="wordText"></span>
+                    <button class="speak-btn" onclick="speakWord(event)">🔊</button>
+                </div>
+                <div id="translationBlock" class="translation-block" style="display:none;">
+                    <div class="translation-lang">Slovenčina</div>
+                    <div class="word-translation">
+                        <span id="translationText"></span>
+                        <button class="speak-btn" onclick="speakTranslation(event)">🔊</button>
+                    </div>
+                </div>
+                <div class="flip-hint" id="flipHint">👆 Klikni pre zobrazenie prekladu</div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="action-btn btn-dont-know" id="btnDont" onclick="answer(false)">😕 Neviem</button>
+                <button class="action-btn btn-know" id="btnKnow" onclick="answer(true)">✅ Viem</button>
+            </div>
+        </div>
+
+        <!-- Results screen -->
+        <div class="results-screen" id="resultsScreen">
+            <div class="score-circle">
+                <div class="score-pct" id="scorePct">--%</div>
+                <div class="score-label">úspešnosť</div>
+            </div>
+
+            <div class="result-title" id="resultTitle"></div>
+            <p class="result-msg" id="resultMsg"></p>
+
+            <div class="result-stats">
+                <div class="stat-chip stat-know" id="statKnow">✅ 0 viem</div>
+                <div class="stat-chip stat-dont" id="statDont">😕 0 neviem</div>
+            </div>
+
+            <a href="/register" class="cta-primary">🚀 Vytvoriť bezplatný účet</a>
+
+            <div class="cta-secondary-row">
+                <button class="cta-retry" onclick="restartDemo()">🔁 Skúsiť znova</button>
+                <a href="/login" class="cta-link">Mám účet → Prihlásiť sa</a>
+            </div>
+
+            <div class="ai-teaser">
+                <span class="ai-icon">🤖</span>
+                <span>S účtom si vygeneruješ vlastnú sadu slovíčok pomocou AI — napíš iba tému a jazyky, zvyšok spraví LexiNova za teba.</span>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const DEMO_WORDS = [
+            { original: "house",       translation: "dom" },
+            { original: "water",       translation: "voda" },
+            { original: "music",       translation: "hudba" },
+            { original: "friendship",  translation: "priateľstvo" },
+            { original: "knowledge",   translation: "vedomosti" },
+            { original: "travel",      translation: "cestovanie" },
+            { original: "dream",       translation: "sen" },
+            { original: "language",    translation: "jazyk" },
+            { original: "family",      translation: "rodina" },
+            { original: "smile",       translation: "úsmev" },
+            { original: "mountain",    translation: "hora" },
+            { original: "freedom",     translation: "sloboda" },
+        ];
+
+        let words = [];
+        let currentIndex = 0;
+        let scoreKnow = 0;
+        let scoreDont = 0;
+        let isFlipped = false;
+
+        function shuffle(arr) {
+            const a = [...arr];
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
+        function startDemo() {
+            words = shuffle(DEMO_WORDS);
+            currentIndex = 0;
+            scoreKnow = 0;
+            scoreDont = 0;
+            isFlipped = false;
+            document.getElementById('testScreen').style.display = 'block';
+            document.getElementById('resultsScreen').style.display = 'none';
+            document.getElementById('resultsScreen').className = 'results-screen';
+            showCard();
+        }
+
+        function showCard() {
+            isFlipped = false;
+            const word = words[currentIndex];
+            document.getElementById('wordText').textContent = word.original;
+            document.getElementById('translationText').textContent = word.translation;
+            document.getElementById('translationBlock').style.display = 'none';
+            document.getElementById('flipHint').style.display = 'flex';
+
+            const flashcard = document.getElementById('flashcard');
+            flashcard.classList.remove('flipped');
+
+            // Hide answer buttons
+            ['btnDont', 'btnKnow'].forEach(id => {
+                const btn = document.getElementById(id);
+                btn.classList.remove('visible');
+            });
+
+            // Progress
+            const total = words.length;
+            const done = currentIndex;
+            document.getElementById('progressText').textContent = `Slovíčko ${done + 1} / ${total}`;
+            document.getElementById('scoreText').innerHTML = `✅ ${scoreKnow} &nbsp; 😕 ${scoreDont}`;
+            document.getElementById('progressFill').style.width = `${(done / total) * 100}%`;
+        }
+
+        function flipCard() {
+            if (isFlipped) return;
+            isFlipped = true;
+
+            const flashcard = document.getElementById('flashcard');
+            flashcard.classList.add('flipped');
+            document.getElementById('translationBlock').style.display = 'block';
+            document.getElementById('flipHint').style.display = 'none';
+
+            // Show answer buttons with small delay for effect
+            setTimeout(() => {
+                ['btnDont', 'btnKnow'].forEach(id => {
+                    document.getElementById(id).classList.add('visible');
+                });
+            }, 150);
+        }
+
+        function answer(know) {
+            if (!isFlipped) return;
+            if (know) scoreKnow++;
+            else scoreDont++;
+
+            currentIndex++;
+            if (currentIndex >= words.length) {
+                showResults();
+            } else {
+                showCard();
+            }
+        }
+
+        function showResults() {
+            document.getElementById('testScreen').style.display = 'none';
+            const resultsEl = document.getElementById('resultsScreen');
+            resultsEl.style.display = 'block';
+
+            const total = words.length;
+            const pct = Math.round((scoreKnow / total) * 100);
+
+            document.getElementById('scorePct').textContent = pct + '%';
+            document.getElementById('statKnow').textContent = `✅ ${scoreKnow} viem`;
+            document.getElementById('statDont').textContent = `😕 ${scoreDont} neviem`;
+
+            let title, msg;
+            if (pct >= 90) {
+                title = '🌟 Výborné!';
+                msg = 'Zvládaš anglické slovíčka skvele. Vyskúšaj ďalšie témy s vlastnou sadou.';
+            } else if (pct >= 60) {
+                title = '💪 Dobrý výsledok!';
+                msg = 'Máš dobrý základ. Registráciou získaš neobmedzené sady a inteligentné opakovanie slov, ktoré ti nejdú.';
+            } else {
+                title = '📚 Je čo zlepšovať!';
+                msg = 'Nevadí — presne preto je tu LexiNova. Inteligentné opakovanie zaistí, že nezabudnuté slovíčka precvičíš viackrát.';
+            }
+            document.getElementById('resultTitle').textContent = title;
+            document.getElementById('resultMsg').textContent = msg;
+
+            // Animate in
+            setTimeout(() => resultsEl.classList.add('show'), 10);
+        }
+
+        function restartDemo() {
+            startDemo();
+        }
+
+        function speakWord(e) {
+            e.stopPropagation();
+            const word = document.getElementById('wordText').textContent;
+            speak(word, 'en-US');
+        }
+
+        function speakTranslation(e) {
+            e.stopPropagation();
+            const word = document.getElementById('translationText').textContent;
+            speak(word, 'sk-SK');
+        }
+
+        function speak(text, lang) {
+            if (!('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = lang;
+            u.rate = 0.85;
+            window.speechSynthesis.speak(u);
+        }
+
+        // Floating background characters
+        (function() {
+            const bg = document.getElementById('bgShapes');
+            const chars = ['A','B','C','?','!','Ω','文','①'];
+            function make() {
+                const el = document.createElement('div');
+                el.className = 'shape';
+                el.textContent = chars[Math.floor(Math.random() * chars.length)];
+                el.style.left = Math.random() * 100 + 'vw';
+                el.style.fontSize = (Math.random() * 22 + 10) + 'px';
+                el.style.animationDuration = (Math.random() * 12 + 10) + 's';
+                bg.appendChild(el);
+                setTimeout(() => el.remove(), 22000);
+            }
+            for (let i = 0; i < 10; i++) setTimeout(make, i * 400);
+            setInterval(make, 1500);
+        })();
+
+        // Start on load
+        startDemo();
+    </script>
+</body>
+</html>
