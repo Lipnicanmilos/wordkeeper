@@ -13,7 +13,10 @@ router = APIRouter(tags=["pages"])
 
 
 def _get_session_user(request: Request):
-    return request.session.get("user")
+    from app.services.runtime import logger
+    user = request.session.get("user")
+    logger.info(f"Session keys in dashboard: {list(request.session.keys())}, has_user: {user is not None}")
+    return user
 
 
 def _get_db_user_or_redirect(request: Request, db: Session):

@@ -207,6 +207,7 @@ Tím LexiNova
             "dark_mode": user.dark_mode,
         }
         request.session["user"] = session_user
+        logger.info(f"Session keys after set: {list(request.session.keys())}, user_id: {session_user['id']}")
 
         return RedirectResponse(url="/dashboard", status_code=303)
     except Exception as exc:
