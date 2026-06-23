@@ -8,6 +8,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from app.database.connection import Base, SessionLocal, engine
 from app.models.user import User
 from app.models.payment import Payment  # noqa: F401  (registrácia tabuľky pre create_all)
+from app.models.inquiry import Inquiry  # noqa: F401  (registrácia tabuľky pre create_all)
 from app.routers import words
 from app.routers.auth import router as auth_router
 from app.routers.categories import router as categories_router
@@ -56,6 +57,9 @@ app.include_router(words.router)
 
 from app.routers.admin import router as admin_router
 app.include_router(admin_router)
+
+from app.routers.inquiry import router as inquiry_router
+app.include_router(inquiry_router)
 
 
 @app.on_event("startup")
