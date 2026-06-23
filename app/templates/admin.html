@@ -12,30 +12,50 @@
   <style>
     body{font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;margin:0;background:#f4f7fe;color:#2d3748;}
     [data-theme="dark"] body{background:#0f172a;color:#f1f5f9;}
-    .wrap{max-width:1200px;margin:0 auto;padding:2rem;}
+    .wrap{max-width:1280px;margin:0 auto;padding:2rem;}
     .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;gap:1rem;flex-wrap:wrap;}
     .title{font-size:1.3rem;font-weight:900;display:flex;align-items:center;gap:.75rem;}
     .btn{border:none;border-radius:12px;padding:.65rem 1rem;font-weight:800;cursor:pointer;background:#4079ff;color:#fff;}
     .btn.secondary{background:#718096;}
+    .btn.danger{background:#e53e3e;}
+    .btn.ghost{background:transparent;color:#4079ff;border:1px solid rgba(64,121,255,.35);}
+    [data-theme="dark"] .btn.ghost{color:#93b4ff;border-color:rgba(147,180,255,.35);}
     table{width:100%;border-collapse:collapse;background:rgba(255,255,255,.9);border-radius:16px;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.05);}
     [data-theme="dark"] table{background:rgba(30,41,59,.95);}
-    th,td{padding:.9rem 1rem;border-bottom:1px solid rgba(0,0,0,.06);text-align:left;}
+    th,td{padding:.9rem 1rem;border-bottom:1px solid rgba(0,0,0,.06);text-align:left;vertical-align:top;}
     th{font-size:.85rem;letter-spacing:.02em;text-transform:uppercase;color:#718096;}
     [data-theme="dark"] th{color:#94a3b8;}
     tr:hover td{background:rgba(64,121,255,.05);}
     .pill{display:inline-flex;align-items:center;gap:.45rem;padding:.25rem .6rem;border-radius:999px;font-weight:900;font-size:.8rem;}
     .pill.plus{background:#FFD700;color:#000;}
     .pill.std{background:#e2e8f0;color:#111827;}
+    .pill.ok{background:#c6f6d5;color:#22543d;}
+    .pill.warn{background:#feebc8;color:#7b341e;}
+    .pill.fail{background:#fed7d7;color:#822727;}
     [data-theme="dark"] .pill.std{background:#334155;color:#e2e8f0;}
     .muted{color:#718096;font-weight:700;}
     [data-theme="dark"] .muted{color:#94a3b8;}
     .error{background:#ffeaec;color:#b00020;border:1px solid rgba(255,0,60,.2);padding:1rem;border-radius:14px;display:none;margin-bottom:1rem;}
-    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:1.25rem;}
     .card{background:rgba(255,255,255,.9);border-radius:16px;padding:1rem;box-shadow:0 8px 30px rgba(0,0,0,.05);}
     [data-theme="dark"] .card{background:rgba(30,41,59,.95);}
-    .k{font-size:.8rem;text-transform:uppercase;letter-spacing:.02em;color:#718096;font-weight:900;}
+    .k{font-size:.78rem;text-transform:uppercase;letter-spacing:.02em;color:#718096;font-weight:900;}
     [data-theme="dark"] .k{color:#94a3b8;}
     .v{font-size:1.4rem;font-weight:1000;margin-top:.35rem;}
+    .toolbar{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin-bottom:1rem;}
+    .toolbar input,.toolbar select{padding:.6rem .8rem;border-radius:12px;border:1px solid rgba(0,0,0,.12);font-weight:700;background:#fff;color:inherit;}
+    [data-theme="dark"] .toolbar input,[data-theme="dark"] .toolbar select{background:#1e293b;border-color:rgba(255,255,255,.12);color:#f1f5f9;}
+    .tabs{display:flex;gap:.5rem;margin-bottom:1.25rem;flex-wrap:wrap;}
+    .tab{padding:.6rem 1rem;border-radius:12px;font-weight:800;cursor:pointer;background:rgba(255,255,255,.9);border:1px solid transparent;}
+    [data-theme="dark"] .tab{background:rgba(30,41,59,.95);}
+    .tab.active{background:#4079ff;color:#fff;}
+    .actions{display:flex;gap:.4rem;flex-wrap:wrap;}
+    .iconbtn{border:none;border-radius:10px;padding:.4rem .6rem;cursor:pointer;font-weight:800;}
+    .iconbtn.plus{background:#4079ff;color:#fff;}
+    .iconbtn.edit{background:#718096;color:#fff;}
+    .iconbtn.del{background:#e53e3e;color:#fff;}
+    .hidden{display:none;}
+    .empty{padding:2rem;text-align:center;}
   </style>
 
   <script>
@@ -48,113 +68,265 @@
       <div class="title"><i class="fa-solid fa-user-shield"></i> Admin</div>
       <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;">
         <button class="btn secondary" onclick="location.href='/dashboard'"><i class="fa-solid fa-house"></i>&nbsp;Dashboard</button>
-        <button class="btn" onclick="refreshData()"><i class="fa-solid fa-rotate"></i>&nbsp;Refresh</button>
+        <button class="btn" onclick="refreshAll()"><i class="fa-solid fa-rotate"></i>&nbsp;Refresh</button>
       </div>
     </div>
 
     <div id="errorBox" class="error"></div>
 
-    <div class="grid2">
-      <div class="card"><div class="k">Users</div><div class="v" id="statUsers">-</div></div>
-      <div class="card"><div class="k">Total Words</div><div class="v" id="statWords">-</div></div>
+    <div class="tabs">
+      <div class="tab active" id="tabUsersBtn" onclick="switchTab('users')"><i class="fa-solid fa-users"></i>&nbsp;Používatelia</div>
+      <div class="tab" id="tabPaymentsBtn" onclick="switchTab('payments')"><i class="fa-solid fa-credit-card"></i>&nbsp;Platby</div>
     </div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Email</th>
-          <th>Plus</th>
-          <th>Last Login</th>
-          <th>Categories</th>
-          <th>Words</th>
-        </tr>
-      </thead>
-      <tbody id="tbody">
-        <tr><td colspan="5" class="muted">Načítavam...</td></tr>
-      </tbody>
-    </table>
+    <!-- ====== USERS TAB ====== -->
+    <div id="tabUsers">
+      <div class="grid">
+        <div class="card"><div class="k">Používatelia</div><div class="v" id="statUsers">-</div></div>
+        <div class="card"><div class="k">Plus</div><div class="v" id="statPlus">-</div></div>
+        <div class="card"><div class="k">Standard</div><div class="v" id="statStd">-</div></div>
+        <div class="card"><div class="k">Slová spolu</div><div class="v" id="statWords">-</div></div>
+        <div class="card"><div class="k">Kategórie spolu</div><div class="v" id="statCats">-</div></div>
+        <div class="card"><div class="k">Noví (7 dní)</div><div class="v" id="statNew7">-</div></div>
+        <div class="card"><div class="k">Noví (30 dní)</div><div class="v" id="statNew30">-</div></div>
+      </div>
+
+      <div class="toolbar">
+        <input id="searchInput" type="text" placeholder="Hľadať email alebo meno..." oninput="debouncedSearch()">
+        <select id="plusFilter" onchange="loadUsers()">
+          <option value="all">Všetci</option>
+          <option value="plus">Iba Plus</option>
+          <option value="standard">Iba Standard</option>
+        </select>
+        <span class="muted" id="resultCount"></span>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Email / Meno</th>
+            <th>Plus</th>
+            <th>Registrácia</th>
+            <th>Posledné prihlásenie</th>
+            <th>Kat.</th>
+            <th>Slová</th>
+            <th>Akcie</th>
+          </tr>
+        </thead>
+        <tbody id="usersTbody">
+          <tr><td colspan="7" class="muted">Načítavam...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ====== PAYMENTS TAB ====== -->
+    <div id="tabPayments" class="hidden">
+      <div id="paymentsDisabled" class="card hidden" style="margin-bottom:1.25rem;">
+        <div class="k">Platobná brána</div>
+        <div style="margin-top:.5rem;font-weight:700;">
+          Platby zatiaľ nie sú aktívne. Po zapojení Stripe / Paddle a vytvorení tabuľky
+          <code>payments</code> sa tu zobrazí prehľad transakcií a tržieb.
+        </div>
+      </div>
+
+      <div id="paymentsContent">
+        <div class="grid">
+          <div class="card"><div class="k">Tržby spolu</div><div class="v" id="payRevenue">-</div></div>
+          <div class="card"><div class="k">Tržby (30 dní)</div><div class="v" id="payRev30">-</div></div>
+          <div class="card"><div class="k">Úspešné platby</div><div class="v" id="paySucceeded">-</div></div>
+          <div class="card"><div class="k">Aktívne predplatné</div><div class="v" id="paySubs">-</div></div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Dátum</th>
+              <th>Email</th>
+              <th>Suma</th>
+              <th>Stav</th>
+              <th>Brána</th>
+              <th>Popis</th>
+            </tr>
+          </thead>
+          <tbody id="paymentsTbody">
+            <tr><td colspan="6" class="muted">Načítavam...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <script>
-    async function refreshData(){
-      const errBox = document.getElementById('errorBox');
-      errBox.style.display = 'none';
+    const errBox = document.getElementById('errorBox');
+    function showErr(msg){ errBox.textContent = msg; errBox.style.display='block'; }
+    function clearErr(){ errBox.style.display='none'; }
+    function fmtDate(iso){ return iso ? new Date(iso).toLocaleString() : '-'; }
+    function esc(s){ return (s ?? '').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
+    function switchTab(which){
+      const u = which === 'users';
+      document.getElementById('tabUsers').classList.toggle('hidden', !u);
+      document.getElementById('tabPayments').classList.toggle('hidden', u);
+      document.getElementById('tabUsersBtn').classList.toggle('active', u);
+      document.getElementById('tabPaymentsBtn').classList.toggle('active', !u);
+      if(!u) loadPayments();
+    }
+
+    /* ---------- USERS ---------- */
+    async function loadUsers(){
+      clearErr();
+      const q = document.getElementById('searchInput').value.trim();
+      const plus = document.getElementById('plusFilter').value;
       try{
-        const res = await fetch('/api/admin/users');
+        const res = await fetch(`/api/admin/users?q=${encodeURIComponent(q)}&plus=${plus}`);
         const data = await res.json();
+        if(!res.ok){ showErr(data.detail || 'Admin request failed'); return; }
 
-        if(!res.ok){
-          errBox.textContent = data.detail || 'Admin request failed';
-          errBox.style.display='block';
-          return;
-        }
-
-        document.getElementById('statUsers').textContent = data.total_users ?? 0;
-        document.getElementById('statWords').textContent = data.total_words_all_users ?? 0;
-
-        const tbody = document.getElementById('tbody');
-        tbody.innerHTML = '';
+        const s = data.stats || {};
+        document.getElementById('statUsers').textContent = s.total_users ?? 0;
+        document.getElementById('statPlus').textContent  = s.total_plus ?? 0;
+        document.getElementById('statStd').textContent   = s.total_standard ?? 0;
+        document.getElementById('statWords').textContent = s.total_words_all_users ?? 0;
+        document.getElementById('statCats').textContent  = s.total_categories_all ?? 0;
+        document.getElementById('statNew7').textContent  = s.new_users_7d ?? 0;
+        document.getElementById('statNew30').textContent = s.new_users_30d ?? 0;
 
         const users = Array.isArray(data.users) ? data.users : [];
-        if(users.length===0){
-          tbody.innerHTML = `<tr><td colspan="5" class="muted">Žiadni používatelia.</td></tr>`;
+        document.getElementById('resultCount').textContent = `${users.length} výsledkov`;
+
+        const tbody = document.getElementById('usersTbody');
+        tbody.innerHTML = '';
+        if(users.length === 0){
+          tbody.innerHTML = `<tr><td colspan="7" class="muted empty">Žiadni používatelia.</td></tr>`;
           return;
         }
 
         for(const u of users){
-          const plusPill = u.is_plus ? `<span class="pill plus"><i class="fa-solid fa-crown"></i> PLUS</span>` : `<span class="pill std">Standard</span>`;
-          const lastLogin = u.last_login ? new Date(u.last_login).toLocaleString() : '-';
+          const plusPill = u.is_plus
+            ? `<span class="pill plus"><i class="fa-solid fa-crown"></i> PLUS</span>`
+            : `<span class="pill std">Standard</span>`;
+          const nameLine = u.name ? `<div class="muted" style="font-size:.85rem">${esc(u.name)}</div>` : '';
           tbody.insertAdjacentHTML('beforeend', `
             <tr>
-              <td style="font-weight:800">${u.email ?? ''}</td>
-              <td>
-                ${plusPill}
-                <div style="margin-top:.5rem; display:flex; gap:.5rem; align-items:center; flex-wrap:wrap;">
-                  <button class="btn secondary" style="padding:.35rem .6rem;" onclick="editPlus(${u.id}, ${u.is_plus ? 'true' : 'false'})" title="Toggle plus">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i>
-                  </button>
-                </div>
-              </td>
-              <td>${lastLogin}</td>
+              <td><div style="font-weight:800">${esc(u.email)}</div>${nameLine}</td>
+              <td>${plusPill}</td>
+              <td>${fmtDate(u.created_at)}</td>
+              <td>${fmtDate(u.last_login)}</td>
               <td style="font-weight:900">${u.categories_count ?? 0}</td>
               <td style="font-weight:900">${u.words_count ?? 0}</td>
+              <td>
+                <div class="actions">
+                  <button class="iconbtn plus" title="Prepnúť Plus" onclick="togglePlus(${u.id}, ${u.is_plus})"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+                  <button class="iconbtn edit" title="Upraviť email" onclick="editEmail(${u.id}, '${esc(u.email)}')"><i class="fa-solid fa-pen"></i></button>
+                  <button class="iconbtn del" title="Zmazať" onclick="deleteUser(${u.id}, '${esc(u.email)}', ${u.words_count ?? 0}, ${u.categories_count ?? 0})"><i class="fa-solid fa-trash"></i></button>
+                </div>
+              </td>
             </tr>
           `);
         }
-      }catch(e){
-        errBox.textContent = 'Network error: ' + (e?.message || e);
-        errBox.style.display='block';
-      }
+      }catch(e){ showErr('Network error: ' + (e?.message || e)); }
     }
 
-    async function editPlus(userId, currentIsPlus){
-      const errBox = document.getElementById('errorBox');
-      errBox.style.display='none';
+    let searchTimer;
+    function debouncedSearch(){ clearTimeout(searchTimer); searchTimer = setTimeout(loadUsers, 300); }
 
+    async function togglePlus(userId, currentIsPlus){
+      clearErr();
       try{
         const res = await fetch(`/api/admin/users/${userId}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          method:'PATCH', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({ is_plus: !currentIsPlus })
         });
-
         const data = await res.json().catch(()=>({}));
-        if(!res.ok){
-          errBox.textContent = data.detail || 'Admin update failed';
-          errBox.style.display='block';
-          return;
-        }
-        await refreshData();
-      }catch(e){
-        errBox.textContent='Network error: '+(e?.message||e);
-        errBox.style.display='block';
-      }
+        if(!res.ok){ showErr(data.detail || 'Update failed'); return; }
+        loadUsers();
+      }catch(e){ showErr('Network error: '+(e?.message||e)); }
     }
 
-    refreshData();
+    async function editEmail(userId, currentEmail){
+      const next = prompt('Nový email:', currentEmail);
+      if(next === null) return;
+      const trimmed = next.trim();
+      if(!trimmed || trimmed === currentEmail) return;
+      clearErr();
+      try{
+        const res = await fetch(`/api/admin/users/${userId}`, {
+          method:'PATCH', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ email: trimmed })
+        });
+        const data = await res.json().catch(()=>({}));
+        if(!res.ok){ showErr(data.detail || 'Update failed'); return; }
+        loadUsers();
+      }catch(e){ showErr('Network error: '+(e?.message||e)); }
+    }
+
+    async function deleteUser(userId, email, words, cats){
+      if(!confirm(`Naozaj zmazať používateľa ${email}?\n\nNenávratne sa zmaže: ${words} slov a ${cats} kategórií.`)) return;
+      clearErr();
+      try{
+        const res = await fetch(`/api/admin/users/${userId}`, { method:'DELETE' });
+        const data = await res.json().catch(()=>({}));
+        if(!res.ok){ showErr(data.detail || 'Delete failed'); return; }
+        loadUsers();
+      }catch(e){ showErr('Network error: '+(e?.message||e)); }
+    }
+
+    /* ---------- PAYMENTS ---------- */
+    async function loadPayments(){
+      clearErr();
+      try{
+        const res = await fetch('/api/admin/payments');
+        const data = await res.json();
+        if(!res.ok){ showErr(data.detail || 'Payments request failed'); return; }
+
+        const disabled = document.getElementById('paymentsDisabled');
+        const content = document.getElementById('paymentsContent');
+        if(!data.enabled){
+          disabled.classList.remove('hidden');
+          content.classList.add('hidden');
+          return;
+        }
+        disabled.classList.add('hidden');
+        content.classList.remove('hidden');
+
+        const s = data.stats || {};
+        document.getElementById('payRevenue').textContent   = `€${(s.total_revenue ?? 0).toFixed(2)}`;
+        document.getElementById('payRev30').textContent     = `€${(s.revenue_30d ?? 0).toFixed(2)}`;
+        document.getElementById('paySucceeded').textContent = s.succeeded_count ?? 0;
+        document.getElementById('paySubs').textContent      = s.active_subscriptions ?? 0;
+
+        const tbody = document.getElementById('paymentsTbody');
+        tbody.innerHTML = '';
+        const payments = Array.isArray(data.payments) ? data.payments : [];
+        if(payments.length === 0){
+          tbody.innerHTML = `<tr><td colspan="6" class="muted empty">Zatiaľ žiadne platby.</td></tr>`;
+          return;
+        }
+        for(const p of payments){
+          const statusPill =
+            p.status === 'succeeded' ? `<span class="pill ok">Uhradené</span>` :
+            p.status === 'pending'   ? `<span class="pill warn">Čaká</span>` :
+                                       `<span class="pill fail">${esc(p.status)}</span>`;
+          tbody.insertAdjacentHTML('beforeend', `
+            <tr>
+              <td>${fmtDate(p.created_at)}</td>
+              <td style="font-weight:800">${esc(p.email)}</td>
+              <td style="font-weight:900">${(p.amount ?? 0).toFixed(2)} ${esc(p.currency || 'EUR')}</td>
+              <td>${statusPill}</td>
+              <td>${esc(p.provider)}</td>
+              <td class="muted">${esc(p.description)}</td>
+            </tr>
+          `);
+        }
+      }catch(e){ showErr('Network error: '+(e?.message||e)); }
+    }
+
+    function refreshAll(){
+      loadUsers();
+      if(!document.getElementById('tabPayments').classList.contains('hidden')) loadPayments();
+    }
+
+    loadUsers();
   </script>
 </body>
 </html>
