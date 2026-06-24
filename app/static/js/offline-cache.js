@@ -1,6 +1,6 @@
 (function (global) {
     const OFFLINE_WORDS_KEY_PREFIX = 'offline_words_v1:';
-    const ALL_LEVELS = ['dont_know', 'learning', 'know'];
+    const ALL_LEVELS = ['dont_know', 'know'];
     const DEFAULT_TEST_DIRECTION = 'original_to_translation';
     const CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 

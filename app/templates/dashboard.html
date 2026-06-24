@@ -622,10 +622,6 @@
     async function prefetchAllWords(categories) {
         if (!navigator.onLine || !categories?.length) return;
         if (window.WKOfflineCache) WKOfflineCache.prefetchAllCategories(categories);
-        if (!('serviceWorker' in navigator)) return;
-        const reg    = await navigator.serviceWorker.ready;
-        const worker = navigator.serviceWorker.controller || reg.active;
-        if (worker) worker.postMessage({ type: 'PREFETCH_WORDS', categoryIds: categories.map(c=>c.id) });
     }
 
     function displayCategories(categories) {
@@ -868,6 +864,10 @@
     window.addEventListener('beforeinstallprompt', e => {
         e.preventDefault(); deferredPrompt = e;
         document.getElementById('installBtn').style.display = 'inline-flex';
+    });
+    window.addEventListener('appinstalled', () => {
+        deferredPrompt = null;
+        document.getElementById('installBtn').style.display = 'none';
     });
     document.getElementById('installBtn').addEventListener('click', async () => {
         if (!deferredPrompt) return;

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lexinova-v14';
+const CACHE_NAME = 'lexinova-v15';
 const ASSETS_TO_CACHE = [
   '/manifest.json',
   '/favicon.ico',
@@ -96,6 +96,16 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('message', (event) => {
   if (!event.data) return;
   if (event.data.type === 'SKIP_WAITING') self.skipWaiting();
+  if (event.data.type === 'SHOW_NOTIFICATION') {
+    const { title, body, tag } = event.data;
+    event.waitUntil(
+      self.registration.showNotification(title || 'LexiNova', {
+        body: body || '',
+        tag: tag || 'lexinova',
+        icon: '/static/icons/icon-192x192.png',
+      })
+    );
+  }
 });
 
-console.log('[SW] Service Worker v13 loaded');
+console.log('[SW] Service Worker v15 loaded');
