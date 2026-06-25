@@ -1,5 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -15,7 +16,7 @@ from app.routers.categories import router as categories_router
 from app.routers.pages import router as pages_router
 from app.routers.users import router as users_router
 from app.services.auth_service import hash_password, verify_password
-from app.services.runtime import STATIC_DIR, SECRET_KEY, is_debug_mode, limiter, logger
+from app.services.runtime import STATIC_DIR, SECRET_KEY, is_debug_mode, limiter, logger, templates
 
 app = FastAPI()
 
@@ -48,6 +49,17 @@ app.add_middleware(
     same_site="lax",
     max_age=2592000,
 )
+
+@app.exception_handler(404)
+async def not_found_handler(request: Request, exc):
+    return templates.TemplateResponse("404.html", {"request": request}, status_code=404)
+
+
+@app.exception_handler(500)
+async def server_error_handler(request: Request, exc):
+    logger.error(f"500 error: {exc}")
+    return templates.TemplateResponse("500.html", {"request": request}, status_code=500)
+
 
 app.include_router(pages_router)
 app.include_router(auth_router)

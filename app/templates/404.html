@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 – Stránka nenájdená · LexiNova</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#4079ff">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        if (localStorage.getItem('darkMode') === 'true')
+            document.documentElement.setAttribute('data-theme', 'dark');
+    </script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --primary: #4079ff;
+            --accent:  #40ffaa;
+            --grad:    linear-gradient(135deg, #4079ff, #40ffaa);
+            --bg:      #f4f7fe;
+            --surface: #ffffff;
+            --text:    #1a202c;
+            --muted:   #718096;
+            --border:  #e2e8f0;
+            --shadow:  0 8px 32px rgba(64,121,255,.09);
+        }
+        [data-theme="dark"] {
+            --bg:      #0f172a;
+            --surface: #1e293b;
+            --text:    #f1f5f9;
+            --muted:   #94a3b8;
+            --border:  #334155;
+            --shadow:  0 8px 32px rgba(0,0,0,.35);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            transition: background .3s, color .3s;
+        }
+
+        .bg-shapes { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+        .shape {
+            position: absolute; color: var(--primary); opacity: .06;
+            font-weight: 700; user-select: none;
+            animation: floatUp linear infinite;
+        }
+        @keyframes floatUp {
+            0%   { transform: translateY(110vh) rotate(0deg);   opacity: 0; }
+            10%  { opacity: .35; }
+            90%  { opacity: .35; }
+            100% { transform: translateY(-20vh) rotate(360deg); opacity: 0; }
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            padding: 3rem 2.5rem;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+            animation: pop .6s cubic-bezier(.2,.8,.2,1) both;
+        }
+        @keyframes pop {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .code {
+            font-size: 5rem;
+            font-weight: 800;
+            line-height: 1;
+            background: var(--grad);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: .5rem;
+        }
+
+        .emoji { font-size: 2.5rem; margin-bottom: 1rem; display: block; }
+
+        h1 {
+            font-size: 1.4rem;
+            font-weight: 800;
+            margin-bottom: .6rem;
+        }
+
+        p {
+            color: var(--muted);
+            font-size: .95rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        .btn-primary {
+            display: inline-block;
+            padding: .85rem 2rem;
+            background: var(--grad);
+            color: #fff;
+            font-weight: 700;
+            font-size: .95rem;
+            text-decoration: none;
+            border-radius: 14px;
+            box-shadow: 0 4px 14px rgba(64,121,255,.35);
+            transition: transform .2s, box-shadow .2s;
+            margin-bottom: .75rem;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 7px 22px rgba(64,121,255,.45); }
+
+        .btn-secondary {
+            display: inline-block;
+            padding: .7rem 1.5rem;
+            border: 2px solid var(--border);
+            color: var(--muted);
+            font-weight: 700;
+            font-size: .88rem;
+            text-decoration: none;
+            border-radius: 12px;
+            transition: all .2s;
+            margin-left: .5rem;
+        }
+        .btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
+
+        .actions { display: flex; gap: .6rem; justify-content: center; flex-wrap: wrap; }
+    </style>
+</head>
+<body>
+
+<div class="bg-shapes" id="bgShapes"></div>
+
+<div class="card">
+    <span class="emoji">🔍</span>
+    <div class="code">404</div>
+    <h1>Stránka nenájdená</h1>
+    <p>Táto stránka neexistuje alebo bola presunutá.<br>Skontroluj URL alebo sa vráť späť.</p>
+    <div class="actions">
+        <a href="/dashboard" class="btn-primary">← Dashboard</a>
+        <a href="javascript:history.back()" class="btn-secondary">Späť</a>
+    </div>
+</div>
+
+<script>
+(function() {
+    const bg = document.getElementById('bgShapes');
+    const chars = ['4','0','?','!','∅','⚡'];
+    function make() {
+        const el = document.createElement('div');
+        el.className = 'shape';
+        el.textContent = chars[Math.floor(Math.random() * chars.length)];
+        el.style.left = Math.random() * 100 + 'vw';
+        el.style.fontSize = (Math.random() * 20 + 10) + 'px';
+        el.style.animationDuration = (Math.random() * 12 + 10) + 's';
+        bg.appendChild(el);
+        setTimeout(() => el.remove(), 22000);
+    }
+    for (let i = 0; i < 8; i++) setTimeout(make, i * 400);
+    setInterval(make, 1800);
+})();
+</script>
+
+</body>
+</html>
