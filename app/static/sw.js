@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lexinova-v16';
+const CACHE_NAME = 'lexinova-v17';
 const ASSETS_TO_CACHE = [
   '/manifest.json',
   '/favicon.ico',
@@ -34,30 +34,25 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Iba GET requesty cachujeme; POST/PUT/... vzdy do siete.
+  // Auth endpointy nikdy neinterceptujeme — OAuth flow potrebuje natívne cookie spracovanie.
+  if (url.pathname.startsWith('/auth/')) {
+    return;
+  }
+
+  // Iba GET cachujeme; POST/PUT/... vždy sieť.
   if (event.request.method !== 'GET') {
     event.respondWith(fetch(event.request));
     return;
   }
 
-  // Auth endpointy + dashboard navigacie - nikdy neinterceptujeme.
-  // Browser musi spracovat Set-Cookie nativne. Pri OAuth flow navigate-mode fetch()
-  // v SW kontexte moze stratit cookie nastavenu v rovnakom response cykle.
-  if (url.pathname.startsWith('/auth/') || event.request.mode === 'navigate') {
-    return;
-  }
-
-  const isStaticAsset = url.pathname.startsWith('/static/') || url.pathname === '/manifest.json';
-  const isApi = url.pathname.startsWith('/api/');
-
-  // API nikdy necachujeme ani nemaskujeme - vzdy siet.
-  if (isApi) {
+  // API nikdy necachujeme — vždy sieť (alebo chyba, ktorú stránka spracuje sama).
+  if (url.pathname.startsWith('/api/')) {
     event.respondWith(fetch(event.request));
     return;
   }
 
-  // Staticke assety: cache-first, potom siet (a uloz do cache).
-  if (isStaticAsset) {
+  // Statické assety: cache-first.
+  if (url.pathname.startsWith('/static/') || url.pathname === '/manifest.json') {
     event.respondWith(
       caches.match(event.request).then(async (cached) => {
         if (cached) return cached;
@@ -72,7 +67,52 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Vsetko ostatne: iba siet.
+  // HTML stránky (navigate): network-first, pri offline servuj z cache.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).then((response) => {
+        // Úspešnú odpoveď ulož do cache pre offline použitie.
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return response;
+      }).catch(async () => {
+        // Offline: skús cache pre túto konkrétnu URL.
+        const cached = await caches.match(event.request);
+        if (cached) return cached;
+
+        // Fallback: skús /dashboard (ak bolo cachované).
+        const dashboard = await caches.match('/dashboard');
+        if (dashboard) return dashboard;
+
+        // Nič nie je v cache — zobraz offline stránku.
+        return new Response(`<!DOCTYPE html><html lang="sk"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Offline – LexiNova</title>
+<style>*{margin:0;box-sizing:border-box}body{font-family:Inter,sans-serif;background:#f4f7fe;
+display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem}
+.card{background:#fff;border-radius:20px;padding:2.5rem;max-width:420px;width:100%;
+text-align:center;box-shadow:0 8px 32px rgba(64,121,255,.1)}
+h1{font-size:1.4rem;font-weight:800;color:#4079ff;margin-bottom:.75rem}
+p{color:#718096;font-size:.95rem;line-height:1.6;margin-bottom:1.5rem}
+a{display:inline-block;padding:.75rem 1.5rem;background:linear-gradient(135deg,#4079ff,#40ffaa);
+color:#fff;text-decoration:none;border-radius:12px;font-weight:700;font-size:.9rem}</style>
+</head><body><div class="card">
+<h1>📡 Si offline</h1>
+<p>Táto stránka nie je dostupná bez internetu.<br>
+Navštív ju najprv online, aby sa uložila do cache.</p>
+<a href="/dashboard">← Dashboard</a>
+</div></body></html>`, {
+          status: 503,
+          headers: { 'Content-Type': 'text/html; charset=utf-8' }
+        });
+      })
+    );
+    return;
+  }
+
+  // Všetko ostatné: iba sieť.
   event.respondWith(fetch(event.request));
 });
 
@@ -91,4 +131,4 @@ self.addEventListener('message', (event) => {
   }
 });
 
-console.log('[SW] Service Worker v16 loaded');
+console.log('[SW] Service Worker v17 loaded');
