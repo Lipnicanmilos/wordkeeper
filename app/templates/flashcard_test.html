@@ -484,10 +484,10 @@ function showCard() {
     const w = words[idx];
     const isRev = direction === 'translation_to_original';
 
-    document.getElementById('wordLang').textContent  = isRev ? w.language_to  : w.language_from;
-    document.getElementById('wordText').textContent  = isRev ? w.translation   : w.original_word;
-    document.getElementById('transLang').textContent = isRev ? w.language_from : w.language_to;
-    document.getElementById('transText').textContent = isRev ? w.original_word : w.translation;
+    document.getElementById('wordLang').textContent  = w.language_from;
+    document.getElementById('wordText').textContent  = w.original_word;
+    document.getElementById('transLang').textContent = w.language_to;
+    document.getElementById('transText').textContent = w.translation;
     document.getElementById('translationBlock').style.display = 'none';
     document.getElementById('flipHint').textContent = isRev ? L[lang].flipHintRev : L[lang].flipHint;
     document.getElementById('flipHint').style.display = 'flex';
