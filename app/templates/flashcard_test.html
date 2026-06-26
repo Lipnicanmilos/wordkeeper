@@ -314,6 +314,7 @@
 
 </div>
 
+<script src="/static/js/offline-cache.js"></script>
 <script>
 /* ── CONFIG from server ── */
 const CAT_ID    = {{ category.id if category else 'null' }};
@@ -440,33 +441,58 @@ async function loadWords() {
     const body = { knowledge_levels: levels, limit: 1000, test_direction: direction };
     if (CAT_ID) body.category_id = CAT_ID;
 
+    let data = null;
+
     try {
+        if (!navigator.onLine) throw new Error('offline');
         const res = await fetch('/api/v1/words/test/start', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body)
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-
-        document.getElementById('loadingMsg').style.display = 'none';
-
-        if (!data || data.length === 0) {
-            document.getElementById('emptyMsg').style.display = 'block';
-            document.getElementById('emptyMsg').innerHTML = L[lang].noWords;
-            return;
-        }
-
-        words = shuffleArr(data);
-        idx = 0; scoreKnow = 0; scoreDont = 0; answers = [];
-        document.getElementById('testScreen').style.display = 'block';
-        showCard();
+        data = await res.json();
     } catch (e) {
-        document.getElementById('loadingMsg').style.display = 'none';
+        // Sieť zlyhala / offline → skús offline cache.
+        console.warn('[WK] test/start zlyhal, skúšam offline cache:', e);
+        data = loadFromOfflineCache(levels);
+    }
+
+    document.getElementById('loadingMsg').style.display = 'none';
+
+    if (!data || data.length === 0) {
         document.getElementById('emptyMsg').style.display = 'block';
         document.getElementById('emptyMsg').innerHTML = L[lang].noWords;
-        console.error(e);
+        return;
     }
+
+    words = shuffleArr(data);
+    idx = 0; scoreKnow = 0; scoreDont = 0; answers = [];
+    document.getElementById('testScreen').style.display = 'block';
+    showCard();
+}
+
+/* Zlúči slovíčka z offline cache pre požadované levely (per-level kľúče). */
+function loadFromOfflineCache(levels) {
+    if (!CAT_ID || !window.WKOfflineCache) return null;
+    const seen = new Set();
+    const merged = [];
+    // offline-cache ukladá len 'dont_know' a 'know'; 'learning' mapuj na 'dont_know'.
+    const cacheLevels = [...new Set(levels.map(l => l === 'learning' ? 'dont_know' : l))];
+    for (const level of cacheLevels) {
+        const key = WKOfflineCache.offlineWordsCacheKey({
+            categoryId: CAT_ID, level, testDirection: direction
+        });
+        const cached = WKOfflineCache.loadOfflineWordsFromCache(key);
+        if (!cached) continue;
+        for (const w of cached) {
+            const id = w.id != null ? w.id : `${w.original_word}|${w.translation}`;
+            if (seen.has(id)) continue;
+            seen.add(id);
+            merged.push(w);
+        }
+    }
+    return merged.length ? merged : null;
 }
 
 /* ── CARD FLOW ── */
