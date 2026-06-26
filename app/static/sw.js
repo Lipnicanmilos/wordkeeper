@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lexinova-v19';
+const CACHE_NAME = 'lexinova-v20';
 const ASSETS_TO_CACHE = [
   '/manifest.json',
   '/favicon.ico',
@@ -145,4 +145,4 @@ self.addEventListener('message', (event) => {
   }
 });
 
-console.log('[SW] Service Worker v19 loaded');
+console.log('[SW] Service Worker v20 loaded');
