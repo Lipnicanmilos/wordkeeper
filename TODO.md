@@ -1,5 +1,41 @@
 # LexiNova – TODO
 
+## 🔒 Bezpečnosť & GDPR — pred komerčnou propagáciou
+> Audit 2026-06-26. Zoradené podľa závažnosti.
+
+### 🔴 Kritické (bezpečnostné diery)
+- [x] **Únik e-mailov** — `/api/v1/users` len pre admina, `/api/debug/users` + `/api/debug/categories` zmazané (commit 72a3a6e3, 2026-06-26)
+- [ ] **Server-side validácia registrácie** (`app/routers/auth.py`)
+  - Email: použiť `EmailStr` namiesto `str` (cez API teraz prejde čokoľvek)
+  - Heslo: vynútiť silu (8+ znakov, veľké/malé/číslo) aj na backende — formulárová validácia sa dá obísť priamym requestom
+  - To isté pre `/api/v1/reset-password` (žiadna kontrola sily hesla)
+- [ ] **Rate limiting na zneužiteľné endpointy**
+  - `POST /api/inquiry` (verejný, bez loginu) → spam
+  - `POST /api/v1/categories/ai-create` → každé volanie stojí AI kredity (Groq/Gemini/Claude)
+
+### 🟠 GDPR / právne (nutné pre komerciu)
+- [ ] **AI poskytovatelia v Privacy Policy** — prompty sa posielajú do Groq, Google Gemini, Anthropic (US tretie strany). V `privacy.html` nie sú spomenuté.
+- [ ] **Obchodné podmienky (Terms of Service)** — neexistujú; pri platenom Plus pláne povinné (odstúpenie, reklamácie, fakturácia)
+- [ ] **Identifikácia prevádzkovateľa** v Privacy — meno/firma/IČO/adresa (teraz iba „LexiNova" + súkromný Gmail) + doba uchovávania údajov (retention)
+- [ ] **Self-hostovať Google Fonts** — CDN posiela IP na Google servery (GDPR problém); self-host vyrieši + zrýchli load
+- [x] Export dát + zmazanie účtu — funguje správne (ORM cascade maže aj kategórie aj slovíčka)
+
+### 🟡 Stredné (bezpečnosť / produkcia)
+- [ ] **Security hlavičky** — CSP, HSTS, X-Frame-Options, X-Content-Type-Options
+- [ ] **CORS** zúžiť — `allow_methods=["*"]` + `allow_credentials=True` + localhost origins v produkcii (`app/main.py`)
+- [ ] **Leak detailov chýb** — `register` vracia `str(exc)` klientovi (`auth.py:82`)
+- [ ] **Vlastná doména** — beží na `lexinova-...run.app`; pre dôveryhodnosť komerčnej služby treba vlastnú doménu
+- [ ] `@app.on_event("startup")` je deprecated → migrovať na FastAPI lifespan
+
+### ⚪ Upratovanie
+- [ ] Zmazať zbytočné súbory z gitu: `app/templates/category_words copy.html`, `test.html`, duplicitný `Readme`, `procedure.txt`
+- [ ] Pridať automatické testy + monitoring (Sentry)
+
+### ⚙️ Nasadenie
+- [ ] Overiť, že na Cloud Run je nastavené `ADMIN_EMAILS` (inak `/api/v1/users` vráti 403 aj adminovi)
+
+---
+
 ## Platobná brána (Stripe) — implementovať
 
 ### Pred začatím — rozhodnúť
@@ -52,4 +88,3 @@
 ## Ďalšie nápady / backlog
 - [ ] Pridať pätičku (site-footer.js) aj na dashboard, test, repeat stránky
 - [ ] Import slovíčok (Excel/CSV) — overiť že funguje
-- [ ] Rate limiting na inquiry endpoint
