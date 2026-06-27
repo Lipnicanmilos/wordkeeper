@@ -29,11 +29,11 @@
 - [x] `@app.on_event("startup")` → migrované na FastAPI lifespan (`asynccontextmanager`) — 2026-06-27
 
 ### ⚪ Upratovanie
-- [ ] Zmazať zbytočné súbory z gitu: `app/templates/category_words copy.html`, `test.html`, duplicitný `Readme`, `procedure.txt`
+- [x] Zmazané zbytočné súbory: `category_words copy.html`, `test.html`, starý `Readme` (WordKeeper), `procedure.txt` — 2026-06-27
 - [ ] Pridať automatické testy + monitoring (Sentry)
 
 ### ⚙️ Nasadenie
-- [ ] Overiť, že na Cloud Run je nastavené `ADMIN_EMAILS` (inak `/api/v1/users` vráti 403 aj adminovi)
+- [x] `ADMIN_EMAILS` nastavené na Cloud Run — overené 2026-06-27, admin prístup pod lipnicanmilos@gmail.com funguje
 
 ---
 
