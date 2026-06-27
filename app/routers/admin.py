@@ -219,6 +219,47 @@ async def admin_delete_user(
     )
 
 
+@router.get("/api/admin/logs")
+async def admin_logs(
+    request: Request,
+    lines: int = 300,
+    current_user: User = Depends(get_authenticated_user),
+):
+    _require_admin(current_user)
+
+    import glob
+    import os
+    from collections import deque
+
+    from app.services.runtime import LOG_FILE
+
+    lines = max(1, min(lines, 2000))  # rozumný strop
+
+    # Rotované (staršie) najprv, aktuálny súbor (najnovší) nakoniec.
+    rotated = sorted(glob.glob(LOG_FILE + ".*"))
+    ordered = rotated + ([LOG_FILE] if os.path.exists(LOG_FILE) else [])
+
+    if not ordered:
+        return JSONResponse(
+            {
+                "available": False,
+                "lines": [],
+                "note": "Log súbor zatiaľ neexistuje (alebo beží read-only / čerstvá Cloud Run inštancia). Trvalé online logy nájdeš v Google Cloud Logging.",
+            }
+        )
+
+    buf: deque = deque(maxlen=lines)
+    for path in ordered:
+        try:
+            with open(path, encoding="utf-8", errors="replace") as fh:
+                for line in fh:
+                    buf.append(line.rstrip("\n"))
+        except OSError:
+            continue
+
+    return JSONResponse({"available": True, "count": len(buf), "lines": list(buf)})
+
+
 @router.get("/api/admin/payments")
 async def admin_payments(
     request: Request,

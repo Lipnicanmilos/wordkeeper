@@ -19,11 +19,17 @@ from starlette.config import Config
 
 load_dotenv()
 
+# Cesta k log súboru (rotujúci) — využíva ju aj admin endpoint na zobrazenie logov.
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+LOG_DIR = os.getenv("LOG_DIR", os.path.join(_PROJECT_ROOT, "logs"))
+LOG_FILE = os.path.join(LOG_DIR, "lexinova.log")
+
 
 def _setup_logging() -> logging.Logger:
-    """Konzola + rotujúci súbor (drží 3 dni / ~72h) + voliteľné e-mail alerty.
+    """Konzola + rotujúci súbor (drží ~48h) + voliteľné e-mail alerty.
 
-    - Súbor: 1/deň, `backupCount=3` → staršie ako 3 dni sa automaticky mažú.
+    - Súbor: rotácia každú polnoc, `backupCount=1` → drží sa current deň +
+      1 predošlý ⇒ záznamy staršie ako ~48h sa automaticky mažú.
     - E-mail: posiela sa pri ERROR+ cez frontu (neblokuje requesty); aktívne
       iba ak je nastavené `ERROR_ALERT_EMAIL` + MAIL prihlasovacie údaje.
     """
@@ -37,18 +43,14 @@ def _setup_logging() -> logging.Logger:
     console.setFormatter(fmt)
     root.addHandler(console)
 
-    # Rotujúci súbor — 72h retencia. Na read-only FS ticho preskočíme.
+    # Rotujúci súbor — ~48h retencia. Na read-only FS ticho preskočíme.
     try:
-        project_root = os.path.dirname(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        )
-        log_dir = os.getenv("LOG_DIR", os.path.join(project_root, "logs"))
-        os.makedirs(log_dir, exist_ok=True)
+        os.makedirs(LOG_DIR, exist_ok=True)
         file_handler = TimedRotatingFileHandler(
-            os.path.join(log_dir, "lexinova.log"),
+            LOG_FILE,
             when="midnight",
             interval=1,
-            backupCount=3,
+            backupCount=1,
             encoding="utf-8",
         )
         file_handler.setFormatter(fmt)

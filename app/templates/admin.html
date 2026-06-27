@@ -78,6 +78,7 @@
       <div class="tab active" id="tabUsersBtn" onclick="switchTab('users')"><i class="fa-solid fa-users"></i>&nbsp;Používatelia</div>
       <div class="tab" id="tabPaymentsBtn" onclick="switchTab('payments')"><i class="fa-solid fa-credit-card"></i>&nbsp;Platby</div>
       <div class="tab" id="tabInquiriesBtn" onclick="switchTab('inquiries')"><i class="fa-solid fa-envelope"></i>&nbsp;Dotazy <span id="inqBadge" class="muted"></span></div>
+      <div class="tab" id="tabLogsBtn" onclick="switchTab('logs')"><i class="fa-solid fa-file-lines"></i>&nbsp;Logy</div>
     </div>
 
     <!-- ====== USERS TAB ====== -->
@@ -189,6 +190,25 @@
         </tbody>
       </table>
     </div>
+
+    <!-- ====== LOGS TAB ====== -->
+    <div id="tabLogs" class="hidden">
+      <div class="toolbar">
+        <select id="logLines" onchange="loadLogs()">
+          <option value="200">Posledných 200 riadkov</option>
+          <option value="500" selected>Posledných 500 riadkov</option>
+          <option value="1000">Posledných 1000 riadkov</option>
+          <option value="2000">Posledných 2000 riadkov</option>
+        </select>
+        <button class="btn" onclick="loadLogs()"><i class="fa-solid fa-rotate"></i>&nbsp;Obnoviť</button>
+        <label class="muted" style="display:flex;align-items:center;gap:.4rem;cursor:pointer;">
+          <input type="checkbox" id="logAuto" onchange="toggleLogAuto()"> Auto-obnova (10s)
+        </label>
+        <span class="muted" id="logCount"></span>
+      </div>
+      <div id="logNote" class="muted" style="margin-bottom:.6rem;"></div>
+      <pre id="logView" style="background:#0f172a;color:#e2e8f0;border-radius:12px;padding:1rem;max-height:65vh;overflow:auto;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.8rem;line-height:1.5;white-space:pre-wrap;word-break:break-word;margin:0;">Načítavam...</pre>
+    </div>
   </div>
 
   <script>
@@ -203,6 +223,7 @@
         users:     ['tabUsers','tabUsersBtn'],
         payments:  ['tabPayments','tabPaymentsBtn'],
         inquiries: ['tabInquiries','tabInquiriesBtn'],
+        logs:      ['tabLogs','tabLogsBtn'],
       };
       for(const key in map){
         const [panel, btn] = map[key];
@@ -212,6 +233,40 @@
       }
       if(which === 'payments')  loadPayments();
       if(which === 'inquiries') loadInquiries();
+      if(which === 'logs')      loadLogs();
+      if(which !== 'logs')      stopLogAuto();   // auto-obnova beží len na záložke Logy
+    }
+
+    /* ---------- LOGS ---------- */
+    let _logAutoTimer = null;
+    async function loadLogs(){
+      clearErr();
+      const n = document.getElementById('logLines').value;
+      const view = document.getElementById('logView');
+      try{
+        const res = await fetch(`/api/admin/logs?lines=${n}`);
+        const data = await res.json();
+        if(!res.ok){ showErr(data.detail || 'Načítanie logov zlyhalo'); return; }
+
+        document.getElementById('logNote').textContent = data.note || '';
+        const lines = Array.isArray(data.lines) ? data.lines : [];
+        document.getElementById('logCount').textContent = `${lines.length} riadkov`;
+        view.textContent = lines.length ? lines.join('\n') : '(žiadne logy)';
+        view.scrollTop = view.scrollHeight;   // scroll na najnovšie
+      }catch(e){ showErr('Chyba spojenia pri načítaní logov.'); }
+    }
+
+    function toggleLogAuto(){
+      if(document.getElementById('logAuto').checked){
+        _logAutoTimer = setInterval(loadLogs, 10000);
+      } else {
+        stopLogAuto();
+      }
+    }
+    function stopLogAuto(){
+      if(_logAutoTimer){ clearInterval(_logAutoTimer); _logAutoTimer = null; }
+      const cb = document.getElementById('logAuto');
+      if(cb) cb.checked = false;
     }
 
     /* ---------- USERS ---------- */
@@ -468,6 +523,7 @@
       loadUsers();
       if(!document.getElementById('tabPayments').classList.contains('hidden')) loadPayments();
       if(!document.getElementById('tabInquiries').classList.contains('hidden')) loadInquiries();
+      if(!document.getElementById('tabLogs').classList.contains('hidden')) loadLogs();
     }
 
     loadUsers();
