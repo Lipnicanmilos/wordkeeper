@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-en="Terms of Service – LexiNova" data-sk="Obchodné podmienky – LexiNova">Obchodné podmienky – LexiNova</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#4079ff">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="stylesheet" href="/static/css/fonts.css">
+    <script>
+        if (localStorage.getItem('darkMode') === 'true')
+            document.documentElement.setAttribute('data-theme', 'dark');
+    </script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --primary: #4079ff;
+            --accent:  #40ffaa;
+            --grad:    linear-gradient(135deg, #4079ff, #40ffaa);
+            --bg:      #f4f7fe;
+            --surface: #ffffff;
+            --text:    #1a202c;
+            --muted:   #718096;
+            --border:  #e2e8f0;
+            --shadow:  0 8px 32px rgba(64,121,255,.09);
+        }
+        [data-theme="dark"] {
+            --bg:      #0f172a;
+            --surface: #1e293b;
+            --text:    #f1f5f9;
+            --muted:   #94a3b8;
+            --border:  #334155;
+            --shadow:  0 8px 32px rgba(0,0,0,.35);
+        }
+
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            transition: background .3s, color .3s;
+        }
+
+        /* ── HEADER ── */
+        .header {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(244,247,254,.92);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--border);
+        }
+        [data-theme="dark"] .header { background: rgba(15,23,42,.92); }
+        .header-inner {
+            max-width: 860px; margin: 0 auto;
+            padding: 0 1.5rem; height: 64px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .logo {
+            font-size: 1.2rem; font-weight: 800;
+            background: var(--grad); -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent; background-clip: text;
+            text-decoration: none;
+        }
+        .header-right { display: flex; align-items: center; gap: .5rem; }
+        .lang-switch { display: flex; gap: 3px; }
+        .lang-btn {
+            padding: .28rem .65rem; border: 1px solid var(--border);
+            background: var(--surface); border-radius: 7px; font-size: .78rem;
+            font-weight: 700; cursor: pointer; color: var(--muted); transition: all .2s;
+        }
+        .lang-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .back-link {
+            font-size: .85rem; color: var(--muted); text-decoration: none;
+            padding: .4rem .8rem; border-radius: 8px; transition: color .2s;
+        }
+        .back-link:hover { color: var(--primary); }
+
+        /* ── CONTENT ── */
+        .content {
+            max-width: 860px; margin: 0 auto;
+            padding: 3rem 1.5rem 5rem;
+        }
+
+        .page-header { margin-bottom: 2.5rem; }
+        .page-header h1 {
+            font-size: 2rem; font-weight: 800; letter-spacing: -.03em;
+            background: var(--grad); -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent; background-clip: text;
+            margin-bottom: .5rem;
+        }
+        .page-header .updated {
+            font-size: .83rem; color: var(--muted);
+        }
+
+        /* Sections */
+        .section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.75rem;
+            margin-bottom: 1.25rem;
+            box-shadow: var(--shadow);
+        }
+        .section h2 {
+            font-size: 1.05rem; font-weight: 700;
+            color: var(--primary); margin-bottom: 1rem;
+            display: flex; align-items: center; gap: .5rem;
+        }
+        .section p, .section li {
+            font-size: .92rem; color: var(--muted);
+            line-height: 1.75; margin-bottom: .6rem;
+        }
+        .section p:last-child, .section li:last-child { margin-bottom: 0; }
+        .section ul { padding-left: 1.25rem; }
+        .section li { margin-bottom: .35rem; }
+
+        .highlight {
+            background: linear-gradient(135deg, rgba(64,121,255,.06), rgba(64,255,170,.06));
+            border: 1px solid rgba(64,121,255,.15);
+            border-radius: 10px;
+            padding: .85rem 1rem;
+            margin-top: .75rem;
+            font-size: .88rem;
+            color: var(--text);
+        }
+
+        .contact-link {
+            color: var(--primary); font-weight: 600; text-decoration: none;
+        }
+        .contact-link:hover { text-decoration: underline; }
+
+        @media (max-width: 600px) {
+            .content { padding: 2rem 1rem 4rem; }
+            .page-header h1 { font-size: 1.6rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="header">
+    <div class="header-inner">
+        <a href="/" class="logo">⚡ LexiNova</a>
+        <div class="header-right">
+            <div class="lang-switch">
+                <button class="lang-btn" data-lang="en">EN</button>
+                <button class="lang-btn" data-lang="sk">SK</button>
+            </div>
+            <a href="javascript:history.back()" class="back-link" data-en="← Back" data-sk="← Späť">← Späť</a>
+        </div>
+    </div>
+</header>
+
+<!-- SK verzia -->
+<div class="content" id="content-sk">
+    <div class="page-header">
+        <h1>Obchodné podmienky</h1>
+        <p class="updated">Posledná aktualizácia: jún 2026</p>
+    </div>
+
+    <div class="section">
+        <h2>📋 1. Úvod</h2>
+        <p>Tieto obchodné podmienky upravujú používanie webovej aplikácie LexiNova (ďalej „služba"), ktorú prevádzkuje <strong>Miloš Lipničan</strong>, fyzická osoba, Slovensko, kontakt <a href="mailto:lipnicanmilos@gmail.com" class="contact-link">lipnicanmilos@gmail.com</a> (ďalej „prevádzkovateľ", „my").</p>
+        <p>Registráciou alebo používaním služby súhlasíte s týmito podmienkami. Ak s nimi nesúhlasíte, službu nepoužívajte.</p>
+    </div>
+
+    <div class="section">
+        <h2>🎯 2. Popis služby</h2>
+        <p>LexiNova je aplikácia na učenie slovíčok, ktorá umožňuje vytvárať kategórie, slovíčka, testovať sa a sledovať pokrok. Súčasťou je voliteľné generovanie obsahu pomocou umelej inteligencie.</p>
+        <p>Vyhradzujeme si právo službu kedykoľvek upraviť, rozšíriť alebo prerušiť, najmä z technických alebo prevádzkových dôvodov.</p>
+    </div>
+
+    <div class="section">
+        <h2>👤 3. Registrácia a účet</h2>
+        <ul>
+            <li>Pre používanie väčšiny funkcií je potrebná registrácia (e-mail a heslo alebo prihlásenie cez Google).</li>
+            <li>Zodpovedáte za správnosť uvedených údajov a za zabezpečenie svojho hesla.</li>
+            <li>Jeden účet je určený pre jednu osobu. Účet nesmiete zdieľať ani prevádzať bez nášho súhlasu.</li>
+            <li>Svoj účet a všetky údaje môžete kedykoľvek zmazať v nastaveniach profilu.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>✅ 4. Pravidlá používania</h2>
+        <p>Pri používaní služby sa zaväzujete, že nebudete:</p>
+        <ul>
+            <li>porušovať platné zákony ani práva tretích strán,</li>
+            <li>nahrávať nezákonný, urážlivý alebo škodlivý obsah,</li>
+            <li>pokúšať sa o neoprávnený prístup, narušenie alebo preťaženie služby,</li>
+            <li>používať automatizované nástroje (boty, scraping) nad rámec bežného používania.</li>
+        </ul>
+        <p>Pri porušení podmienok môžeme účet obmedziť alebo zrušiť.</p>
+    </div>
+
+    <div class="section">
+        <h2>📝 5. Váš obsah</h2>
+        <p>Slovíčka, kategórie a ďalší obsah, ktorý vytvoríte, zostávajú vaše. Udeľujete nám len obmedzené právo tento obsah uchovávať a spracúvať za účelom poskytovania služby.</p>
+        <p>Zodpovedáte za obsah, ktorý do služby vložíte.</p>
+    </div>
+
+    <div class="section">
+        <h2>🤖 6. Funkcie umelej inteligencie</h2>
+        <p>Generovanie slovíčok pomocou AI využíva tretie strany (Groq, Google Gemini, Anthropic). Podrobnosti o spracúvaní údajov nájdete v <a href="/privacy" class="contact-link">Ochrane súkromia</a>.</p>
+        <p>Obsah generovaný AI môže byť nepresný alebo neúplný — odporúčame si ho overiť. Za výsledky učenia ani správnosť generovaného obsahu neručíme.</p>
+    </div>
+
+    <div class="section">
+        <h2>💳 7. Predplatné PLUS a platby</h2>
+        <div class="highlight">
+            ⚠️ Platený plán PLUS je momentálne vo vývoji. Nasledujúce podmienky nadobudnú účinnosť po spustení platieb a budú doplnené o konkrétne ceny.
+        </div>
+        <ul>
+            <li><strong>Plán a cena:</strong> [DOPLNIŤ — napr. PLUS Mesačne €X,XX / PLUS Ročne €XX,XX].</li>
+            <li><strong>Fakturačné obdobie:</strong> predplatné sa automaticky obnovuje na konci obdobia, kým ho nezrušíte.</li>
+            <li><strong>Platby:</strong> spracúva poskytovateľ platobnej brány; neukladáme údaje o vašej platobnej karte.</li>
+            <li><strong>Zmena cien:</strong> o zmene cien vás budeme informovať vopred; zmena sa prejaví v ďalšom fakturačnom období.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>↩️ 8. Zrušenie a odstúpenie</h2>
+        <ul>
+            <li>Predplatné môžete kedykoľvek zrušiť; prístup k PLUS zostane do konca zaplateného obdobia.</li>
+            <li>Ako spotrebiteľ máte právo odstúpiť od zmluvy do 14 dní. Začatím poskytovania digitálnej služby pred uplynutím tejto lehoty s vaším súhlasom toto právo zaniká.</li>
+            <li>Postup a prípadné vrátenie platby: [DOPLNIŤ po spustení platieb].</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>⚠️ 9. Obmedzenie zodpovednosti</h2>
+        <p>Služba je poskytovaná „tak ako je". Nezaručujeme nepretržitú dostupnosť ani bezchybnosť. V rozsahu povolenom zákonom nezodpovedáme za nepriame škody, stratu dát alebo ušlý zisk vzniknuté používaním služby.</p>
+    </div>
+
+    <div class="section">
+        <h2>🔄 10. Zmeny podmienok</h2>
+        <p>Tieto podmienky môžeme aktualizovať. O podstatných zmenách vás budeme informovať (napr. e-mailom alebo oznámením v aplikácii). Ďalším používaním služby po zmene vyjadrujete súhlas s upravenými podmienkami.</p>
+    </div>
+
+    <div class="section">
+        <h2>⚖️ 11. Rozhodné právo</h2>
+        <p>Tieto podmienky sa riadia právnym poriadkom Slovenskej republiky. Spory sa prednostne riešia dohodou; ako spotrebiteľ sa môžete obrátiť aj na subjekt alternatívneho riešenia sporov.</p>
+    </div>
+
+    <div class="section">
+        <h2>📬 12. Kontakt</h2>
+        <p>Otázky k týmto podmienkam smerujte na:</p>
+        <p><a href="mailto:lipnicanmilos@gmail.com" class="contact-link">lipnicanmilos@gmail.com</a></p>
+    </div>
+</div>
+
+<!-- EN verzia -->
+<div class="content" id="content-en" style="display:none;">
+    <div class="page-header">
+        <h1>Terms of Service</h1>
+        <p class="updated">Last updated: June 2026</p>
+    </div>
+
+    <div class="section">
+        <h2>📋 1. Introduction</h2>
+        <p>These terms govern the use of the LexiNova web application (the "service"), operated by <strong>Miloš Lipničan</strong>, an individual, Slovakia, contact <a href="mailto:lipnicanmilos@gmail.com" class="contact-link">lipnicanmilos@gmail.com</a> ("operator", "we").</p>
+        <p>By registering or using the service you agree to these terms. If you do not agree, do not use the service.</p>
+    </div>
+
+    <div class="section">
+        <h2>🎯 2. Description of the service</h2>
+        <p>LexiNova is a vocabulary-learning application that lets you create categories and words, test yourself and track progress. It includes optional AI-assisted content generation.</p>
+        <p>We reserve the right to modify, extend or discontinue the service at any time, particularly for technical or operational reasons.</p>
+    </div>
+
+    <div class="section">
+        <h2>👤 3. Registration and account</h2>
+        <ul>
+            <li>Most features require registration (email and password, or Google sign-in).</li>
+            <li>You are responsible for the accuracy of the data you provide and for keeping your password secure.</li>
+            <li>An account is for a single person. You may not share or transfer it without our consent.</li>
+            <li>You may delete your account and all data at any time in your profile settings.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>✅ 4. Acceptable use</h2>
+        <p>When using the service you agree not to:</p>
+        <ul>
+            <li>violate applicable laws or third-party rights,</li>
+            <li>upload unlawful, offensive or harmful content,</li>
+            <li>attempt unauthorised access to, disruption of, or overloading of the service,</li>
+            <li>use automated tools (bots, scraping) beyond normal use.</li>
+        </ul>
+        <p>We may restrict or terminate accounts that breach these terms.</p>
+    </div>
+
+    <div class="section">
+        <h2>📝 5. Your content</h2>
+        <p>Words, categories and other content you create remain yours. You grant us only a limited right to store and process this content for the purpose of providing the service.</p>
+        <p>You are responsible for the content you add to the service.</p>
+    </div>
+
+    <div class="section">
+        <h2>🤖 6. AI features</h2>
+        <p>AI word generation uses third parties (Groq, Google Gemini, Anthropic). See the <a href="/privacy" class="contact-link">Privacy Policy</a> for details on data processing.</p>
+        <p>AI-generated content may be inaccurate or incomplete — we recommend verifying it. We do not guarantee learning outcomes or the correctness of generated content.</p>
+    </div>
+
+    <div class="section">
+        <h2>💳 7. PLUS subscription and payments</h2>
+        <div class="highlight">
+            ⚠️ The paid PLUS plan is currently under development. The terms below take effect once payments launch and will be completed with specific prices.
+        </div>
+        <ul>
+            <li><strong>Plan and price:</strong> [TO BE ADDED — e.g. PLUS Monthly €X.XX / PLUS Annual €XX.XX].</li>
+            <li><strong>Billing cycle:</strong> the subscription renews automatically at the end of each period until you cancel.</li>
+            <li><strong>Payments:</strong> processed by a payment-gateway provider; we do not store your card details.</li>
+            <li><strong>Price changes:</strong> we will notify you in advance; changes apply from the next billing period.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>↩️ 8. Cancellation and withdrawal</h2>
+        <ul>
+            <li>You can cancel your subscription at any time; PLUS access remains until the end of the paid period.</li>
+            <li>As a consumer you have a 14-day right of withdrawal. By starting the digital service before that period ends, with your consent, this right expires.</li>
+            <li>Procedure and any refunds: [TO BE ADDED once payments launch].</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>⚠️ 9. Limitation of liability</h2>
+        <p>The service is provided "as is". We do not guarantee uninterrupted availability or error-free operation. To the extent permitted by law, we are not liable for indirect damages, data loss or lost profits arising from the use of the service.</p>
+    </div>
+
+    <div class="section">
+        <h2>🔄 10. Changes to the terms</h2>
+        <p>We may update these terms. We will notify you of material changes (e.g. by email or an in-app notice). Continued use of the service after a change constitutes acceptance of the updated terms.</p>
+    </div>
+
+    <div class="section">
+        <h2>⚖️ 11. Governing law</h2>
+        <p>These terms are governed by the law of the Slovak Republic. Disputes are resolved primarily by agreement; as a consumer you may also turn to an alternative dispute resolution body.</p>
+    </div>
+
+    <div class="section">
+        <h2>📬 12. Contact</h2>
+        <p>For questions about these terms, contact:</p>
+        <p><a href="mailto:lipnicanmilos@gmail.com" class="contact-link">lipnicanmilos@gmail.com</a></p>
+    </div>
+</div>
+
+<script>
+    let lang = localStorage.getItem('preferredLang') || 'sk';
+
+    function setLang(l) {
+        lang = l;
+        localStorage.setItem('preferredLang', l);
+        document.getElementById('content-sk').style.display = l === 'sk' ? 'block' : 'none';
+        document.getElementById('content-en').style.display = l === 'en' ? 'block' : 'none';
+        document.querySelectorAll('.lang-btn').forEach(b =>
+            b.classList.toggle('active', b.getAttribute('data-lang') === l));
+        document.querySelectorAll('[data-en],[data-sk]').forEach(el => {
+            const text = el.getAttribute('data-' + l);
+            if (text) el.textContent = text;
+        });
+        document.title = l === 'sk' ? 'Obchodné podmienky – LexiNova' : 'Terms of Service – LexiNova';
+    }
+
+    document.querySelectorAll('.lang-btn').forEach(b =>
+        b.addEventListener('click', () => setLang(b.getAttribute('data-lang'))));
+
+    setLang(lang);
+</script>
+<script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+</script>
+</body>
+</html>

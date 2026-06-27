@@ -16,8 +16,8 @@
 
 ### 🟠 GDPR / právne (nutné pre komerciu)
 - [x] **AI poskytovatelia v Privacy Policy** — 2026-06-27. Sekcia „Tretie strany" (SK+EN) doplnená o Groq/Gemini/Anthropic; uvedené, že sa posiela iba text promptu + jazyky (overené v ai_category_service.py)
-- [ ] **Obchodné podmienky (Terms of Service)** — neexistujú; pri platenom Plus pláne povinné (odstúpenie, reklamácie, fakturácia). ⏳ Čaká na firemné údaje + ceny
-- [ ] **Identifikácia prevádzkovateľa** v Privacy — meno/firma/IČO/adresa (teraz iba „LexiNova" + súkromný Gmail) + doba uchovávania údajov (retention). ⏳ Čaká na reálne údaje od prevádzkovateľa
+- [x] **Obchodné podmienky (Terms of Service)** — 2026-06-27. Nová `terms.html` (SK+EN, 12 sekcií), route `/terms`, odkazy v registrácii + pätičke. Ceny/odstúpenie sú `[DOPLNIŤ]` placeholdery — doplniť po spustení Stripe.
+- [x] **Identifikácia prevádzkovateľa + retention** v Privacy — 2026-06-27. Prevádzkovateľ: Miloš Lipničan (fyzická osoba, SK) + sekcia „Doba uchovávania" (SK+EN).
 - [x] **Self-hostovať Google Fonts** — 2026-06-27. Inter v20 (variabilný, latin+latin-ext) v `app/static/fonts/`, `app/static/css/fonts.css`; nahradené v 12 šablónach; MIME `font/woff2` v main.py; sw.js precache v22. Žiadne volania na Google CDN.
 - [x] Export dát + zmazanie účtu — funguje správne (ORM cascade maže aj kategórie aj slovíčka)
 

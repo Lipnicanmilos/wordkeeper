@@ -47,6 +47,8 @@
       <span>© 2025 LexiNova · <a href="https://lipnicanmilos.github.io/" target="_blank" rel="noopener">Miloš Lipničan</a></span>
       <div class="ln-footer-links">
         <button type="button" class="ln-link" id="lnInquiryOpen">✉️ Zanechať dotaz</button>
+        <a href="/terms">Obchodné podmienky</a>
+        <a href="/privacy">Ochrana súkromia</a>
         <a href="https://lipnicanmilos.github.io/" target="_blank" rel="noopener">Autor</a>
       </div>
     </div>
