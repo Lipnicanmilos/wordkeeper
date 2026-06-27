@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lexinova-v24';
+const CACHE_NAME = 'lexinova-v25';
 const ASSETS_TO_CACHE = [
   '/manifest.json',
   '/favicon.ico',
@@ -6,6 +6,7 @@ const ASSETS_TO_CACHE = [
   '/static/icons/icon-192x192.png',
   '/static/icons/icon-512x512.png',
   '/static/js/offline-cache.js',
+  '/static/js/cookie-notice.js',
   '/static/css/fonts.css',
   '/static/fonts/inter-latin.woff2',
   '/static/fonts/inter-latin-ext.woff2',

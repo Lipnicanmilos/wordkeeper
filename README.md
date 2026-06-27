@@ -22,7 +22,7 @@
 - **PWA** — inštalovateľná ako mobilná appka, funguje offline (Service Worker)
 - **Email notifikácie** — uvítacie emaily, reset hesla, notifikácie o dotazoch
 - **Kontaktný formulár** — v pätičke, bez prihlásenia
-- **GDPR** — export dát (JSON), zmazanie účtu (ORM cascade), Privacy Policy + Obchodné podmienky (SK/EN)
+- **GDPR** — export dát (JSON, vrátane kontaktných správ), zmazanie účtu (ORM cascade + inquiries), Privacy Policy + Obchodné podmienky (SK/EN), informačná cookie lišta (len nevyhnutné cookies — banner súhlasu netreba)
 - **Bezpečnosť** — rate limiting, security hlavičky (CSP/HSTS/…), self-hostované fonty
 - **Admin panel** — správa používateľov, prehľad platieb, správa dopytov
 
