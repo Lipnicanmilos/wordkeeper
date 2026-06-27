@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lexinova-v23';
+const CACHE_NAME = 'lexinova-v24';
 const ASSETS_TO_CACHE = [
   '/manifest.json',
   '/favicon.ico',
@@ -11,6 +11,7 @@ const ASSETS_TO_CACHE = [
   '/static/fonts/inter-latin-ext.woff2',
   '/static/vendor/fontawesome/css/all.min.css',
   '/static/vendor/fontawesome/webfonts/fa-solid-900.woff2',
+  '/static/vendor/chartjs/chart.umd.min.js',
 ];
 
 // Navigačné stránky za auth — predcachujeme tolerantne (cookie sa posiela cez credentials).

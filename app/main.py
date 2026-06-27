@@ -100,8 +100,8 @@ CSP = (
     "object-src 'none'; "
     "frame-ancestors 'none'; "
     "img-src 'self' data: https:; "
-    # Chart.js (jsdelivr); inline scripty v šablónach
-    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+    # inline scripty v šablónach (Chart.js je self-hostovaný)
+    "script-src 'self' 'unsafe-inline'; "
     # inline štýly v šablónach (Font Awesome je self-hostovaný)
     "style-src 'self' 'unsafe-inline'; "
     # self-hostovaný Inter + Font Awesome

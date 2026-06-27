@@ -57,8 +57,10 @@
 - **CSS3** — moderný dizajn, dark mode, CSS premenné
 - **Inter** — self-hostovaný variabilný font (žiadne volania na Google Fonts CDN)
 - **Font Awesome 6.4** — self-hostované ikony v `static/vendor/fontawesome/` (žiadny CDN)
-- **Chart.js** — grafy (z `cdn.jsdelivr.net`)
+- **Chart.js 4.5** — self-hostované grafy v `static/vendor/chartjs/` (žiadny CDN)
 - **Service Worker** — PWA / offline
+
+> Aplikácia **nevolá žiadny externý CDN** — všetky fonty, ikony aj skripty sú self-hostované (GDPR-friendly, prísna CSP `'self'`).
 
 ---
 
