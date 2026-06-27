@@ -1,5 +1,5 @@
 # app/schemas/category.py
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, Dict
 from datetime import datetime
 
@@ -21,5 +21,4 @@ class CategoryResponse(CategoryBase):
     level_counts: Dict[str, int] = {}  # počty pre každý level
     level_percentages: Dict[str, float] = {}  # percentá pre každý level
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

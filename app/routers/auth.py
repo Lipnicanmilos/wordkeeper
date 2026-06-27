@@ -1,7 +1,7 @@
 import os
 import re
 import secrets
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from app.database.connection import get_db
 from app.models.user import User
+from app.utils import utcnow
 from app.services.auth_service import hash_password, verify_password
 from app.services.email_service import send_welcome_email
 from app.services.runtime import SECRET_KEY, limiter, logger, mail_config, oauth
@@ -143,7 +144,7 @@ async def login(request: Request, user_data: UserLogin, db: Session = Depends(ge
         if not verified:
             raise HTTPException(status_code=400, detail="Incorrect password")
 
-        user.last_login = datetime.utcnow()
+        user.last_login = utcnow()
         db.commit()
 
         session_user = {
@@ -232,7 +233,7 @@ Tím LexiNova
         else:
             if not user.name and name:
                 user.name = name
-            user.last_login = datetime.utcnow()
+            user.last_login = utcnow()
             db.commit()
 
         session_user = {
@@ -283,7 +284,7 @@ async def forgot_password(request: Request, db: Session = Depends(get_db)):
 
     token = secrets.token_urlsafe(32)
     user.reset_token = token
-    user.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
+    user.reset_token_expires = utcnow() + timedelta(hours=1)
     db.commit()
 
     reset_url = f"{request.base_url}reset-password?token={token}"
@@ -305,7 +306,7 @@ async def reset_password(
     request: Request, data: PasswordReset, db: Session = Depends(get_db)
 ):
     user = db.query(User).filter(User.reset_token == data.token).first()
-    if not user or user.reset_token_expires < datetime.utcnow():
+    if not user or user.reset_token_expires < utcnow():
         raise HTTPException(status_code=400, detail="Token je neplatný alebo vypršal.")
 
     user.password = hash_password(data.password)

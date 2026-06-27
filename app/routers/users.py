@@ -1,5 +1,4 @@
 import json
-from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -13,6 +12,7 @@ from app.models.word import Word
 from app.services.session_auth import get_authenticated_user
 from app.services.stats_service import get_user_level_counts
 from app.services.runtime import ADMIN_EMAILS
+from app.utils import utcnow
 
 router = APIRouter(tags=["users"])
 
@@ -141,7 +141,7 @@ async def export_user_data(
 
     export_data = {
         "export_info": {
-            "exported_at": datetime.utcnow().isoformat(),
+            "exported_at": utcnow().isoformat(),
             "user_id": current_user.id,
             "user_email": current_user.email,
             "user_name": current_user.name,
@@ -176,7 +176,7 @@ async def export_user_data(
         yield json.dumps(export_data, indent=2, ensure_ascii=False)
 
     filename = (
-        f"lexinova_data_{current_user.email}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.json"
+        f"lexinova_data_{current_user.email}_{utcnow().strftime('%Y%m%d_%H%M%S')}.json"
     )
     return StreamingResponse(
         generate(),

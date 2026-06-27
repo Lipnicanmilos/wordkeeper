@@ -89,19 +89,20 @@ async def get_sw():
 @router.get("/")
 async def read_root(request: Request):
     return templates.TemplateResponse(
+        request,
         "index.html",
-        {"request": request, "lang": get_language(request)},
+        {"lang": get_language(request)},
     )
 
 
 @router.get("/login")
 async def login_page(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse(request, "login.html")
 
 
 @router.get("/register")
 async def register_page(request: Request):
-    return templates.TemplateResponse("register.html", {"request": request})
+    return templates.TemplateResponse(request, "register.html")
 
 
 @router.get("/dashboard")
@@ -111,9 +112,9 @@ async def dashboard_page(request: Request, db: Session = Depends(get_db)):
         return redirect
 
     return templates.TemplateResponse(
+        request,
         "dashboard.html",
         {
-            "request": request,
             "email": db_user.email,
             "is_plus": db_user.is_plus,
             "dark_mode": db_user.dark_mode,
@@ -128,8 +129,9 @@ async def profile_page(request: Request, db: Session = Depends(get_db)):
         return redirect
 
     return templates.TemplateResponse(
+        request,
         "profile.html",
-        {"request": request, "email": db_user.email, "user": db_user},
+        {"email": db_user.email, "user": db_user},
     )
 
 
@@ -157,9 +159,9 @@ async def category_words_page(request: Request, category_id: int, db: Session = 
     }
 
     return templates.TemplateResponse(
+        request,
         "category_words.html",
         {
-            "request": request,
             "email": user_session.get("email", ""),
             "category": category_data,
             "dark_mode": db_user.dark_mode,
@@ -190,9 +192,9 @@ async def test_page(
             return redirect
 
     return templates.TemplateResponse(
+        request,
         "flashcard_test.html",
         {
-            "request": request,
             "email": user_session.get("email", ""),
             "category": category_data,
             "level": level,
@@ -223,9 +225,9 @@ async def repeat_page(
             return redirect
 
     return templates.TemplateResponse(
+        request,
         "repeat.html",
         {
-            "request": request,
             "email": user_session.get("email", ""),
             "category": category_data,
             "level": level,
@@ -235,29 +237,29 @@ async def repeat_page(
 
 @router.get("/demo")
 async def demo_page(request: Request):
-    return templates.TemplateResponse("demo.html", {"request": request})
+    return templates.TemplateResponse(request, "demo.html")
 
 
 @router.get("/auth/callback")
 async def auth_callback(request: Request):
-    return templates.TemplateResponse("auth-callback.html", {"request": request})
+    return templates.TemplateResponse(request, "auth-callback.html")
 
 
 @router.get("/privacy")
 async def privacy_page(request: Request):
-    return templates.TemplateResponse("privacy.html", {"request": request})
+    return templates.TemplateResponse(request, "privacy.html")
 
 
 @router.get("/terms")
 async def terms_page(request: Request):
-    return templates.TemplateResponse("terms.html", {"request": request})
+    return templates.TemplateResponse(request, "terms.html")
 
 
 @router.get("/forgot-password")
 async def forgot_password_page(request: Request):
-    return templates.TemplateResponse("forgot_password.html", {"request": request})
+    return templates.TemplateResponse(request, "forgot_password.html")
 
 
 @router.get("/reset-password")
 async def reset_password_page(request: Request, token: str):
-    return templates.TemplateResponse("reset_password.html", {"request": request, "token": token})
+    return templates.TemplateResponse(request, "reset_password.html", {"token": token})

@@ -46,7 +46,7 @@ async def admin_page(
 ):
     _require_admin(current_user)
     from app.services.runtime import templates
-    return templates.TemplateResponse("admin.html", {"request": request, "email": current_user.email})
+    return templates.TemplateResponse(request, "admin.html", {"email": current_user.email})
 
 
 @router.get("/api/admin/users")
