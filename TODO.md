@@ -68,16 +68,18 @@ Ceny: **PLUS Mesačne €4,99 · PLUS Ročne €39,99 · 7-dňový trial**.
 - [x] `billing_service.expire_if_needed(user)` + kontrola pri logine (email aj OAuth)
 - [ ] (voliteľné neskôr) Cloud Scheduler denný cron
 
-### Fáza 4 — Frontend (profil)
-- [ ] Sekcia „Predplatné": stav (Free / PLUS do DD.MM.YYYY / trial do…)
-- [ ] Tlačidlá „Upgradovať na PLUS" (mesačne/ročne) → `/checkout` → redirect
-- [ ] Tlačidlo „Spravovať predplatné" → portal
-- [ ] Banner pri expirácii / zlyhanej platbe
-- [ ] Odstrániť fake user `togglePlus()` (nechať len admin override)
+### Fáza 4 — Frontend (profil) ✅ — 2026-06-28
+- [x] Sekcia „Predplatné": stav (Standard / PLUS / trial) + dátum „aktívne do"
+- [x] Tlačidlá „PLUS Mesačne / Ročne" → `/api/v1/checkout` → redirect
+- [x] Tlačidlo „Spravovať predplatné" → `/api/v1/billing/portal`
+- [x] Návrat z checkoutu (`?upgraded=1`) → správa + reload stavu
+- [x] **Odstránený fake user `togglePlus()` + endpoint `/api/user/plus`** (bezpečnostná diera — self-grant PLUS zadarmo). Admin override (`/api/admin/users`) zostáva.
 
-### Fáza 5 — PLUS benefity (treba doplniť hodnotu)
-- [ ] Definovať čo PLUS dáva navyše (teraz len 20 vs 5 kategórií) — napr. viac AI generovaní, viac slovíčok/kat., rozšírené štatistiky
-- [ ] Vynútiť limity na backende podľa `user_has_active_plus`
+### Fáza 5 — PLUS benefity
+- [x] **Kategórie: PLUS = neobmedzene** (Free = 5) — categories.py create + ai-create
+- [ ] AI generovanie: Free X/deň, PLUS neobmedzene (treba denný counter na User)
+- [ ] Limit slovíčok/kategória (Free) + rozšírené štatistiky (PLUS)
+- [ ] Pozn.: gating používa `user.is_plus` (expire_if_needed pri logine ho drží aktuálny)
 
 ### Fáza 6 — Admin
 - [ ] Stĺpce: stav predplatného, expirácia, plán

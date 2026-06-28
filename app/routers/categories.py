@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -27,11 +28,11 @@ from app.services.stats_service import (
 router = APIRouter(prefix="/api/v1/categories", tags=["categories"])
 
 CATEGORY_LIMIT_FREE = 5
-CATEGORY_LIMIT_PLUS = 20
 
 
-def _get_category_limit(user: User) -> int:
-    return CATEGORY_LIMIT_PLUS if user.is_plus else CATEGORY_LIMIT_FREE
+def _get_category_limit(user: User) -> Optional[int]:
+    """None = neobmedzene (PLUS). Free účet má limit CATEGORY_LIMIT_FREE."""
+    return None if user.is_plus else CATEGORY_LIMIT_FREE
 
 
 def _get_current_user(request: Request, db: Session) -> User:
@@ -86,8 +87,11 @@ async def create_category(
 
     category_count = db.query(Category).filter(Category.user_id == user.id).count()
     limit = _get_category_limit(user)
-    if category_count >= limit:
-        raise HTTPException(status_code=400, detail=f"Maximum limit of {limit} categories reached")
+    if limit is not None and category_count >= limit:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Dosiahli ste maximum {limit} kategórií. Aktivujte PLUS pre neobmedzené kategórie.",
+        )
 
     existing_category = (
         db.query(Category)
@@ -196,8 +200,11 @@ async def ai_create_category_and_words(
     # Skontroluj limit PRED volanim AI (setri API credits)
     category_count = db.query(Category).filter(Category.user_id == user.id).count()
     limit = _get_category_limit(user)
-    if category_count >= limit:
-        raise HTTPException(status_code=400, detail=f"Maximum limit of {limit} categories reached")
+    if limit is not None and category_count >= limit:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Dosiahli ste maximum {limit} kategórií. Aktivujte PLUS pre neobmedzené kategórie.",
+        )
 
     if ai_data.ai_provider == "groq":
         groq_api_key = os.getenv("GROQ_API_KEY")

@@ -66,25 +66,6 @@ async def get_current_user(
     )
 
 
-@router.patch("/api/user/plus")
-async def toggle_user_plus(
-    request: Request,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_authenticated_user),
-):
-    current_user.is_plus = not current_user.is_plus
-    db.commit()
-    db.refresh(current_user)
-
-    user_session = request.session.get("user", {})
-    user_session["is_plus"] = current_user.is_plus
-    request.session["user"] = user_session
-
-    return JSONResponse(
-        {"message": "Plus status updated successfully", "is_plus": current_user.is_plus}
-    )
-
-
 @router.patch("/api/user/dark-mode")
 async def toggle_user_dark_mode(
     request: Request,

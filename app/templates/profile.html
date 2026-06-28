@@ -313,14 +313,26 @@
         <!-- RIGHT -->
         <div>
             <div class="card-section" style="text-align:center;">
-                <h3 data-en="Account Status" data-sk="Stav účtu">Stav účtu</h3>
+                <h3 data-en="Subscription" data-sk="Predplatné">Predplatné</h3>
                 <div id="plusStatusBadge" class="status-badge" style="margin:1rem 0; background:var(--muted); color:#fff;">Standard</div>
+                <div id="subInfo" style="font-size:.82rem; color:var(--muted); margin-bottom:1rem;"></div>
                 <div style="font-size:.88rem; color:var(--muted); margin-bottom:1rem;">
                     <span data-en="Categories:" data-sk="Kategórie:">Kategórie:</span>
                     <strong id="categoriesUsage" style="color:var(--text);">-- / --</strong>
                 </div>
-                <button onclick="togglePlus()" class="btn-primary" style="font-size:.82rem; padding:.55rem 1rem;"
-                        data-en="Upgrade to PLUS" data-sk="Aktivovať PLUS">Aktivovať PLUS</button>
+
+                <div id="upgradeBox">
+                    <button onclick="startCheckout('monthly', this)" class="btn-primary" style="width:100%; margin-bottom:.5rem; font-size:.85rem; padding:.6rem 1rem;"
+                            data-en="PLUS Monthly – €4.99" data-sk="PLUS Mesačne – €4,99">PLUS Mesačne – €4,99</button>
+                    <button onclick="startCheckout('annual', this)" class="btn-primary" style="width:100%; font-size:.85rem; padding:.6rem 1rem;"
+                            data-en="PLUS Annual – €39.99 (−33%)" data-sk="PLUS Ročne – €39,99 (−33 %)">PLUS Ročne – €39,99 (−33 %)</button>
+                    <div style="font-size:.72rem; color:var(--muted); margin-top:.5rem;"
+                         data-en="7-day free trial · cancel anytime" data-sk="7 dní zadarmo · zrušíš kedykoľvek">7 dní zadarmo · zrušíš kedykoľvek</div>
+                </div>
+
+                <button id="manageBtn" onclick="openPortal(this)"
+                        style="display:none; width:100%; padding:.6rem 1rem; border:1px solid var(--border); background:var(--surface); color:var(--text); border-radius:10px; font-weight:600; cursor:pointer;"
+                        data-en="Manage subscription" data-sk="Spravovať predplatné">Spravovať predplatné</button>
             </div>
 
             <div class="card-section">
@@ -389,9 +401,17 @@
     document.addEventListener('DOMContentLoaded', () => {
         initBackground();
         loadUserProfile();
+        loadSubscription();
         setupLanguages();
         setupPasswordCheck();
         setupInquiryForm();
+
+        // Návrat z checkoutu — webhook mohol prísť s krátkym oneskorením.
+        if (new URLSearchParams(location.search).get('upgraded') === '1') {
+            showMessage(currentLang === 'sk' ? 'Ďakujeme! Aktivujem predplatné…' : 'Thank you! Activating subscription…', 'success');
+            setTimeout(loadSubscription, 2500);
+            history.replaceState({}, '', '/profile');
+        }
     });
 
     /* ── MOBILE MENU ── */
@@ -509,12 +529,77 @@
         else { document.documentElement.removeAttribute('data-theme'); localStorage.setItem('darkMode','false'); }
     }
 
-    async function togglePlus() {
-        const res  = await fetch('/api/user/plus', { method:'PATCH' });
-        const data = await res.json();
-        updatePlusBadge(data.is_plus);
-        loadUserStats(data.is_plus);
-        showMessage('Status updated!', 'success');
+    /* ── PREDPLATNÉ (Lemon Squeezy) ── */
+    async function loadSubscription() {
+        try {
+            const res = await fetch('/api/v1/subscription');
+            if (!res.ok) return;
+            renderSubscription(await res.json());
+        } catch { /* offline – ponecháme základný badge */ }
+    }
+
+    function renderSubscription(s) {
+        const sk = currentLang === 'sk';
+        const badge = document.getElementById('plusStatusBadge');
+        const info  = document.getElementById('subInfo');
+        const upBox = document.getElementById('upgradeBox');
+        const manage = document.getElementById('manageBtn');
+
+        if (s.is_plus) {
+            const trial = s.status === 'on_trial';
+            badge.textContent = trial ? (sk ? 'PLUS – skúšobné' : 'PLUS – trial') : 'PLUS';
+            badge.style.background = '#FFD700'; badge.style.color = '#000';
+            let txt = '';
+            if (s.expires_at) {
+                const d = new Date(s.expires_at).toLocaleDateString(sk ? 'sk-SK' : 'en-US');
+                txt = s.cancelled_at
+                    ? (sk ? `Zrušené – prístup do ${d}` : `Cancelled – access until ${d}`)
+                    : (sk ? `Aktívne do ${d}` : `Active until ${d}`);
+            }
+            info.textContent = txt;
+            upBox.style.display = 'none';
+            manage.style.display = 'block';
+        } else {
+            badge.textContent = 'Standard';
+            badge.style.background = 'var(--muted)'; badge.style.color = '#fff';
+            info.textContent = '';
+            upBox.style.display = 'block';
+            manage.style.display = 'none';
+        }
+        loadUserStats(s.is_plus);
+    }
+
+    async function startCheckout(plan, btn) {
+        const sk = currentLang === 'sk';
+        const orig = btn.textContent;
+        btn.disabled = true; btn.textContent = sk ? 'Presmerovávam…' : 'Redirecting…';
+        try {
+            const res = await fetch('/api/v1/checkout', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ plan })
+            });
+            const data = await res.json();
+            if (res.ok && data.url) { window.location.href = data.url; return; }
+            showMessage(
+                res.status === 503
+                    ? (sk ? 'Platby zatiaľ nie sú dostupné.' : 'Payments are not available yet.')
+                    : (data.detail || (sk ? 'Nepodarilo sa spustiť platbu.' : 'Could not start checkout.')),
+                'error'
+            );
+        } catch { showMessage(sk ? 'Chyba spojenia.' : 'Connection error.', 'error'); }
+        btn.disabled = false; btn.textContent = orig;
+    }
+
+    async function openPortal(btn) {
+        const sk = currentLang === 'sk';
+        btn.disabled = true;
+        try {
+            const res = await fetch('/api/v1/billing/portal');
+            const data = await res.json();
+            if (res.ok && data.url) { window.location.href = data.url; return; }
+            showMessage(data.detail || (sk ? 'Nepodarilo sa otvoriť správu predplatného.' : 'Could not open portal.'), 'error');
+        } catch { showMessage(sk ? 'Chyba spojenia.' : 'Connection error.', 'error'); }
+        btn.disabled = false;
     }
 
     function setupPasswordCheck() {
