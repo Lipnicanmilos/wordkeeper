@@ -15,12 +15,12 @@ class User(Base):
     last_login = Column(DateTime(timezone=True), nullable=True)
     reset_token = Column(String, nullable=True)
     reset_token_expires = Column(DateTime, nullable=True)
-    # Predplatné (Lemon Squeezy)
-    plus_expires_at = Column(DateTime, nullable=True)         # dokedy má PLUS prístup
+    # Predplatné (Paddle)
+    plus_expires_at = Column(DateTime, nullable=True)          # dokedy má PLUS prístup
     plus_plan = Column(String(20), nullable=True)             # monthly / annual
-    plus_status = Column(String(20), nullable=True)           # on_trial/active/past_due/cancelled/expired
+    plus_status = Column(String(20), nullable=True)           # trialing/active/past_due/canceled/expired
     plus_cancelled_at = Column(DateTime, nullable=True)
-    ls_customer_id = Column(String(64), nullable=True)        # Lemon Squeezy customer id
-    ls_subscription_id = Column(String(64), nullable=True)    # Lemon Squeezy subscription id
+    paddle_customer_id = Column(String(64), nullable=True)     # Paddle customer id (ctm_...)
+    paddle_subscription_id = Column(String(64), nullable=True) # Paddle subscription id (sub_...)
     # Relácie
     categories = relationship("Category", back_populates="user", cascade="all, delete-orphan")

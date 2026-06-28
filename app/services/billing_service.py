@@ -1,8 +1,13 @@
-"""Lemon Squeezy (Merchant of Record) — checkout, subscription, webhook verifikácia.
+"""Paddle (Merchant of Record) — checkout config, subscription, webhook verifikácia.
 
 Konfigurácia cez env premenné (môžu chýbať — appka funguje, platby sú len neaktívne):
-  LEMONSQUEEZY_API_KEY, LEMONSQUEEZY_STORE_ID, LEMONSQUEEZY_WEBHOOK_SECRET,
-  LEMONSQUEEZY_VARIANT_MONTHLY, LEMONSQUEEZY_VARIANT_ANNUAL
+  PADDLE_API_KEY            – server API kľúč (pdl_live_... / pdl_sdbx_...)
+  PADDLE_CLIENT_TOKEN       – client-side token pre Paddle.js (live_... / test_...)
+  PADDLE_WEBHOOK_SECRET     – tajný kľúč na overenie webhookov
+  PADDLE_PRICE_MONTHLY      – price id mesačného plánu (pri_...)
+  PADDLE_PRICE_ANNUAL       – price id ročného plánu (pri_...)
+  PADDLE_ENV               – 'sandbox' (default) alebo 'production'
+  PADDLE_API_BASE          – voliteľný override base URL
 """
 import hashlib
 import hmac
@@ -14,120 +19,141 @@ import httpx
 
 from app.utils import utcnow
 
-LS_API_BASE = "https://api.lemonsqueezy.com/v1"
-_JSON_API = {
-    "Accept": "application/vnd.api+json",
-    "Content-Type": "application/vnd.api+json",
-}
+# Paddle statusy, pri ktorých má používateľ ešte PLUS prístup.
+# (zrušené predplatné má status 'active'/'trialing' až do konca obdobia, potom 'canceled')
+ACTIVE_STATUSES = {"trialing", "active", "past_due"}
 
-# stavy, pri ktorých má používateľ ešte PLUS prístup (cancelled = beží do konca obdobia)
-ACTIVE_STATUSES = {"on_trial", "active", "past_due", "cancelled"}
+
+def environment() -> str:
+    return "production" if os.getenv("PADDLE_ENV") == "production" else "sandbox"
+
+
+def api_base() -> str:
+    override = os.getenv("PADDLE_API_BASE")
+    if override:
+        return override.rstrip("/")
+    return (
+        "https://api.paddle.com"
+        if environment() == "production"
+        else "https://sandbox-api.paddle.com"
+    )
 
 
 def is_configured() -> bool:
-    return bool(os.getenv("LEMONSQUEEZY_API_KEY") and os.getenv("LEMONSQUEEZY_STORE_ID"))
+    """Server-side platby (webhook/portal) sú nakonfigurované."""
+    return bool(os.getenv("PADDLE_API_KEY"))
+
+
+def is_client_configured() -> bool:
+    """Client-side checkout (Paddle.js overlay) je nakonfigurovaný."""
+    return bool(os.getenv("PADDLE_CLIENT_TOKEN") and os.getenv("PADDLE_PRICE_MONTHLY"))
+
+
+def client_config() -> dict:
+    """Konfigurácia pre Paddle.js na frontende (token je client-side, nie tajný)."""
+    return {
+        "configured": is_client_configured(),
+        "environment": environment(),
+        "token": os.getenv("PADDLE_CLIENT_TOKEN", ""),
+        "prices": {
+            "monthly": os.getenv("PADDLE_PRICE_MONTHLY"),
+            "annual": os.getenv("PADDLE_PRICE_ANNUAL"),
+        },
+    }
 
 
 def _auth_headers() -> dict:
-    return {**_JSON_API, "Authorization": f"Bearer {os.getenv('LEMONSQUEEZY_API_KEY', '')}"}
-
-
-def variant_id_for_plan(plan: str) -> Optional[str]:
     return {
-        "monthly": os.getenv("LEMONSQUEEZY_VARIANT_MONTHLY"),
-        "annual": os.getenv("LEMONSQUEEZY_VARIANT_ANNUAL"),
-    }.get(plan)
+        "Authorization": f"Bearer {os.getenv('PADDLE_API_KEY', '')}",
+        "Content-Type": "application/json",
+    }
 
 
-def plan_for_variant(variant_id) -> Optional[str]:
-    vid = str(variant_id)
-    if vid and vid == os.getenv("LEMONSQUEEZY_VARIANT_MONTHLY"):
+def plan_for_price(price_id) -> Optional[str]:
+    pid = str(price_id) if price_id else ""
+    if pid and pid == os.getenv("PADDLE_PRICE_MONTHLY"):
         return "monthly"
-    if vid and vid == os.getenv("LEMONSQUEEZY_VARIANT_ANNUAL"):
+    if pid and pid == os.getenv("PADDLE_PRICE_ANNUAL"):
         return "annual"
     return None
 
 
-async def create_checkout(*, user_id: int, email: str, plan: str, redirect_url: str) -> str:
-    """Vytvorí Lemon Squeezy checkout a vráti URL, na ktorú presmerujeme používateľa."""
-    store_id = os.getenv("LEMONSQUEEZY_STORE_ID")
-    variant_id = variant_id_for_plan(plan)
-    if not (store_id and variant_id):
-        raise RuntimeError("Lemon Squeezy nie je nakonfigurované (store/variant chýba)")
+def _first_price_id(data: dict) -> Optional[str]:
+    for item in data.get("items") or []:
+        price = item.get("price") or {}
+        if price.get("id"):
+            return price["id"]
+    return None
 
-    body = {
-        "data": {
-            "type": "checkouts",
-            "attributes": {
-                "checkout_data": {
-                    "email": email,
-                    "custom": {"user_id": str(user_id)},  # vráti sa vo webhooku
-                },
-                "product_options": {"redirect_url": redirect_url},
-            },
-            "relationships": {
-                "store": {"data": {"type": "stores", "id": str(store_id)}},
-                "variant": {"data": {"type": "variants", "id": str(variant_id)}},
-            },
-        }
-    }
+
+async def create_portal_session(customer_id: str, subscription_id: Optional[str] = None) -> str:
+    """Vytvorí Paddle customer portal session a vráti URL na správu predplatného."""
+    body: dict = {}
+    if subscription_id:
+        body["subscription_ids"] = [str(subscription_id)]
     async with httpx.AsyncClient(timeout=20) as client:
-        resp = await client.post(f"{LS_API_BASE}/checkouts", json=body, headers=_auth_headers())
-        resp.raise_for_status()
-        return resp.json()["data"]["attributes"]["url"]
-
-
-async def get_subscription(subscription_id: str) -> dict:
-    """Načíta subscription z LS (napr. kvôli URL na customer portal)."""
-    async with httpx.AsyncClient(timeout=20) as client:
-        resp = await client.get(
-            f"{LS_API_BASE}/subscriptions/{subscription_id}", headers=_auth_headers()
+        resp = await client.post(
+            f"{api_base()}/customers/{customer_id}/portal-sessions",
+            json=body,
+            headers=_auth_headers(),
         )
         resp.raise_for_status()
-        return resp.json()["data"]
+        urls = resp.json()["data"]["urls"]
+        return urls["general"]["overview"]
 
 
-def verify_webhook_signature(payload: bytes, signature: str) -> bool:
-    """Overí HMAC-SHA256 podpis webhooku (hlavička X-Signature)."""
-    secret = os.getenv("LEMONSQUEEZY_WEBHOOK_SECRET", "")
-    if not secret or not signature:
+def verify_webhook_signature(payload: bytes, sig_header: str) -> bool:
+    """Overí Paddle-Signature hlavičku 'ts=..;h1=..' (HMAC-SHA256 z 'ts:body')."""
+    secret = os.getenv("PADDLE_WEBHOOK_SECRET", "")
+    if not secret or not sig_header:
         return False
-    digest = hmac.new(secret.encode(), payload, hashlib.sha256).hexdigest()
-    return hmac.compare_digest(digest, signature)
+    parts = dict(p.split("=", 1) for p in sig_header.split(";") if "=" in p)
+    ts, h1 = parts.get("ts"), parts.get("h1")
+    if not ts or not h1:
+        return False
+    signed = f"{ts}:".encode() + payload
+    digest = hmac.new(secret.encode(), signed, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(digest, h1)
 
 
 def _parse_dt(value: Optional[str]) -> Optional[datetime]:
     if not value:
         return None
     try:
-        # LS dáva ISO 8601 (napr. 2026-07-28T10:00:00.000000Z) — ako naive UTC
+        # Paddle dáva ISO 8601 (napr. 2026-07-28T10:00:00Z) — držíme ako naive UTC
         return datetime.fromisoformat(value.replace("Z", "+00:00")).replace(tzinfo=None)
     except (ValueError, AttributeError):
         return None
 
 
-def apply_subscription(user, attrs: dict, subscription_id, customer_id, plan: Optional[str]) -> None:
-    """Premietne stav subscription (z webhooku) do používateľa."""
-    status = attrs.get("status")
+def apply_subscription(user, data: dict) -> None:
+    """Premietne stav Paddle subscription (z webhooku) do používateľa."""
+    status = data.get("status")
     user.plus_status = status
-    if subscription_id:
-        user.ls_subscription_id = str(subscription_id)
-    if customer_id:
-        user.ls_customer_id = str(customer_id)
+
+    if data.get("id"):
+        user.paddle_subscription_id = str(data["id"])
+    if data.get("customer_id"):
+        user.paddle_customer_id = str(data["customer_id"])
+
+    plan = plan_for_price(_first_price_id(data))
     if plan:
         user.plus_plan = plan
 
-    # Expirácia: ends_at (po zrušení), inak renews_at, inak koniec trialu
-    user.plus_expires_at = _parse_dt(
-        attrs.get("ends_at") or attrs.get("renews_at") or attrs.get("trial_ends_at")
-    )
+    # Expirácia: naplánované zrušenie → effective_at, inak koniec aktuálneho obdobia
+    scheduled = data.get("scheduled_change") or {}
+    period = data.get("current_billing_period") or {}
+    if scheduled.get("action") == "cancel":
+        user.plus_expires_at = _parse_dt(scheduled.get("effective_at"))
+        if not user.plus_cancelled_at:
+            user.plus_cancelled_at = utcnow()
+    else:
+        user.plus_expires_at = _parse_dt(period.get("ends_at") or data.get("next_billed_at"))
+        if status in ("active", "trialing"):
+            user.plus_cancelled_at = None
 
-    if status == "cancelled" and not user.plus_cancelled_at:
-        user.plus_cancelled_at = utcnow()
-    elif status in ("active", "on_trial"):
-        user.plus_cancelled_at = None
-
-    user.is_plus = status in ACTIVE_STATUSES
+    not_expired = user.plus_expires_at is None or user.plus_expires_at > utcnow()
+    user.is_plus = status in ACTIVE_STATUSES and not_expired
 
 
 def expire_if_needed(user) -> bool:

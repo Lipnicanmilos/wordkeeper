@@ -100,13 +100,15 @@ CSP = (
     "object-src 'none'; "
     "frame-ancestors 'none'; "
     "img-src 'self' data: https:; "
-    # inline scripty v šablónach (Chart.js je self-hostovaný)
-    "script-src 'self' 'unsafe-inline'; "
-    # inline štýly v šablónach (Font Awesome je self-hostovaný)
-    "style-src 'self' 'unsafe-inline'; "
-    # self-hostovaný Inter + Font Awesome
-    "font-src 'self'; "
-    "connect-src 'self'; "
+    # inline scripty v šablónach (Chart.js je self-hostovaný) + Paddle.js
+    "script-src 'self' 'unsafe-inline' https://*.paddle.com; "
+    # inline štýly v šablónach (Font Awesome je self-hostovaný) + Paddle checkout
+    "style-src 'self' 'unsafe-inline' https://*.paddle.com; "
+    # self-hostovaný Inter + Font Awesome + Paddle
+    "font-src 'self' https://*.paddle.com; "
+    "connect-src 'self' https://*.paddle.com; "
+    # Paddle checkout overlay (iframe)
+    "frame-src https://*.paddle.com; "
     "form-action 'self'"
 )
 

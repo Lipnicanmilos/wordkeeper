@@ -9,11 +9,13 @@ os.environ["DEBUG"] = "true"
 os.environ.setdefault("DATABASE_URL", "sqlite://")
 os.environ.pop("ERROR_ALERT_EMAIL", None)  # žiadne e-mail alerty počas testov
 for _k in (
-    "LEMONSQUEEZY_API_KEY",
-    "LEMONSQUEEZY_STORE_ID",
-    "LEMONSQUEEZY_WEBHOOK_SECRET",
-    "LEMONSQUEEZY_VARIANT_MONTHLY",
-    "LEMONSQUEEZY_VARIANT_ANNUAL",
+    "PADDLE_API_KEY",
+    "PADDLE_CLIENT_TOKEN",
+    "PADDLE_WEBHOOK_SECRET",
+    "PADDLE_PRICE_MONTHLY",
+    "PADDLE_PRICE_ANNUAL",
+    "PADDLE_ENV",
+    "PADDLE_API_BASE",
 ):
     os.environ.pop(_k, None)  # platby v testoch nenakonfigurované (deterministicky)
 

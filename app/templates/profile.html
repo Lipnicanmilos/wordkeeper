@@ -395,13 +395,17 @@
 
 <div id="message"></div>
 
+<script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
 <script>
     let currentLang = localStorage.getItem('preferredLang') || 'sk';
+    let _userId = null, _userEmail = null;          // pre Paddle checkout
+    let _paddleConfig = null, _paddleReady = false;
 
     document.addEventListener('DOMContentLoaded', () => {
         initBackground();
         loadUserProfile();
         loadSubscription();
+        initPaddle();
         setupLanguages();
         setupPasswordCheck();
         setupInquiryForm();
@@ -464,6 +468,7 @@
             localStorage.setItem('wk_user_is_plus', String(!!user.is_plus));
             document.getElementById('userId').textContent    = '#' + user.id;
             document.getElementById('userEmail').textContent = user.email;
+            _userId = user.id; _userEmail = user.email;
             if (user.created_at) {
                 try {
                     const d = new Date(user.created_at.replace(' ','T').split('.')[0]);
@@ -529,7 +534,28 @@
         else { document.documentElement.removeAttribute('data-theme'); localStorage.setItem('darkMode','false'); }
     }
 
-    /* ── PREDPLATNÉ (Lemon Squeezy) ── */
+    /* ── PREDPLATNÉ (Paddle) ── */
+    async function initPaddle() {
+        try {
+            const res = await fetch('/api/v1/billing/config');
+            if (!res.ok) return;
+            _paddleConfig = await res.json();
+            if (!_paddleConfig.configured || !window.Paddle) return;
+            Paddle.Environment.set(_paddleConfig.environment === 'production' ? 'production' : 'sandbox');
+            Paddle.Initialize({
+                token: _paddleConfig.token,
+                eventCallback: (ev) => {
+                    if (ev && ev.name === 'checkout.completed') {
+                        const sk = currentLang === 'sk';
+                        showMessage(sk ? 'Ďakujeme! Aktivujem predplatné…' : 'Thank you! Activating subscription…', 'success');
+                        setTimeout(loadSubscription, 2500);
+                    }
+                }
+            });
+            _paddleReady = true;
+        } catch { /* platby ostanú neaktívne */ }
+    }
+
     async function loadSubscription() {
         try {
             const res = await fetch('/api/v1/subscription');
@@ -569,25 +595,25 @@
         loadUserStats(s.is_plus);
     }
 
-    async function startCheckout(plan, btn) {
+    function startCheckout(plan, btn) {
         const sk = currentLang === 'sk';
-        const orig = btn.textContent;
-        btn.disabled = true; btn.textContent = sk ? 'Presmerovávam…' : 'Redirecting…';
-        try {
-            const res = await fetch('/api/v1/checkout', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ plan })
-            });
-            const data = await res.json();
-            if (res.ok && data.url) { window.location.href = data.url; return; }
-            showMessage(
-                res.status === 503
-                    ? (sk ? 'Platby zatiaľ nie sú dostupné.' : 'Payments are not available yet.')
-                    : (data.detail || (sk ? 'Nepodarilo sa spustiť platbu.' : 'Could not start checkout.')),
-                'error'
-            );
-        } catch { showMessage(sk ? 'Chyba spojenia.' : 'Connection error.', 'error'); }
-        btn.disabled = false; btn.textContent = orig;
+        const priceId = _paddleConfig && _paddleConfig.prices ? _paddleConfig.prices[plan] : null;
+        if (!_paddleReady || !priceId) {
+            showMessage(sk ? 'Platby zatiaľ nie sú dostupné.' : 'Payments are not available yet.', 'error');
+            return;
+        }
+        const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+        Paddle.Checkout.open({
+            items: [{ priceId: priceId, quantity: 1 }],
+            customer: _userEmail ? { email: _userEmail } : undefined,
+            customData: { user_id: String(_userId || '') },
+            settings: {
+                displayMode: 'overlay',
+                theme: dark ? 'dark' : 'light',
+                locale: sk ? 'sk' : 'en',
+                successUrl: location.origin + '/profile?upgraded=1'
+            }
+        });
     }
 
     async function openPortal(btn) {

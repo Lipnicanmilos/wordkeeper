@@ -150,12 +150,13 @@ INQUIRY_TO=admin@example.com      # kam posielať notifikácie o dotazoch
 ERROR_ALERT_EMAIL=admin@example.com   # e-mail upozornenia pri chybách (ERROR+); prázdne = vypnuté
 # LOG_DIR=logs                        # priečinok pre rotujúce logy (default: ./logs)
 
-# Platby — Lemon Squeezy (voliteľné; bez nich sú platby neaktívne)
-LEMONSQUEEZY_API_KEY=...
-LEMONSQUEEZY_STORE_ID=...
-LEMONSQUEEZY_WEBHOOK_SECRET=...
-LEMONSQUEEZY_VARIANT_MONTHLY=...      # variant ID pre PLUS Mesačne (€4,99)
-LEMONSQUEEZY_VARIANT_ANNUAL=...       # variant ID pre PLUS Ročne (€39,99)
+# Platby — Paddle (Merchant of Record; voliteľné, bez nich sú platby neaktívne)
+PADDLE_ENV=sandbox                    # sandbox (default) alebo production
+PADDLE_API_KEY=...                    # server API kľúč (pdl_sdbx_... / pdl_live_...)
+PADDLE_CLIENT_TOKEN=...               # client-side token pre Paddle.js (test_... / live_...)
+PADDLE_WEBHOOK_SECRET=...             # tajný kľúč na overenie webhookov
+PADDLE_PRICE_MONTHLY=pri_...          # price ID pre PLUS Mesačne (€4,99)
+PADDLE_PRICE_ANNUAL=pri_...           # price ID pre PLUS Ročne (€39,99)
 
 # Migrácia — spusti create_all len pri explicitnom požiadaní
 # RUN_DB_CREATE_ALL=1
@@ -281,11 +282,11 @@ LexiNova/
 - `POST /api/v1/words/test/start` · `POST /api/v1/words/test/submit`
 - `POST /api/v1/words/import` — import z Excelu/CSV
 
-### Platby (Lemon Squeezy)
-- `POST /api/v1/checkout` — vytvorí checkout pre plán (`monthly`/`annual`), vráti URL
+### Platby (Paddle)
+- `GET /api/v1/billing/config` — konfigurácia pre Paddle.js overlay (token, price ID, prostredie)
 - `GET /api/v1/subscription` — stav predplatného prihláseného používateľa
-- `GET /api/v1/billing/portal` — URL na správu/zrušenie predplatného
-- `POST /api/webhooks/lemonsqueezy` — webhooky (HMAC-SHA256 podpisová verifikácia)
+- `GET /api/v1/billing/portal` — URL na správu/zrušenie predplatného (Paddle portal session)
+- `POST /api/webhooks/paddle` — webhooky (Paddle-Signature HMAC-SHA256 verifikácia)
 
 ### Verejné / stránky
 - `POST /api/inquiry` — kontaktný dotaz (bez prihlásenia)
