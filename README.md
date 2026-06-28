@@ -285,8 +285,10 @@ LexiNova/
 ### Platby (Paddle)
 - `GET /api/v1/billing/config` — konfigurácia pre Paddle.js overlay (token, price ID, prostredie)
 - `GET /api/v1/subscription` — stav predplatného prihláseného používateľa
-- `GET /api/v1/billing/portal` — URL na správu/zrušenie predplatného (Paddle portal session)
+- `POST /api/v1/billing/cancel` — zruší predplatné ku koncu obdobia (prístup ostáva do expirácie)
+- `GET /api/v1/billing/portal` — URL na správu predplatného (Paddle portal session, otvára sa v novej karte)
 - `POST /api/webhooks/paddle` — webhooky (Paddle-Signature HMAC-SHA256 verifikácia)
+- Admin `GET /api/admin/users` vracia aj stav predplatného (plán/status/expirácia) → stĺpec „Predplatné" v admin tabuľke
 
 #### Testovanie platieb (Paddle sandbox)
 Checkout beží cez Paddle.js overlay. V **sandbox** móde (`PADDLE_ENV=sandbox`) sa

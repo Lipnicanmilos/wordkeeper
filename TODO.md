@@ -81,7 +81,9 @@ Ceny: **PLUS Mesačne €4,99 · PLUS Ročne €39,99 · 7-dňový trial**.
 ### Fáza 4 — Frontend (profil) ✅ — 2026-06-28
 - [x] Sekcia „Predplatné": stav (Standard / PLUS / trial) + dátum „aktívne do"
 - [x] Tlačidlá „PLUS Mesačne / Ročne" → `/api/v1/checkout` → redirect
-- [x] Tlačidlo „Spravovať predplatné" → `/api/v1/billing/portal`
+- [x] Tlačidlo „Spravovať predplatné" → `/api/v1/billing/portal` (otvára sa v novej karte)
+- [x] Tlačidlo „Zrušiť predplatné" → `POST /api/v1/billing/cancel` (ku koncu obdobia, prístup ostáva do expirácie)
+- [x] Checkout cez **Paddle.js overlay** (`Paddle.Checkout.open`) — nie server redirect
 - [x] Návrat z checkoutu (`?upgraded=1`) → správa + reload stavu
 - [x] **Odstránený fake user `togglePlus()` + endpoint `/api/user/plus`** (bezpečnostná diera — self-grant PLUS zadarmo). Admin override (`/api/admin/users`) zostáva.
 
@@ -92,14 +94,14 @@ Ceny: **PLUS Mesačne €4,99 · PLUS Ročne €39,99 · 7-dňový trial**.
 - [ ] Pozn.: gating používa `user.is_plus` (expire_if_needed pri logine ho drží aktuálny)
 
 ### Fáza 6 — Admin
-- [ ] Stĺpce: stav predplatného, expirácia, plán
+- [x] Stĺpce: stav predplatného, expirácia, plán (stĺpec „Predplatné" v admin tabuľke; `/api/admin/users` vracia plus_plan/status/expires_at/cancelled_at)
 - [ ] Manuálny grant PLUS s dátumom (+30 dní) — admin override
-- [ ] MRR / aktívne predplatné štatistika (Payment model + LS)
+- [ ] MRR / aktívne predplatné štatistika (Payment model — čiastočne v `/api/admin/payments`)
 
 ### Fáza 7 — Testy + go-live
-- [ ] Testy: checkout vytvorí URL, webhook (validný/nevalidný podpis), aktivácia/expirácia, gating
-- [ ] E2E v test mode (testovacia karta)
-- [ ] Prepnúť LS na live + reálne env premenné (až po vyriešení živnosti)
+- [x] Testy `test_billing.py` (8): config auth/nenakonfigurované, subscription, cancel auth/404, webhook podpis + aktivácia + zrušenie. Spolu 34 testov.
+- [x] **E2E v sandbox test mode HOTOVÝ (2026-06-28):** migrácia na Supabase spustená, testovacia platba kartou `4242…` prešla, webhook aktivoval PLUS. ✅
+- [ ] Prepnúť na **live** Paddle účet: zopakovať setup (produkt/ceny/webhook/Approved domain/Default payment link), live env premenné, `PADDLE_ENV=production`, **revoke** omylom zverejneného live API kľúča. Až po vyriešení živnosti/zdanenia s účtovníkom.
 
 ---
 
