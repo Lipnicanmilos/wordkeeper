@@ -288,6 +288,22 @@ LexiNova/
 - `GET /api/v1/billing/portal` — URL na správu/zrušenie predplatného (Paddle portal session)
 - `POST /api/webhooks/paddle` — webhooky (Paddle-Signature HMAC-SHA256 verifikácia)
 
+#### Testovanie platieb (Paddle sandbox)
+Checkout beží cez Paddle.js overlay. V **sandbox** móde (`PADDLE_ENV=sandbox`) sa
+neúčtujú reálne peniaze. Testovacie karty:
+
+| Účel | Číslo karty | Exp. | CVC |
+|------|-------------|------|-----|
+| Úspešná platba (Visa) | `4242 4242 4242 4242` | hocijaký budúci dátum | hocijaké 3 čísla |
+| Mastercard (success) | `5555 5555 5555 4444` | -//- | -//- |
+| Vyžaduje 3DS overenie | `4000 0038 0000 0002` | -//- | -//- |
+| Zamietnutá platba | `4000 0000 0000 0002` | -//- | -//- |
+
+Predpoklady, aby sandbox checkout fungoval (jednorazové nastavenie v Paddle):
+- **Approved domain** — Checkout settings → pridať doménu appky (bez `https://`/`www`)
+- **Default payment link** — Checkout settings → URL na schválenej doméne (napr. `https://<doména>/profile`); bez neho Paddle vráti `transaction_default_checkout_url_not_set`
+- DB migrácia spustená (stĺpce `paddle_*`), env premenné `PADDLE_*` nasadené na serveri
+
 ### Verejné / stránky
 - `POST /api/inquiry` — kontaktný dotaz (bez prihlásenia)
 - `GET /privacy` · `GET /terms` — právne stránky (SK/EN)

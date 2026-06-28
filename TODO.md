@@ -38,17 +38,27 @@
 
 ---
 
-## Platobná brána — Lemon Squeezy (Merchant of Record)
+## Platobná brána — Paddle (Merchant of Record)
 
-**Rozhodnuté (2026-06-27):** Lemon Squeezy (MoR, rieši DPH za nás — prevádzkovateľ je FO bez IČO).
+**Rozhodnuté (2026-06-28):** Paddle (nezávislý pravý MoR, rieši EU DPH + faktúry — prevádzkovateľ je FO bez IČO).
+⚠️ Pôvodne Lemon Squeezy, ale po akvizícii Stripom LS presmeruje nových používateľov do Stripe (nie čistý MoR) → prešli sme na Paddle. Backend prerobený commitom `8f352b69`.
 Ceny: **PLUS Mesačne €4,99 · PLUS Ročne €39,99 · 7-dňový trial**.
-⚠️ Pred OSTRÝM spustením (live) overiť s účtovníkom živnosť/zdanenie príjmu. Celý vývoj prebehne v **test mode** (žiadne reálne peniaze, netreba živnosť).
+⚠️ Pred OSTRÝM spustením (live) overiť s účtovníkom živnosť/zdanenie príjmu. Celý vývoj prebehne v **sandbox / test mode** (žiadne reálne peniaze, netreba živnosť).
 
-### Fáza 0 — Lemon Squeezy setup (manuálne, robí používateľ)
-- [ ] Vytvoriť LS účet + Store (test mode)
-- [ ] Produkt „LexiNova PLUS" s 2 variantmi (Monthly €4,99, Annual €39,99), oba subscription + 7-day free trial
-- [ ] API key, Store ID, Webhook signing secret, Variant IDs (monthly/annual)
-- [ ] Env: `LEMONSQUEEZY_API_KEY`, `LEMONSQUEEZY_STORE_ID`, `LEMONSQUEEZY_WEBHOOK_SECRET`, `LEMONSQUEEZY_VARIANT_MONTHLY`, `LEMONSQUEEZY_VARIANT_ANNUAL`
+### Testovacie karty (Paddle sandbox)
+| Účel | Číslo karty | Exp. | CVC |
+|------|-------------|------|-----|
+| Úspešná platba (Visa) | `4242 4242 4242 4242` | hocijaký budúci dátum | hocijaké 3 čísla |
+| Mastercard (success) | `5555 5555 5555 4444` | -//- | -//- |
+| Vyžaduje 3DS overenie | `4000 0038 0000 0002` | -//- | -//- |
+| Zamietnutá platba | `4000 0000 0000 0002` | -//- | -//- |
+
+### Fáza 0 — Paddle setup (manuálne, robí používateľ) ✅ (sandbox) — 2026-06-28
+- [x] Sandbox účet (`sandbox-login.paddle.com`) + produkt „LexiNova PLUS" + 2 ceny (Monthly €4,99 / Annual €39,99), 7-day free trial, tax = Account default
+- [x] Env (sandbox): `PADDLE_ENV=sandbox`, `PADDLE_API_KEY`, `PADDLE_CLIENT_TOKEN`, `PADDLE_WEBHOOK_SECRET`, `PADDLE_PRICE_MONTHLY`, `PADDLE_PRICE_ANNUAL` — v lokálnom `.env` aj na Cloud Run
+- [x] Webhook destinácia → `https://lexinova-...run.app/api/webhooks/paddle` (subscription.* + transaction.completed + transaction.payment_failed)
+- [x] **Checkout settings: Approved domain** + **Default payment link** (`/profile`) — inak `transaction_default_checkout_url_not_set`
+- [ ] LIVE účet: zopakovať setup + revoke omylom zverejneného live API kľúča (`pdl_live_...`)
 
 ### Fáza 1 — DB migrácia (User) ✅ (kód) — 2026-06-28
 - [x] Stĺpce v `User`: `plus_expires_at`, `plus_plan`, `plus_status`, `ls_customer_id`, `ls_subscription_id`, `plus_cancelled_at`
