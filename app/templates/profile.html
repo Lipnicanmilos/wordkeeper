@@ -333,6 +333,9 @@
                 <button id="manageBtn" onclick="openPortal(this)"
                         style="display:none; width:100%; padding:.6rem 1rem; border:1px solid var(--border); background:var(--surface); color:var(--text); border-radius:10px; font-weight:600; cursor:pointer;"
                         data-en="Manage subscription" data-sk="Spravovať predplatné">Spravovať predplatné</button>
+                <button id="cancelBtn" onclick="cancelSubscription(this)"
+                        style="display:none; width:100%; margin-top:.5rem; padding:.6rem 1rem; border:1px solid var(--danger); background:transparent; color:var(--danger); border-radius:10px; font-weight:600; cursor:pointer;"
+                        data-en="Cancel subscription" data-sk="Zrušiť predplatné">Zrušiť predplatné</button>
             </div>
 
             <div class="card-section">
@@ -570,6 +573,7 @@
         const info  = document.getElementById('subInfo');
         const upBox = document.getElementById('upgradeBox');
         const manage = document.getElementById('manageBtn');
+        const cancel = document.getElementById('cancelBtn');
 
         if (s.is_plus) {
             const trial = s.status === 'on_trial';
@@ -585,12 +589,16 @@
             info.textContent = txt;
             upBox.style.display = 'none';
             manage.style.display = 'block';
+            // „Zrušiť" len ak ešte nie je zrušené
+            const alreadyCancelled = s.cancelled_at || s.status === 'canceled';
+            cancel.style.display = alreadyCancelled ? 'none' : 'block';
         } else {
             badge.textContent = 'Standard';
             badge.style.background = 'var(--muted)'; badge.style.color = '#fff';
             info.textContent = '';
             upBox.style.display = 'block';
             manage.style.display = 'none';
+            cancel.style.display = 'none';
         }
         loadUserStats(s.is_plus);
     }
@@ -626,6 +634,26 @@
             showMessage(data.detail || (sk ? 'Nepodarilo sa otvoriť správu predplatného.' : 'Could not open portal.'), 'error');
         } catch { showMessage(sk ? 'Chyba spojenia.' : 'Connection error.', 'error'); }
         btn.disabled = false;
+    }
+
+    async function cancelSubscription(btn) {
+        const sk = currentLang === 'sk';
+        if (!confirm(sk
+            ? 'Naozaj zrušiť predplatné? Prístup ti zostane do konca zaplateného obdobia.'
+            : 'Cancel subscription? You keep access until the end of the paid period.')) return;
+        const orig = btn.textContent;
+        btn.disabled = true; btn.textContent = sk ? 'Ruším…' : 'Cancelling…';
+        try {
+            const res = await fetch('/api/v1/billing/cancel', { method: 'POST' });
+            const data = await res.json();
+            if (res.ok) {
+                showMessage(sk ? 'Predplatné zrušené – prístup máš do konca obdobia.' : 'Subscription cancelled – access until period end.', 'success');
+                loadSubscription();
+                return;
+            }
+            showMessage(data.detail || (sk ? 'Nepodarilo sa zrušiť predplatné.' : 'Could not cancel subscription.'), 'error');
+        } catch { showMessage(sk ? 'Chyba spojenia.' : 'Connection error.', 'error'); }
+        btn.disabled = false; btn.textContent = orig;
     }
 
     function setupPasswordCheck() {

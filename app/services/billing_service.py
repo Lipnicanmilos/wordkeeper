@@ -86,6 +86,18 @@ def _first_price_id(data: dict) -> Optional[str]:
     return None
 
 
+async def cancel_subscription(subscription_id: str) -> dict:
+    """Zruší Paddle subscription ku koncu fakturačného obdobia. Vráti aktualizovaný objekt."""
+    async with httpx.AsyncClient(timeout=20) as client:
+        resp = await client.post(
+            f"{api_base()}/subscriptions/{subscription_id}/cancel",
+            json={"effective_from": "next_billing_period"},
+            headers=_auth_headers(),
+        )
+        resp.raise_for_status()
+        return resp.json()["data"]
+
+
 async def create_portal_session(customer_id: str, subscription_id: Optional[str] = None) -> str:
     """Vytvorí Paddle customer portal session a vráti URL na správu predplatného."""
     body: dict = {}

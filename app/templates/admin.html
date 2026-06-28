@@ -108,6 +108,7 @@
           <tr>
             <th>Email / Meno</th>
             <th>Plus</th>
+            <th>Predplatné</th>
             <th>Registrácia</th>
             <th>Posledné prihlásenie</th>
             <th>Kat.</th>
@@ -116,7 +117,7 @@
           </tr>
         </thead>
         <tbody id="usersTbody">
-          <tr><td colspan="7" class="muted">Načítavam...</td></tr>
+          <tr><td colspan="8" class="muted">Načítavam...</td></tr>
         </tbody>
       </table>
     </div>
@@ -224,6 +225,16 @@
     function showErr(msg){ errBox.textContent = msg; errBox.style.display='block'; }
     function clearErr(){ errBox.style.display='none'; }
     function fmtDate(iso){ return iso ? new Date(iso).toLocaleString() : '-'; }
+    function fmtDay(iso){ return iso ? new Date(iso).toLocaleDateString() : '-'; }
+    function subCell(u){
+      if(!u.is_plus && !u.plus_status) return '<span class="muted">—</span>';
+      const plan = u.plus_plan === 'annual' ? 'Ročne' : (u.plus_plan === 'monthly' ? 'Mesačne' : '');
+      let html = plan ? `<div style="font-weight:800">${plan}</div>` : '';
+      if(u.plus_cancelled_at) html += `<div class="muted" style="font-size:.8rem">zrušené · do ${fmtDay(u.plus_expires_at)}</div>`;
+      else if(u.plus_expires_at) html += `<div class="muted" style="font-size:.8rem">do ${fmtDay(u.plus_expires_at)}</div>`;
+      if(u.plus_status) html += `<div class="muted" style="font-size:.72rem">${esc(u.plus_status)}</div>`;
+      return html || '<span class="muted">—</span>';
+    }
     function esc(s){ return (s ?? '').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
     function switchTab(which){
@@ -310,7 +321,7 @@
         const tbody = document.getElementById('usersTbody');
         tbody.innerHTML = '';
         if(users.length === 0){
-          tbody.innerHTML = `<tr><td colspan="7" class="muted empty">Žiadni používatelia.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="8" class="muted empty">Žiadni používatelia.</td></tr>`;
           return;
         }
 
@@ -323,6 +334,7 @@
             <tr>
               <td><div style="font-weight:800">${esc(u.email)}</div>${nameLine}</td>
               <td>${plusPill}</td>
+              <td>${subCell(u)}</td>
               <td>${fmtDate(u.created_at)}</td>
               <td>${fmtDate(u.last_login)}</td>
               <td style="font-weight:900">${u.categories_count ?? 0}</td>

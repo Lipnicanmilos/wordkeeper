@@ -17,7 +17,9 @@ for _k in (
     "PADDLE_ENV",
     "PADDLE_API_BASE",
 ):
-    os.environ.pop(_k, None)  # platby v testoch nenakonfigurované (deterministicky)
+    # Prázdny reťazec (nie pop) — load_dotenv pri importe appky neprepíše existujúci
+    # kľúč, takže platby ostanú v testoch deterministicky nenakonfigurované.
+    os.environ[_k] = ""
 
 import pytest
 from sqlalchemy import create_engine

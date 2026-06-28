@@ -37,6 +37,34 @@ async def my_subscription(current_user: User = Depends(get_authenticated_user)):
     )
 
 
+@router.post("/api/v1/billing/cancel")
+async def cancel_my_subscription(
+    current_user: User = Depends(get_authenticated_user),
+    db: Session = Depends(get_db),
+):
+    if not current_user.paddle_subscription_id:
+        raise HTTPException(status_code=404, detail="Žiadne aktívne predplatné.")
+    try:
+        data = await billing_service.cancel_subscription(current_user.paddle_subscription_id)
+    except Exception as exc:
+        logger.error(f"Cancel error: {exc}")
+        raise HTTPException(status_code=502, detail="Nepodarilo sa zrušiť predplatné.")
+    # Premietni výsledok hneď (webhook subscription.updated príde aj tak).
+    billing_service.apply_subscription(current_user, data)
+    db.commit()
+    return JSONResponse(
+        {
+            "status": current_user.plus_status,
+            "expires_at": current_user.plus_expires_at.isoformat()
+            if current_user.plus_expires_at
+            else None,
+            "cancelled_at": current_user.plus_cancelled_at.isoformat()
+            if current_user.plus_cancelled_at
+            else None,
+        }
+    )
+
+
 @router.get("/api/v1/billing/portal")
 async def billing_portal(current_user: User = Depends(get_authenticated_user)):
     if not current_user.paddle_customer_id:

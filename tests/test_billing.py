@@ -28,6 +28,17 @@ def test_subscription_status_default(client):
     assert data["status"] is None
 
 
+def test_cancel_requires_auth(client):
+    r = client.post("/api/v1/billing/cancel")
+    assert r.status_code in (401, 403)
+
+
+def test_cancel_without_subscription_returns_404(client):
+    client.post("/api/v1/register", json={"email": "can@example.com", "password": "Abcdef12"})
+    r = client.post("/api/v1/billing/cancel")
+    assert r.status_code == 404
+
+
 def test_webhook_rejects_invalid_signature(client):
     r = client.post("/api/webhooks/paddle", content=b"{}", headers={"Paddle-Signature": "ts=1;h1=bad"})
     assert r.status_code == 401
