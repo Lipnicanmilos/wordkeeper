@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request, UploadFile, File, Form
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
@@ -9,6 +10,7 @@ from app.database.connection import get_db
 from app.models.user import User
 from app.models.category import Category
 from app.models.word import Word, KnowledgeLevel
+from app.services.limits import WORD_LIMIT_FREE
 from app.schemas.word import (
     WordCreate, WordResponse, WordUpdate, WordListResponse,
     TestConfig, TestResult, KnowledgeLevel, KnowledgeLevelUpdate
@@ -47,7 +49,24 @@ def create_word(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Category not found"
         )
-    
+
+    # Free účet: limit slov na kategóriu (PLUS = neobmedzene)
+    if not current_user.is_plus:
+        word_count = (
+            db.query(func.count(Word.id))
+            .filter(Word.category_id == word_data.category_id, Word.user_id == current_user.id)
+            .scalar()
+            or 0
+        )
+        if word_count >= WORD_LIMIT_FREE:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    f"Dosiahli ste maximum {WORD_LIMIT_FREE} slov v kategórii. "
+                    "Aktivujte PLUS pre neobmedzené slová."
+                ),
+            )
+
     # Vytvorte nové slovíčko
     new_word = Word(
         original_word=word_data.original_word,
@@ -370,6 +389,18 @@ def import_words(
 
         imported_count = 0
         errors = []
+        limit_reached = False
+
+        # Free účet: koľko nových slov ešte možno pridať (PLUS = neobmedzene)
+        remaining_slots = None
+        if not current_user.is_plus:
+            existing_count = (
+                db.query(func.count(Word.id))
+                .filter(Word.category_id == category_id, Word.user_id == current_user.id)
+                .scalar()
+                or 0
+            )
+            remaining_slots = max(0, WORD_LIMIT_FREE - existing_count)
 
         # Spracovať každý riadok
         for index, row in df.iterrows():
@@ -394,6 +425,10 @@ def import_words(
                     existing_word.translation = translation
                     existing_word.updated_at = datetime.now()
                 else:
+                    # Free účet: nepridávaj nové slová nad limit
+                    if remaining_slots is not None and remaining_slots <= 0:
+                        limit_reached = True
+                        continue
                     # Vytvoriť nové slovíčko
                     new_word = Word(
                         original_word=original_word,
@@ -404,6 +439,8 @@ def import_words(
                         user_id=current_user.id if current_user else None
                     )
                     db.add(new_word)
+                    if remaining_slots is not None:
+                        remaining_slots -= 1
 
                 imported_count += 1
 
@@ -412,8 +449,15 @@ def import_words(
 
         db.commit()
 
+        message = f"Successfully imported {imported_count} words"
+        if limit_reached:
+            message += (
+                f". Limit {WORD_LIMIT_FREE} slov v kategórii dosiahnutý — "
+                "časť slov nebola pridaná. Aktivujte PLUS pre neobmedzené slová."
+            )
+
         return {
-            "message": f"Successfully imported {imported_count} words",
+            "message": message,
             "imported_count": imported_count,
             "errors": errors if errors else None
         }

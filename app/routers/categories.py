@@ -4,6 +4,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.database.connection import get_db
@@ -20,6 +21,7 @@ from app.services.ai_category_service import (
     generate_category_and_words_groq,
     validate_ai_category_payload,
 )
+from app.services.limits import CATEGORY_LIMIT_FREE, consume_ai_quota, word_limit_for
 from app.services.runtime import limiter, logger
 from app.services.stats_service import (
     empty_level_counts,
@@ -29,8 +31,6 @@ from app.services.stats_service import (
 
 
 router = APIRouter(prefix="/api/v1/categories", tags=["categories"])
-
-CATEGORY_LIMIT_FREE = 5
 
 # Tvorba kategórie z fotky (AI vision)
 IMAGE_MAX_BYTES = 5 * 1024 * 1024  # 5 MB (limit Claude vision na obrázok)
@@ -49,11 +49,13 @@ def _persist_generated_category(
     generated: dict,
     default_language_from: str,
     default_language_to: str,
+    word_limit: Optional[int] = None,
 ) -> AICategoryCreateResponse:
     """Zvaliduje AI payload, vytvorí/nájde kategóriu a uloží slovíčka.
 
     Zdieľané medzi tvorbou z promptu aj z obrázka. Limit kategórií treba
-    skontrolovať PRED volaním AI (aby sa nemíňali API credits)."""
+    skontrolovať PRED volaním AI (aby sa nemíňali API credits). `word_limit`
+    (None = neobmedzene) obmedzí počet nových slov v kategórii pre Free účet."""
     try:
         validate_ai_category_payload(generated)
     except Exception as exc:
@@ -86,6 +88,14 @@ def _persist_generated_category(
     updated = 0
     skipped = 0
     saved_words_preview: list[dict] = []
+
+    # Aktuálny počet slov v kategórii (kvôli word_limit pre Free účet).
+    current_word_count = (
+        db.query(func.count(Word.id))
+        .filter(Word.category_id == category.id, Word.user_id == user.id)
+        .scalar()
+        or 0
+    )
 
     for w in words:
         try:
@@ -121,6 +131,11 @@ def _persist_generated_category(
                 skipped += 1
             continue
 
+        # Free účet: nepridávaj nad word_limit (existujúce slová sa stále aktualizujú).
+        if word_limit is not None and current_word_count >= word_limit:
+            skipped += 1
+            continue
+
         new_word = Word(
             original_word=original_word,
             translation=translation,
@@ -131,6 +146,7 @@ def _persist_generated_category(
         )
         db.add(new_word)
         inserted += 1
+        current_word_count += 1
 
         saved_words_preview.append(
             {
@@ -332,6 +348,9 @@ async def ai_create_category_and_words(
             detail=f"Dosiahli ste maximum {limit} kategórií. Aktivujte PLUS pre neobmedzené kategórie.",
         )
 
+    # Denný AI limit (Free účet) — započítaj pred volaním AI
+    consume_ai_quota(db, user)
+
     if ai_data.ai_provider == "groq":
         groq_api_key = os.getenv("GROQ_API_KEY")
         groq_model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
@@ -373,7 +392,7 @@ async def ai_create_category_and_words(
         )
 
     return _persist_generated_category(
-        db, user, generated, ai_data.language_from, ai_data.language_to
+        db, user, generated, ai_data.language_from, ai_data.language_to, word_limit_for(user)
     )
 
 
@@ -415,6 +434,9 @@ async def ai_create_category_from_image(
             detail=f"Obrázok je príliš veľký (max {IMAGE_MAX_BYTES // (1024 * 1024)} MB).",
         )
 
+    # Denný AI limit (Free účet) — započítaj pred volaním AI
+    consume_ai_quota(db, user)
+
     image_b64 = base64.b64encode(image_bytes).decode("ascii")
 
     if ai_provider == "gemini":
@@ -446,7 +468,9 @@ async def ai_create_category_from_image(
             max_count=IMAGE_MAX_WORDS,
         )
 
-    return _persist_generated_category(db, user, generated, language_from, language_to)
+    return _persist_generated_category(
+        db, user, generated, language_from, language_to, word_limit_for(user)
+    )
 
 
 @router.get("/{category_id}/stats")

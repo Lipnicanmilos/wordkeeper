@@ -87,10 +87,12 @@ Ceny: **PLUS Mesačne €4,99 · PLUS Ročne €39,99 · 7-dňový trial**.
 - [x] Návrat z checkoutu (`?upgraded=1`) → správa + reload stavu
 - [x] **Odstránený fake user `togglePlus()` + endpoint `/api/user/plus`** (bezpečnostná diera — self-grant PLUS zadarmo). Admin override (`/api/admin/users`) zostáva.
 
-### Fáza 5 — PLUS benefity
-- [x] **Kategórie: PLUS = neobmedzene** (Free = 5) — categories.py create + ai-create
-- [ ] AI generovanie: Free X/deň, PLUS neobmedzene (treba denný counter na User)
-- [ ] Limit slovíčok/kategória (Free) + rozšírené štatistiky (PLUS)
+### Fáza 5 — PLUS benefity — HOTOVÉ (2026-06-29)
+- [x] **Kategórie: PLUS = neobmedzene** (Free = 5) — categories.py create + ai-create (+ FE už neblokuje PLUS pri 5)
+- [x] **AI generovanie: Free 3/deň, PLUS neobmedzene** — `services/limits.py:consume_ai_quota`, denný counter `User.ai_uses_date/ai_uses_count`, platí pre prompt aj fotku (429 pri prekročení). Migrácia `2026-06-29_ai_usage_columns.sql`.
+- [x] **Limit slovíčok/kategória: Free 30, PLUS neobmedzene** — `services/limits.py:WORD_LIMIT_FREE`, vynútené v words.py (create + import) aj v AI ukladaní (`_persist_generated_category` word_limit)
+- [x] **Rozšírené štatistiky (PLUS)** — `/api/user/stats` vracia `is_plus` + `plus_stats` (úspešnosť testov, zvládnuté slová, počet testov, top 5 najslabších slov); dashboard zobrazí PLUS sekciu
+- [x] Testy `tests/test_plus_limits.py` (6) → spolu 43 testov
 - [ ] Pozn.: gating používa `user.is_plus` (expire_if_needed pri logine ho drží aktuálny)
 
 ### Fáza 6 — Admin

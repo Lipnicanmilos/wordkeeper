@@ -58,6 +58,12 @@ def _no_real_emails(monkeypatch):
 
 
 @pytest.fixture
+def db_factory():
+    """Sessionmaker viazaný na tú istú test DB ako aplikácia (pre priame DB úpravy v testoch)."""
+    return TestingSessionLocal
+
+
+@pytest.fixture
 def client():
     """Štandardný client — rate limiting vypnutý."""
     main_module.app.dependency_overrides[get_db] = _override_get_db

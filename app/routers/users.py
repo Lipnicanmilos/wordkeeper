@@ -151,15 +151,42 @@ async def get_user_stats(
     if tests_taken > 0:
         success_rate = round((times_correct / tests_taken) * 100, 2)
 
-    return JSONResponse(
-        {
-            "total_words": words_count,
-            "total_categories": categories_count,
-            "tests_taken": tests_taken,
-            "success_rate": success_rate,
-            "words_by_level": get_user_level_counts(db, current_user.id),
+    payload = {
+        "total_words": words_count,
+        "total_categories": categories_count,
+        "tests_taken": tests_taken,
+        "success_rate": success_rate,
+        "words_by_level": get_user_level_counts(db, current_user.id),
+        "is_plus": bool(current_user.is_plus),
+    }
+
+    # Rozšírené štatistiky len pre PLUS účet (Fáza 5)
+    if current_user.is_plus:
+        level_counts = payload["words_by_level"]
+        tested_words = (
+            db.query(Word)
+            .filter(Word.user_id == current_user.id, Word.times_tested > 0)
+            .all()
+        )
+        weakest = sorted(
+            tested_words,
+            key=lambda w: (w.times_correct / w.times_tested, -w.times_tested),
+        )[:5]
+        payload["plus_stats"] = {
+            "words_mastered": level_counts.get("know", 0),
+            "words_tested": len(tested_words),
+            "weakest_words": [
+                {
+                    "original_word": w.original_word,
+                    "translation": w.translation,
+                    "success_rate": round((w.times_correct / w.times_tested) * 100, 1),
+                    "times_tested": w.times_tested,
+                }
+                for w in weakest
+            ],
         }
-    )
+
+    return JSONResponse(payload)
 
 
 @router.get("/api/user/export")

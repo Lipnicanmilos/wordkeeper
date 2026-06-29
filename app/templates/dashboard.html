@@ -244,6 +244,22 @@
 
         .ai-hint { font-size: .85rem; color: var(--muted); margin-bottom: 1rem; line-height: 1.4; }
 
+        /* ─── PLUS STATS ─── */
+        .plus-stats { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 1.25rem 1.4rem; margin-top: 1.25rem; box-shadow: var(--shadow); }
+        .plus-stats-head { display: flex; align-items: center; gap: .5rem; font-weight: 800; font-size: 1rem; margin-bottom: 1rem; }
+        .plus-stats-head i { background: var(--grad); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        .plus-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+        .plus-metric { text-align: center; padding: .6rem; background: var(--bg); border-radius: 12px; }
+        .plus-metric-value { font-size: 1.5rem; font-weight: 800; color: var(--primary); }
+        .plus-metric-label { font-size: .78rem; color: var(--muted); margin-top: .2rem; }
+        .plus-weakest-title { font-weight: 700; font-size: .9rem; margin: 1.1rem 0 .5rem; }
+        .plus-weakest { list-style: none; }
+        .plus-weakest li { display: flex; justify-content: space-between; align-items: center; padding: .5rem .2rem; border-bottom: 1px solid var(--border); font-size: .88rem; }
+        .plus-weakest li:last-child { border-bottom: none; }
+        .plus-weakest .ww-pair { color: var(--text); }
+        .plus-weakest .ww-rate { font-weight: 700; color: #e53e3e; flex-shrink: 0; margin-left: 1rem; }
+        @media (max-width: 560px) { .plus-stats-grid { grid-template-columns: 1fr; } }
+
         /* ─── AI LOADING ─── */
         .ai-loading { display: none; text-align: center; padding: 1rem 0 .5rem; }
         .ai-loading.active { display: block; }
@@ -378,6 +394,32 @@
             </div>
         </div>
         <div id="statsWordsByLevel" class="stat-card" style="justify-content:space-around;"></div>
+    </div>
+
+    <!-- PLUS rozšírené štatistiky (len pre PLUS účet) -->
+    <div id="plusStatsSection" class="plus-stats" style="display:none;">
+        <div class="plus-stats-head">
+            <i class="fa-solid fa-crown"></i>
+            <span data-en="PLUS statistics" data-sk="PLUS štatistiky">PLUS statistics</span>
+        </div>
+        <div class="plus-stats-grid">
+            <div class="plus-metric">
+                <div class="plus-metric-value" id="plusSuccessRate">0%</div>
+                <div class="plus-metric-label" data-en="Test success rate" data-sk="Úspešnosť testov">Test success rate</div>
+            </div>
+            <div class="plus-metric">
+                <div class="plus-metric-value" id="plusWordsMastered">0</div>
+                <div class="plus-metric-label" data-en="Words mastered" data-sk="Zvládnuté slová">Words mastered</div>
+            </div>
+            <div class="plus-metric">
+                <div class="plus-metric-value" id="plusTestsTaken">0</div>
+                <div class="plus-metric-label" data-en="Tests taken" data-sk="Absolvované testy">Tests taken</div>
+            </div>
+        </div>
+        <div id="plusWeakestWrap" style="display:none;">
+            <div class="plus-weakest-title" data-en="Weakest words" data-sk="Najslabšie slová">Weakest words</div>
+            <ul id="plusWeakestList" class="plus-weakest"></ul>
+        </div>
     </div>
 
     <!-- Section header -->
@@ -625,6 +667,37 @@
             <div style="text-align:center"><div style="color:#e53e3e;font-weight:800;font-size:1.4rem">${dk}</div><small style="color:var(--muted)">${l.dk}</small></div>
             <div style="text-align:center"><div style="color:#38a169;font-weight:800;font-size:1.4rem">${stats.words_by_level?.know ?? 0}</div><small style="color:var(--muted)">${l.kn}</small></div>
         `;
+        renderPlusStats(stats);
+    }
+
+    function renderPlusStats(stats) {
+        const section = document.getElementById('plusStatsSection');
+        if (!stats.is_plus || !stats.plus_stats) { section.style.display = 'none'; return; }
+        const ps = stats.plus_stats;
+        document.getElementById('plusSuccessRate').textContent  = `${stats.success_rate ?? 0}%`;
+        document.getElementById('plusWordsMastered').textContent = ps.words_mastered ?? 0;
+        document.getElementById('plusTestsTaken').textContent   = stats.tests_taken ?? 0;
+
+        const weakest = ps.weakest_words || [];
+        const wrap = document.getElementById('plusWeakestWrap');
+        const list = document.getElementById('plusWeakestList');
+        if (weakest.length) {
+            list.innerHTML = weakest.map(w => `
+                <li>
+                    <span class="ww-pair">${escapeHtml(w.original_word)} → ${escapeHtml(w.translation)}</span>
+                    <span class="ww-rate">${w.success_rate}%</span>
+                </li>
+            `).join('');
+            wrap.style.display = 'block';
+        } else {
+            wrap.style.display = 'none';
+        }
+        section.style.display = 'block';
+        setLang(currentLang);
+    }
+
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     }
 
     async function loadUserStats() {
@@ -771,7 +844,7 @@
     function openAICreateModal()  { document.getElementById('aiCreateModal').style.display = 'flex'; setLang(currentLang); resetAIModal(); }
     function closeAICreateModal() { document.getElementById('aiCreateModal').style.display = 'none'; resetAIModal(); }
     function openCreateModal() {
-        if (allCategories.length >= 5) {
+        if (!currentUserIsPlus && allCategories.length >= 5) {
             showMessage(currentLang==='sk'?`Dosiahli ste max. počet kategórií (5).`:`You've reached the category limit (5).`, 'error');
             return;
         }
@@ -866,7 +939,7 @@
     let aiImageStepTimer = null;
 
     function openAIImageModal()  {
-        if (allCategories.length >= 5) {
+        if (!currentUserIsPlus && allCategories.length >= 5) {
             showMessage(currentLang==='sk'?`Dosiahli ste max. počet kategórií (5).`:`You've reached the category limit (5).`, 'error');
             return;
         }
@@ -934,8 +1007,9 @@
         }).then(async res => {
             const data = await res.json().catch(() => ({}));
             if (!res.ok) {
+                if (data.detail) throw new Error(data.detail);
                 if (res.status === 429) throw new Error(currentLang === 'sk' ? 'Príliš veľa AI požiadaviek. Skús to o chvíľu.' : 'Too many AI requests. Try again later.');
-                throw new Error(data.detail || data.error || 'AI request failed');
+                throw new Error(data.error || 'AI request failed');
             }
 
             clearTimeout(aiImageStepTimer);

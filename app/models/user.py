@@ -1,5 +1,5 @@
 from app.database.connection import Base
-from sqlalchemy import Column, Integer, String, DateTime, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, Date, Boolean
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 
@@ -22,5 +22,8 @@ class User(Base):
     plus_cancelled_at = Column(DateTime, nullable=True)
     paddle_customer_id = Column(String(64), nullable=True)     # Paddle customer id (ctm_...)
     paddle_subscription_id = Column(String(64), nullable=True) # Paddle subscription id (sub_...)
+    # Denný limit AI generovania (Free účet) — počítadlo sa resetuje pri zmene dátumu
+    ai_uses_date = Column(Date, nullable=True)
+    ai_uses_count = Column(Integer, default=0)
     # Relácie
     categories = relationship("Category", back_populates="user", cascade="all, delete-orphan")
