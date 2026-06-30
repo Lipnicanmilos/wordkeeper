@@ -344,7 +344,7 @@
 <!-- LEAVE CONFIRMATION MODAL -->
 <div class="modal-overlay" id="leaveModal">
     <div class="modal-box">
-        <div class="modal-icon">⚠️</div>
+        <div class="modal-icon">🏁</div>
         <div class="modal-title" id="leaveTitle"></div>
         <p class="modal-text" id="leaveText"></p>
         <div class="modal-actions">
@@ -371,7 +371,7 @@ const L = {
     en: {
         topDash:    '← Dashboard',
         leaveTitle:  'End the test?',
-        leaveWarn:   "If you leave now, the flashcard test will end and your progress won't be saved.",
+        leaveWarn:   'Do you really want to end the flashcard test? Your answers so far will be saved.',
         leaveStay:   'Stay',
         leaveConfirm:'End test',
         loggedIn:   'Logged in as',
@@ -399,7 +399,7 @@ const L = {
     sk: {
         topDash:    '← Dashboard',
         leaveTitle:  'Ukončiť test?',
-        leaveWarn:   'Ak teraz odídeš, test kartičiek sa ukončí a tvoj postup sa neuloží.',
+        leaveWarn:   'Naozaj chceš ukončiť test kartičiek? Doterajšie odpovede sa uložia.',
         leaveStay:   'Zostať',
         leaveConfirm:'Ukončiť test',
         loggedIn:   'Prihlásený ako',
@@ -465,9 +465,12 @@ async function goDashboard(e) {
     const testInProgress =
         document.getElementById('testScreen').style.display === 'block' &&
         words.length > 0 && idx < words.length;
-    // Nedokončený test → postup sa neuloží, preto upozorni a vyžiadaj potvrdenie.
-    if (testInProgress && !(await confirmLeave())) return false;
-    // Počkaj na uloženie výsledkov (ak nejaké boli), aby dashboard ukázal čerstvé čísla.
+    if (testInProgress) {
+        if (!(await confirmLeave())) return false;
+        // Predčasné ukončenie: ulož zmeny levelu pre doteraz zodpovedané karty.
+        submitPromise = submitResults();
+    }
+    // Počkaj na uloženie výsledkov, aby dashboard ukázal čerstvé čísla.
     try { await submitPromise; } catch {}
     window.location.href = '/dashboard';
     return false;
